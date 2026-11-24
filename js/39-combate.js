@@ -1,0 +1,137 @@
+/* 0.39.0 — posicionamento, projéteis e estabilidade dos lacaios. */
+(()=>{
+'use strict';
+const combat=()=>['hunt','boss','dungeon','trial'].includes(state.mode);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const toward=(a,b,n)=>{const d=dist(a,b);return d?{x:a.x+(b.x-a.x)*Math.min(1,n/d),y:a.y+(b.y-a.y)*Math.min(1,n/d)}:{x:a.x,y:a.y};};
+const blocked=side=>hasStatus(side,'stun')||hasStatus(side,'freeze');
+const slowed=side=>hasStatus(side,'slow')?.7:1;
+// Ranged combat: finite retreat, faster pursuers, and a stationary casting window.
+window.eldoria39MoveRanged=function(now,dt){
+ const e=enemyPoint(now),d=dist(pos,e),r=range11(),gap=window.eldoria38Gap(),ranged=foeRanged11();
+ const ms=clamp(dt,0,100),speed=({ranger:.145,mage:.118,cleric:.115,necro:.12}[state.cls]||.12)*slowed('hero');
+ const dir=d>.01?{x:(e.x-pos.x)/d,y:(e.y-pos.y)/d}:{x:1,y:0};
+ if(now>=heroHold11&&!blocked('hero')){
+  const desired=r*.88;
+  if(d>r*.96)pos=walk34(pos,toward(pos,e,Math.min(d-desired,speed*ms)));
+  else if(d<r*.66){
+   const retreat=Math.min(r*.77-d,speed*.66*ms);
+   const opts=[{x:pos.x-dir.x*retreat,y:pos.y-dir.y*retreat}];
+   if(state.mode!=='hunt')for(const sign of [-1,1])opts.push({x:pos.x+sign*dir.y*retreat,y:pos.y-sign*dir.x*retreat});
+   const valid=opts.map(q=>walk34(pos,q)).filter(q=>dist(q,pos)>.01).sort((a,b)=>dist(b,e)-dist(a,e));
+   if(valid.length&&dist(valid[0],e)>d+.01)pos=valid[0];
+  }
+ }
+ if(now>=foeHold11&&!blocked('enemy')){
+  const n=dist(e,pos),reach=ranged?110:gap;
+  const fs=(ranged?.137:.185)*(state.era20?.affixes?.includes('fast')?1.18:1)*slowed('enemy');
+  if(n>reach){const q=walk34(e,toward(e,pos,Math.min(n-reach,fs*ms)));e.x=q.x;e.y=q.y;}
+  else if(ranged&&n<Math.max(65,gap)){const q=walk34(e,{x:e.x-dir.x*-fs*.45*ms,y:e.y-dir.y*-fs*.45*ms});e.x=q.x;e.y=q.y;}
+ }
+ dest=null;
+};
+// Cache each servant's attack slot; moving targets are followed continuously.
+// Expensive route selection happens only on a timer or when a slot is invalid.
+window.eldoria381StepServants=function(now,dt){
+ const list=state.necro30?.servants||[];if(!list.length)return;
+ const e=enemyPoint(now),arena=state.mode!=='hunt',eg=window.eldoria38ServantGap(),pg=arena?62:44,sg=arena?60:43;
+ const engage=state.enemyHp>0&&!window.eldoria31Interlude?.(),ms=clamp(dt,0,100);
+ const points=list.map((a,i)=>window.eldoria36Minions.position(a,i,now));
+ const blocks=(q,o,g)=>arena?((q.x-o.x)/g)**2+((q.y-o.y)/Math.min(65,g))**2<.999:Math.abs(q.x-o.x)<g-.05;
+ const baseLegal=q=>valid34(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
+ const slots=[];
+ for(let i=0;i<points.length;i++){
+  const p=points[i],a=list[i],others=points.filter((_,j)=>i!==j);
+  const legal=q=>baseLegal(q)&&!slots.some(o=>blocks(q,o,sg));
+  const actual=q=>legal(q)&&!others.some(o=>blocks(q,o,sg));
+  const hitDistance=dist(p,e),strikeAge=now-(a.attack31??-10000),locked=strikeAge>=0&&strikeAge<420;
+  p.phaseLeft381=Math.max(0,(p.phaseLeft381||0)-ms);
+  const settled=engage&&actual(p)&&hitDistance<=eg+13;
+  if(settled){
+   slots.push({x:p.x,y:p.y});p.goal39=null;p.stall39=0;p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);
+   if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;continue;
+  }
+  const old=p.goal39;
+  let goal=old&&engage?{x:e.x+old.dx,y:e.y+old.dy}:old&&{x:pos.x+old.dx,y:pos.y+old.dy};
+  if(!old||old.engage!==engage||!legal(goal)||now-(p.planned39||0)>650&&p.stall39>120){
+   const anchor=engage?e:pos,candidates=[];
+   for(const rad of engage?[eg+3,eg+10]:[pg+5,pg+sg+7,pg+sg*2+10]){
+    for(let j=0;j<(arena?16:2);j++){
+     const t=j*Math.PI*2/(arena?16:2),q={x:anchor.x+Math.cos(t)*rad,y:arena?anchor.y+Math.sin(t)*rad:anchor.y};
+     if(legal(q))candidates.push(q);
+    }
+   }
+   candidates.sort((u,v)=>dist(p,u)-dist(p,v)+(others.some(o=>blocks(u,o,sg))?50:0)-(others.some(o=>blocks(v,o,sg))?50:0));
+   goal=candidates[0];p.goal39=goal?{dx:goal.x-anchor.x,dy:goal.y-anchor.y,engage}:null;p.planned39=now;p.route39=null;
+  }
+  if(!goal){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
+  slots.push(goal);
+  // Keep a valid attack pose still while its animation plays.
+  if(locked&&baseLegal(p)&&hitDistance<=eg+22){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
+  const clear=(u,v)=>{const n=Math.max(1,Math.ceil(dist(u,v)/12));for(let k=1;k<=n;k++){const q=toward(u,v,dist(u,v)*k/n);if(!actual(q))return false;}return true;};
+  let waypoint=goal;
+  if(arena&&!clear(p,goal)){
+   if(!p.route39||!actual(p.route39)||dist(p,p.route39)<5||now-(p.routeTime39||0)>400){
+    const options=[];
+    for(const [o,g] of [[pos,pg],[e,eg],...others.map(o=>[o,sg])])for(let j=0;j<8;j++){
+     const t=j*Math.PI/4,q={x:o.x+Math.cos(t)*(g+12),y:o.y+Math.sin(t)*(Math.min(65,g)+12)};
+     if(actual(q)&&clear(p,q))options.push(q);
+    }
+    options.sort((u,v)=>dist(p,u)+dist(u,goal)+(clear(u,goal)?0:100)-dist(p,v)-dist(v,goal)-(clear(v,goal)?0:100));
+    p.route39=options[0]||null;p.routeTime39=now;
+   }
+   waypoint=p.route39||goal;
+  }
+  let q=walk34(p,toward(p,waypoint,(engage?.18:.17)*ms));
+  let moved=actual(q)&&dist(p,q)>.01;
+  if(!moved){
+   p.stall39=(p.stall39||0)+ms;
+   // Temporary translucent passage avoids deadlocks in narrow lanes without teleporting.
+   if(!actual(p)||p.stall39>=200||p.phaseLeft381>0){
+    q=walk34(p,toward(p,goal,.24*ms));moved=dist(p,q)>.01;
+    if(moved)p.phaseLeft381=200;
+   }
+  }else p.stall39=0;
+  if(moved){p.x=q.x;p.y=q.y;}
+  p.moving=moved;p.motion39=(p.motion39||0)+(Number(moved)-(p.motion39||0))*(1-Math.exp(-ms/95));
+  if(!locked)p.dir=Math.sign((engage?e:waypoint).x-p.x)||p.dir;
+ }
+};
+// Projectiles start at hand/bow height and travel toward the existing collision body.
+const projectile0=initProjectile18;
+initProjectile18=function(p,now){
+ const fresh=!Number.isFinite(p.px);
+ if(fresh){const a=p.side==='hero'?pos:enemyPoint(now),b=p.side==='hero'?enemyPoint(now):pos,dir=Math.sign(b.x-a.x)||1;
+  p.px=a.x+dir*12;p.py=a.y-(state.mode==='hunt'?27:36);
+ }
+ projectile0(p,now);
+ if(fresh){const q=targetBody18(p.side,now),d=Math.hypot(q.x-p.px,q.y-p.py);p.speed18=clamp(d/(arrowKinds18.has(p.kind)?570:780),.16,.46);}
+};
+const kind0=projectileKind11;
+projectileKind11=function(cast,incoming){if(!incoming&&state.cls==='necro'&&cast){const e=skillElement12(cast.id);if(['poison','blood','dark','fire','ice','arcane','shock','holy'].includes(e))return e;}return kind0(cast,incoming);};
+const colors={arrow:'#f4e4ad',pierce:'#e5f5ff',poisonarrow:'#a8ee68',fire:'#ff8c45',ice:'#94e5ff',arcane:'#d1a3ff',holy:'#ffe29a',dark:'#be91e9',shock:'#b8c8ff',poison:'#91db70',blood:'#fb7080'};
+const bursts=[];
+const launch0=launch11;
+launch11=function(...args){const r=launch0(...args);const p=state.pending11?.at(-1);if(p&&p.side==='hero'&&!suppress&&!document.hidden&&!catchingUp){bursts.push({x:p.px,y:p.py,t:gameNow28(),color:colors[p.kind]||colors.arcane,cast:!!p.cast,launch:true});}return r;};
+const impact0=impact11;
+impact11=function(side,dmg,crit,cast,s){if(dmg>0&&!suppress&&!document.hidden&&!catchingUp&&(side==='hero'?state.cls!=='war':foeRanged11())){const q=targetBody18(side,gameNow28());bursts.push({x:q.x,y:q.y,t:gameNow28(),color:colors[projectileKind11(cast,side==='enemy')]||colors.arcane,cast:!!cast});}return impact0(side,dmg,crit,cast,s);};
+const projectDraw0=drawProjectiles11;
+drawProjectiles11=function(now){
+ for(const p of state.pending11||[]){if(!Number.isFinite(p.px))continue;
+  const arrow=arrowKinds18.has(p.kind),color=colors[p.kind]||colors.arcane,ang=p.angle18||0,len=arrow?52:42;
+  ctx.save();ctx.translate(p.px,p.py);ctx.rotate(ang);ctx.lineCap='round';ctx.shadowBlur=arrow?4:10;ctx.shadowColor=color;
+  const gradient=ctx.createLinearGradient(-len,0,0,0);gradient.addColorStop(0,'transparent');gradient.addColorStop(1,color);
+  ctx.strokeStyle=gradient;ctx.lineWidth=arrow?3.3:p.cast?8:5;ctx.beginPath();ctx.moveTo(-len,0);ctx.lineTo(arrow?-2:0,0);ctx.stroke();
+  if(!arrow){ctx.fillStyle=color;for(let i=1;i<=4;i++){ctx.globalAlpha=.7-i*.1;ctx.beginPath();ctx.arc(-i*8,Math.sin(now/90+i*2)*5,Math.max(1,3-i*.4),0,Math.PI*2);ctx.fill();}}
+  ctx.restore();
+ }
+ projectDraw0(now);
+ for(let i=bursts.length-1;i>=0;i--){const f=bursts[i],age=(now-f.t)/340;if(age>=1||age<0){bursts.splice(i,1);continue;}
+  ctx.save();ctx.globalAlpha=(1-age)*.85;ctx.strokeStyle=f.color;ctx.fillStyle=f.color;ctx.lineWidth=f.cast?2.5:1.5;ctx.shadowColor=f.color;ctx.shadowBlur=6;
+  const radius=3+age*(f.cast?25:14);ctx.beginPath();ctx.arc(f.x,f.y,radius,0,Math.PI*2);ctx.stroke();
+  for(let j=0;j<(f.cast?8:4);j++){const a=j*Math.PI*2/(f.cast?8:4);ctx.beginPath();ctx.arc(f.x+Math.cos(a)*radius,f.y+Math.sin(a)*radius,1.4,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+ }
+};
+const switch0=switchActivity;switchActivity=function(...a){bursts.length=0;return switch0(...a);};
+})();
