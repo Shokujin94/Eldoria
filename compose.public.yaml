@@ -4,7 +4,7 @@ services:
     environment:
       ALLOWED_ORIGINS: https://${ELDORIA_DOMAIN:?Defina ELDORIA_DOMAIN}
       TRUST_PROXY: "1"
-      REGISTRATION_MODE: ${REGISTRATION_MODE:-closed}
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-open}
       BETA_INVITE_SHA256: ${BETA_INVITE_SHA256:-}
   proxy:
     image: caddy:2

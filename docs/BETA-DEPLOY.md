@@ -23,3 +23,6 @@ Os scripts agora usam o compose local por padrão. Na VPS use `ELDORIA_PUBLIC=1 
 
 ### Git Bash no Windows
 O script de backup desativa a conversão MSYS dos caminhos internos do Docker e transfere os bytes por redirecionamento no host, verificando SHA-256 antes de publicar a cópia. Atualize com `git pull --ff-only` e execute `bash scripts/beta-backup.sh`. Não é preciso reconstruir o container para esta correção de script. Se a transferência falhar, a cópia de origem permanece no container. Não compartilhe backups publicamente.
+
+## Servidor no PC Windows
+Para acesso externo sem VPS, consulte [HOST-PC.md](HOST-PC.md). O novo modo de compartilhamento usa cadastro aberto. O compose público também usa cadastro aberto por padrão; REGISTRATION_MODE=closed continua opção administrativa explícita para manutenção.

@@ -1,4 +1,5 @@
 import {createServer} from 'node:http';
+import {isIP} from 'node:net';
 import {DatabaseSync} from 'node:sqlite';
 import {randomBytes,randomUUID,scrypt as derive,timingSafeEqual,createHash} from 'node:crypto';
 import {promisify} from 'node:util';
@@ -21,9 +22,9 @@ async function matches(p,a){const check=await password(p,a?.password.split(':')[
 function atomic(fn){db.exec('BEGIN IMMEDIATE');try{const v=fn();db.exec('COMMIT');return v;}catch(e){db.exec('ROLLBACK');throw e;}}
 function newRecovery(id){const code=randomBytes(24).toString('hex');db.prepare('INSERT INTO recovery_codes(account,digest,created) VALUES(?,?,?) ON CONFLICT(account) DO UPDATE SET digest=excluded.digest,created=excluded.created').run(id,hash(code),Date.now());return code;}
 function issueSession(id){const token=randomBytes(32).toString('hex');db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(hash(token),id,Date.now()+age);db.prepare('DELETE FROM sessions WHERE account=? AND hash NOT IN (SELECT hash FROM sessions WHERE account=? ORDER BY expires DESC,rowid DESC LIMIT 5)').run(id,id);return token;}
-const trustedProxy=process.env.TRUST_PROXY==='1';
+const trustedProxy=process.env.TRUST_PROXY==='1',proxyHeader=process.env.PROXY_IP_HEADER||'x-real-ip',proxyPeer=process.env.TRUST_PROXY_PEER||'';if(!['x-real-ip','cf-connecting-ip'].includes(proxyHeader)||proxyPeer&&!isIP(proxyPeer)||proxyHeader==='cf-connecting-ip'&&trustedProxy&&!proxyPeer)throw Error('Configuração do proxy inválida');
 const registrationMode=process.env.REGISTRATION_MODE||'open';if(!['open','closed','invite'].includes(registrationMode))throw Error('REGISTRATION_MODE inválido');const inviteDigest=process.env.BETA_INVITE_SHA256||'';if(registrationMode==='invite'&&!/^[a-f0-9]{64}$/.test(inviteDigest))throw Error('Configure BETA_INVITE_SHA256');
-function clientIP(req){const peer=req.socket.remoteAddress||'unknown';if(!trustedProxy)return peer;const ip=req.headers['x-real-ip'];return typeof ip==='string'&&/^[0-9a-f:.]{3,45}$/i.test(ip)?ip:peer;}
+function clientIP(req){const peer=(req.socket.remoteAddress||'unknown').replace(/^::ffff:/,'');if(!trustedProxy||proxyPeer&&peer!==proxyPeer)return peer;const ip=req.headers[proxyHeader];return typeof ip==='string'&&isIP(ip)?ip:peer;}
 
 function auth(req){const raw=(req.headers.authorization||'').match(/^Bearer ([a-f0-9]{64})$/)?.[1];if(!raw)fail(401,'Entre na conta.');const key=hash(raw),s=db.prepare('SELECT account FROM sessions WHERE hash=? AND expires>?').get(key,Date.now());if(!s)fail(401,'Sessão expirada.');return {id:s.account,key};}
 const background=setInterval(()=>{try{g.tickBatch(10,40);}catch(e){console.error('Tick:',e.code||e.name);}},5000);background.unref();

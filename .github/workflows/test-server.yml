@@ -26,3 +26,5 @@ jobs:
       - run: bash -n scripts/beta-backup.sh scripts/beta-update.sh scripts/beta-restore.sh
 
       - run: bash scripts/test-beta-backup.sh
+
+      - run: bash -n scripts/share-start.sh scripts/share-stop.sh scripts/share-status.sh

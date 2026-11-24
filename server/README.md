@@ -53,3 +53,6 @@ Restauração offline com validação de integridade, estrutura e chaves estrang
 
 ### Correção Windows (0.46.9)
 O script de backup agora preserva caminhos Linux no Git Bash e verifica o SHA-256 da cópia transferida. Teste simulado no CI cobre flags MSYS, transferência binária e rejeição de cópia truncada; Docker Desktop no Windows precisa de confirmação local.
+
+## 0.47.0 — servidor doméstico compartilhado
+Modo opcional Cloudflare Quick Tunnel (temporário), porta local mantida em loopback, origem pública exata e cabeçalho de IP confiável apenas do peer Docker configurado. Scripts share-start/status/stop, backup antes de abrir, registro aberto por padrão. Não há provisionamento externo nem garantia de disponibilidade/capacidade. Consulte docs/HOST-PC.md. Teste HTTP cobre cadastro sem convite e rejeição de origem diferente; túnel real requer Docker Desktop e internet do operador.
