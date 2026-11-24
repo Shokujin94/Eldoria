@@ -5,7 +5,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const num=v=>Number.isFinite(+v)?+v:0;
 const nf=v=>num(v).toLocaleString('pt-BR',{maximumFractionDigits:1});
 const time=v=>duration(Math.max(0,Math.floor(num(v))));
-const sizes={bag:[620,610],hero:[650,640],equip:[660,650],attr:[650,640],talent:[710,650],dungeon:[900,650],analyzer:[460,630],forge:[650,640],prof:[680,640],zones:[880,650],sub:[520,600]};
+const sizes={bag:[620,610],hero:[650,640],equip:[660,650],attr:[650,640],talent:[710,650],dungeon:[900,650],analyzer:[460,630],forge:[650,640],prof:[680,640],zones:[880,650],bestiary:[680,640],sub:[520,600]};
 for(const [id,def] of Object.entries(WINDOW_DEFS)){if(sizes[id]){def[2]=sizes[id][0];def[3]=sizes[id][1];}else{def[2]=Math.min(def[2],680);def[3]=Math.min(def[3],640);}}
 function dimensions(w,h,vw,vh){return {w:Math.max(1,Math.min(w,vw-12)),h:Math.max(1,Math.min(h,vh-12))};}
 window.eldoria44Dimensions=dimensions;
