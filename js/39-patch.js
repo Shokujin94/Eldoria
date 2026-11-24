@@ -2,6 +2,13 @@
 (()=>{
 'use strict';
 const history=[
+ {version:'0.42.0',date:'2026-11-24',title:'Nova Jornada',kind:'Nova temporada',intro:'Uma nova experiência para organizar a mochila, evoluir a build e dominar os ofícios.',groups:[
+ ['Interface',['Inventário com capacidade em destaque, busca, filtros de equipamentos utilizáveis/equipados, ordenação dentro das raridades e modos grade/lista.','Ficha com cartões de atributos, cores individuais e separação de valores naturais, investidos e de equipamentos.','Talentos com pontos livres fixados no topo e ações de investimento em lote, sem mudar requisitos.']],
+ ['Balanceamento',['Atributos: investir +1, +5 ou todos os pontos livres. Talentos: +1 ou até o limite do nó.','Redistribuição independente de atributos e talentos com confirmação, custo de 100 + 25 × (nível − 1) ouro e devolução dos pontos. Equipamentos sem requisitos são desequipados.']],
+ ['Equipamentos',['Forja com abas de fabricação e aprimoramento/runas, prévia da raridade e iLvl, materiais com quantidade necessária e saldo, requisitos de nível e espaço, confirmação de resultado.','Coleta com estado atual, contagem para o próximo ciclo e recursos realmente recebidos na última coleta. Regras de produção preservadas.']],
+ ['Áudio',['Ataques, impactos, habilidades e mortes com graves reforçados e ruídos mais marcantes, respeitando configurações de volume.']],
+ ['Salvamento',['Nova temporada: personagens e progressos anteriores, incluindo itens e materiais, são reiniciados na primeira entrada. Saves desta temporada usam armazenamento separado; saves antigos não podem ser importados. Preferências de HUD e áudio independentes são mantidas.']]
+ ]},
  {version:'0.41.1',date:'2026-11-24',title:'Ecos de Eldoria',kind:'Estabilidade e refinamento',intro:'Uma aventura mais fluida, legível e sonora, com identidade visual própria.',groups:[
  ['Lacaios',['Corrigida a validação de posições reservadas: a própria reserva não bloqueia mais o lacaio.','Deslocamento contínuo por obstáculos móveis, com contorno em profundidade nas caçadas e passagem espectral somente enquanto há sobreposição. Alcances e intervalos de ataque mantidos.']],
  ['Equipamentos',['iLvl em destaque e atributos efetivos em uma única lista com suas faixas originais. Requisitos, raridade, afixos e poderes continuam visíveis.','Detalhes e comparação completa em janela própria, acessível pelo menu contextual, equipamento selecionado e tecla I com foco em um item.']],
