@@ -1,0 +1,36 @@
+name: Publicar Eldoria
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v6
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+      - name: Preparar publicacao com versao exclusiva
+        shell: bash
+        run: |
+          BASE=$(python3 -c 'import json; print(json.load(open("version.json"))["version"])')
+          python3 tools/publicar.py --versao "${BASE}-gh${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}" --saida public
+          python3 tools/verificar_publicacao.py public
+      - name: Enviar arquivos publicos
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,14 @@
+/public/
+/saves/
+/save/
+/backups/
+*.zip
+*.log
+.env
+.env.*
+__pycache__/
+.DS_Store
+Thumbs.db
+personagem.json
+backup.json
+eldoria-save*.json

@@ -1,0 +1,49 @@
+
+/* 0.28 — revisão de consistência, economia e persistência. */
+(()=>{'use strict';
+const combat28=()=>['hunt','boss','dungeon','trial'].includes(state.mode);
+const baseRound=round;
+// Use one simulated second per round. Convert hold timers back to the live clock.
+round=function(){if(!state.cls||!state.active||!(suppress||document.hidden||catchingUp))return baseRound();const live=performance.now();simClock28=live;try{return baseRound();}finally{const delta=simClock28-live;heroHold11=Math.max(0,heroHold11-delta);foeHold11=Math.max(0,foeHold11-delta);simClock28=null;}};
+window.eldoria26OfflineMove=function(){const start=gameNow28();for(let i=1;i<=20&&state.active&&!state.rest;i++){simClock28=start+i*50;moveCombat11(simClock28,50);stepProjectiles18(simClock28,50,true);}simClock28=start+1000;};
+// Speed of approach matters particularly in short elite waves, not raw HP inflation.
+const move=moveCombat11;moveCombat11=function(now,dt){if(state.mode==='dungeon'&&state.cls==='war'&&!bossArena())return move(now,dt*1.30);return move(now,dt);};
+const stat=stats;stats=function(eq=state.equipment){const s=stat(eq);if(!state.cls)return s;const c=state.cls,l=state.level,early=Math.max(0,1-(l-1)/15);let factor=({war:1.03,ranger:.98,mage:.96,cleric:1.04,necro:.96}[c]);if(state.mode==='dungeon'&&!bossArena())factor*=({war:1.45,ranger:1.15,mage:.96,cleric:.92,necro:.98}[c]);if(bossArena()){factor*=({war:1.10,ranger:1.20,mage:1.03,cleric:l>=45&&l<80?1.13:.94,necro:1.06}[c]);s.reduction=Math.min(.52,s.reduction+(c==='ranger'?.075:0));}if(state.mode==='hunt'&&l>=45)factor*=({war:1.06,ranger:1.10,mage:.95,cleric:1.06,necro:.97}[c]);s.dmg*=factor;if(c==='mage'||c==='war')s.h=Math.round(s.h*(1+.10*early));return s;};
+const hit28=impact11;impact11=function(side,n,crit,cast,s){if(side==='enemy'&&bossArena()&&state.mode!=='trial'){const high=clamp((state.level-20)/60,0,1);n=Math.round(n*(1-high*({war:.10,ranger:.27,mage:.18,cleric:0}[state.cls]||0)));}if(side==='enemy'&&state.mode==='dungeon'){const d=clamp((state.era20?.difficulty||0)-1,0,3);n=Math.round(n*(1-d*({ranger:.055,mage:.025,war:.012,cleric:0}[state.cls]||0)));}return hit28(side,n,crit,cast,s);};
+// Bound resale independent of upgrade/refinement/socket investment; crafting is never a money printer.
+const rebuild=rebuildItem;rebuildItem=function(it){rebuild(it);const cap=Math.max(1,Math.floor(craftCost10(it.tier,it.rarity)*.28));if(it.relic===null)it.value=Math.min(it.value,cap);return it;};
+// Profession resources remain useful, but gathering low-tier materials is not the dominant gold farm.
+for(const [k,m] of Object.entries(MAT10)){if(k.startsWith('boss:'))m.price=Math.max(10,Math.round(m.price*.38));else{const [type,z,r]=k.split(':');m.price=Math.max(1,Math.round((1+Number(z)*.55)*[1,3,9,25,65][Number(r)]*(type==='mob'?1.2:1)));}}
+// Boss/old-area rewards: taper gold as well as XP, preserve item and material odds.
+const en=enemy;enemy=function(){const e=en();if(!state.cls||!combat28()||state.mode==='trial')return e;const over=Math.max(0,state.level-ZONES[state.zone].level-9);const scale=(state.zone===0?.85:.64-state.zone*.019)/(1+.012*over);const diff=state.mode==='dungeon'?state.era20?.difficulty||0:0;return {...e,gold:Math.max(1,Math.round(e.gold*scale*(1+.035*diff)))};};
+// Gold cost grows with actual upgrade level; crafting remains a progression path, not required for every slot.
+forgeCost=function(it){return Math.round((18+14*(it.tier+1))*(1+it.rarity*.72)*(1+.22*it.upgrade+.075*it.upgrade*it.upgrade));};
+craftCost10=function(z,r){return Math.round((30+33*z)*[1,2,4,9,20][r]);};
+// No free sale from old saves: rebuild values in both inventories on migration.
+const norm=normalizeWorld;normalizeWorld=function(){norm();if(!state.cls)return;for(const it of state.inventory)rebuildItem(it);for(const it of vaultState11())rebuildItem(it);state.pending11=[];if(!state.balance28){state.enemyHp=enemy().hp;state.balance28=1;}};
+// Economy ledger measures actual gold created/spent, including all existing actions, without changing balances.
+function ledger(){return state.economy28??={earned:0,spent:0,combat:0,other:0,observed:state.gold};}
+function audit(){if(!state.cls)return;const d=ledger(),change=state.gold-d.observed;if(change>0){d.earned+=change;d.other+=change;}else if(change<0)d.spent-=change;d.observed=state.gold;}
+const victory=win;win=function(){audit();const g=state.gold;const ret=victory();const d=ledger(),delta=state.gold-g;if(delta>0){d.earned+=delta;d.combat+=delta;}else if(delta<0)d.spent-=delta;d.observed=state.gold;return ret;};
+const settings=$('content-settings');
+// Save primary and rolling validated backup. Legacy key remains unchanged for migration.
+const valid=d=>!!(d&&d.version===3&&Object.hasOwn(CLASSES,d.cls)&&Number.isInteger(d.zone)&&ZONES[d.zone]&&Object.hasOwn(ENEMIES,d.enemy)&&Number.isSafeInteger(d.level)&&d.level>=1&&Number.isFinite(d.gold)&&d.gold>=0&&Array.isArray(d.inventory)&&d.inventory.every(i=>i&&Number.isSafeInteger(i.id)&&Object.hasOwn(SLOTS,i.slot)&&RARITIES[i.rarity]&&ZONES[i.tier]&&i.mods&&typeof i.name==='string')&&d.equipment&&d.attrs&&d.talents&&Number.isFinite(d.savedAt));
+const read=k=>{try{const d=JSON.parse(localStorage.getItem(k)||'null');return valid(d)?d:null;}catch{return null;}};
+let recovered=false,backupAt=0,storageOK=false;const status=t=>{if($('saveStatus'))$('saveStatus').textContent=t;const el=$('persist28status');if(el)el.textContent=t;};
+window.eldoria26ReadSave=function(){const main=read(KEY);if(main)return main;for(const k of [KEY+'-backup','eldoria-autosave-v023']){const d=read(k);if(d){recovered=true;return d;}}return null;};
+save=function(){if(!state.cls)return false;try{audit();state.version=3;state.savedAt=Date.now();state.build17='0.28';state.balance28=1;state.revision27=1;state.position28={x:pos.x,y:pos.y,foe:foe11?{x:foe11.x,y:foe11.y}:null};const raw=JSON.stringify(state);if(!valid(JSON.parse(raw)))throw Error('Estado inválido');const prior=read(KEY);if(prior&&Date.now()-backupAt>30000){localStorage.setItem(KEY+'-backup',JSON.stringify(prior));backupAt=Date.now();}else if(!read(KEY+'-backup'))localStorage.setItem(KEY+'-backup',raw);localStorage.setItem(KEY,raw);if(localStorage.getItem(KEY)!==raw)throw Error('Falha de verificação');storageOK=true;window.eldoria26.lastSave=true;status(recovered?'Save recuperado e gravado':'Progresso salvo · verificado');recovered=false;return true;}catch(e){storageOK=false;window.eldoria26.lastSave=false;status('Armazenamento indisponível · exporte o save');return false;}};
+// Optional portable disk save, served only from the bundled loopback launcher.
+const diskToken=document.querySelector('meta[name="eldoria-disk-token"]')?.content;
+function disk(method,path,body){if(!diskToken||location.origin!=='http://127.0.0.1:8765')return null;try{const x=new XMLHttpRequest();x.open(method,path,false);x.setRequestHeader('X-Eldoria-Token',diskToken);if(body)x.setRequestHeader('Content-Type','application/json');x.send(body||null);return x.status===200?JSON.parse(x.responseText):null;}catch{return null;}}
+const browserRead=window.eldoria26ReadSave;window.eldoria26ReadSave=function(){const a=browserRead(),b=disk('GET','/save');return valid(b)&&(!a||b.savedAt>=a.savedAt)?b:a;};
+const browserSave=save;save=function(){const local=browserSave();if(!state.cls||!diskToken)return local;const result=disk('POST','/save',JSON.stringify(state));if(result?.ok){status('Progresso salvo em disco · verificado');return true;}if(!local)status('Falha de armazenamento · exporte o save');else status('Salvo no navegador · disco indisponível');return local;};
+window.eldoria28ResetDisk=()=>disk('POST','/reset','{}');
+const oldRestore=restore;restore=function(){const d=window.eldoria26ReadSave();if(d?.position28&&Number.isFinite(d.position28.x)&&Number.isFinite(d.position28.y)){pos={x:d.position28.x,y:d.position28.y};const f=d.position28.foe;foe11=f&&Number.isFinite(f.x)&&Number.isFinite(f.y)?f:null;}return oldRestore();};
+// Replace legacy import listener to validate before committing. Export is portable across paths/origins.
+const oldInput=$('import17file');if(oldInput){const input=oldInput.cloneNode();oldInput.replaceWith(input);$('import17').onclick=()=>input.click();input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!valid(d))throw Error('Save inválido');if(!confirm('Substituir o personagem atual pelo arquivo importado?'))return;const previous=state;try{state=d;state.active=false;state.pending11=[];normalizeWorld();lastMode='';dest=null;pos={x:400,y:300};foe11=null;render();if(!save())status('Importado nesta sessão · exporte antes de fechar');else status('Save importado e verificado');}catch(e){state=previous;render();throw e;}}catch(e){status('Importação recusada: '+e.message);}finally{input.value='';}};}
+if($('export17'))$('export17').onclick=()=>{if(!state.cls)return;save();const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='eldoria-save-030.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);};
+if(settings){settings.insertAdjacentHTML('afterbegin','<section class="service-card"><h3>0.29 · Grimórios e Ofícios</h3><p id="persist28status">Armazenamento será verificado ao salvar.</p><p>Use Exportar save antes de mudar a pasta, navegador ou versão. O backup local é rotativo; não substitui uma cópia em disco.</p><p id="ledger28"></p></section>');}
+setInterval(()=>{if(!state.cls)return;const d=ledger(),el=$('ledger28');if(el)el.textContent=`Economia desde esta revisão: ${fmt(d.earned)} ouro recebido · ${fmt(d.spent)} gasto · ${fmt(d.combat)} de combate.`;},1000);
+window.eldoria28={version:'0.28',ledger,audit,valid,storage:()=>storageOK};
+})();
+

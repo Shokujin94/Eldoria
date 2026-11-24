@@ -1,0 +1,8 @@
+
+#art19-actions{position:fixed!important;display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:4px!important;width:max-content;max-width:calc(100vw - 12px);min-width:0;border:1px solid #a58a5e;border-radius:5px;background:linear-gradient(145deg,#242025,#101116)!important;box-shadow:0 3px 12px #000c,0 0 0 1px #0a0a0d;}
+#art19-actions.hidden{display:none!important}
+#art19-actions button{display:flex;align-items:center;gap:5px;justify-content:flex-start;width:auto!important;min-width:0!important;min-height:0!important;height:24px!important;aspect-ratio:auto!important;margin:0!important;padding:3px 7px!important;border:1px solid #6f5a40;border-radius:3px;background:linear-gradient(#30292b,#1a191e)!important;color:#e9d3a9!important;font:600 11px/1.15 system-ui,sans-serif!important;white-space:nowrap;box-shadow:none!important;}
+#art19-actions button:hover,#art19-actions button:focus-visible{border-color:#e4c68c;background:#433629!important;color:#fff0c9!important;}
+#art19-actions button[data-act="equip"]::before{content:'＋';color:#9fc29a;}
+#art19-actions button[data-act="remove"]::before{content:'−';color:#d8b394;}
+#art19-actions button[data-act="sell"]::before{content:'◇';color:#d7b468;}

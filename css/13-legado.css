@@ -1,0 +1,35 @@
+
+/* Ferro e Cinzas: ornamented interface, no canvas overlay */
+:root{--gold:#c6a36a;--text:#e6dfd2;--muted:#aaa49a;--line:#49413a;--panel:#17171b;--bg:#0b0c10}
+.play14 .quicknav,.hud14,.hud14-location,.hud14-resource,.play14 .scene .maptools,.play14 .scene #target11,.play14 .scene #skillbar09,.play14 .scene #consbar11,.play14 .scene #buffbar11,.floating{
+ border:1px solid #807052; border-radius:5px; box-shadow:0 0 0 2px #111014,0 0 0 3px #39312b,0 8px 24px #0008,inset 0 0 0 1px #ffffff09;
+}
+.play14 .quicknav,.hud14,.hud14-location,.hud14-resource,.play14 .scene .maptools,.play14 .scene #target11,.play14 .scene #skillbar09,.play14 .scene #consbar11{
+ background:linear-gradient(155deg,rgba(44,42,44,.94),rgba(15,16,20,.96) 32%,rgba(23,22,25,.95));
+}
+.hud14-head,.window-head{background:linear-gradient(90deg,#302729,#252126 40%,#1e2025);border-bottom:1px solid #665540;box-shadow:inset 0 1px #b7a18426;}
+.hud14-head b,.window-head h2,.hud14-location b{font-family:Georgia,serif;letter-spacing:.035em;color:#e0c89d;text-shadow:0 1px 2px #000}
+.hud14-head b::before,.window-head h2::before{content:'◆';font-size:9px;color:#967748;margin-right:8px;vertical-align:2px}
+.hud14-body{background:linear-gradient(165deg,#ffffff03,transparent 48%,#0002)}
+.quicknav .direct14,.quicknav .navToggle13{border:1px solid transparent!important;border-radius:3px!important;min-height:46px!important;background:linear-gradient(180deg,#ffffff04,transparent)!important;position:relative}
+.quicknav .direct14:hover,.quicknav .navToggle13:hover,.quicknav button[aria-expanded=true]{border-color:#9a7b4c!important;background:linear-gradient(180deg,#4b382b,#211b1b)!important;color:#f6dca8!important}
+.quicknav .navicon svg,.quicknav .navToggle13 svg{filter:drop-shadow(0 2px 1px #0009);stroke:#d2b681;}
+.quicknav .navtext,.quicknav .nav14-label{letter-spacing:.015em;font-weight:600;color:#cfc1a7}
+.quicknav .navDrawer13{border:1px solid #8b704c;background:linear-gradient(160deg,#262329,#111217);box-shadow:0 7px 22px #000a}
+.hero14 .id14 img{background:radial-gradient(ellipse,#4c4436,#14151b 72%);border:1px solid #8c7551;box-shadow:inset 0 0 0 2px #0d0e12;}
+.hero14 .vital10,.hero14 .vital14,.hero14 .vbar14,.target-track11{border-radius:2px;box-shadow:inset 0 2px 4px #000b,0 0 0 1px #0e0e12;border:1px solid #74614c;}
+.hero14 .hp10 i,.hero14 .hp14 i,.target-track11 i{background:linear-gradient(180deg,#a54c52,#6a242e 70%,#421b26)!important;box-shadow:inset 0 1px #f1a6a14d}
+.hero14 .mp10 i,.hero14 .mp14 i{background:linear-gradient(180deg,#517b9d,#2a426f 72%,#1d2b49)!important;box-shadow:inset 0 1px #a9c8e24d}
+.hero14 .meter.xp i{background:linear-gradient(90deg,#7c5937,#d4b57b)!important}
+.play14 .scene .maptools button,.hud14 button,.hud14-resource button,.secondary,.quiet11{border-color:#64533e;background:linear-gradient(180deg,#343137,#1c1c21 70%);color:#e4d5b8;box-shadow:inset 0 1px #ffffff0b;text-shadow:0 1px 1px #000}
+.play14 .scene .maptools button:hover,.hud14 button:hover,.secondary:hover{border-color:#c2a16a;background:linear-gradient(180deg,#46362e,#282226)}
+.auto14 input[type=range]{accent-color:#c6a36a}.auto14 select{background:#15151a;border-color:#655540;color:#e8e0d4}
+.floating{background-image:linear-gradient(145deg,rgba(49,42,39,.35),transparent 34%),linear-gradient(0deg,rgba(9,9,12,.12),transparent)}
+.window-head{padding-block:10px}.window-head button{border-color:#776143}.gear-paper{background:radial-gradient(ellipse at 50% 42%,#51413350,transparent 52%),repeating-linear-gradient(135deg,#ffffff02 0px,#ffffff02 1px,transparent 1px,transparent 8px),#141419;border:1px solid #756044;box-shadow:inset 0 0 0 3px #0f1014}
+.gear-portrait{min-height:180px}.gear-portrait .portrait18{width:100%;max-width:138px;height:auto;aspect-ratio:76/70;object-fit:contain;image-rendering:pixelated;position:relative;filter:drop-shadow(0 6px 5px #000);}
+.gear-portrait strong{font-size:17px}.gear-portrait .gear-halo{background:radial-gradient(ellipse,#b7995d38,transparent 67%)}
+.gear-cell{background:linear-gradient(145deg,#30292a,#19191f);border-color:color-mix(in srgb,var(--slotrar),#343137 50%);box-shadow:inset 0 0 0 1px #0e0f12;}
+.gear-cell.occupied{border-color:var(--slotrar)}.gear-cell.chosen{outline:1px solid #d0b178;outline-offset:1px}.gear-pic{background:radial-gradient(ellipse,#3b3834,#101116);box-shadow:inset 0 0 0 1px #000;}
+.gear-inspect,.attrib13,.service-card{border-color:#52473a;background-image:linear-gradient(145deg,#b3956a07,transparent 60%)}
+.slot11,.bag-slot,.gear-pic{border-radius:3px}.slot11{box-shadow:inset 0 0 0 2px #111216,0 2px 4px #0008}
+@media(max-width:600px){.quicknav .direct14,.quicknav .navToggle13{min-height:36px!important}.gear-portrait{min-height:100px}.gear-portrait .portrait18{max-width:92px}.hud14-head b::before{margin-right:4px}}
