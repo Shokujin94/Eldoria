@@ -75,6 +75,32 @@ window.eldoria381StepServants=function(now,dt){
  const floor=q=>arena?valid34(q):valid34({x:q.x,y:lane})&&Math.abs(q.y-lane)<=depth+.01;
  const baseLegal=q=>floor(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
  const walk=(a,b)=>{if(arena)return walk34(a,b);const [lo,hi]=bounds34();return {x:clamp(b.x,lo,hi),y:clamp(b.y,lane-depth,lane+depth)};};
+ // Tight arena corners require a coordinated pair of slots, rather than first-come allocation.
+ let pair=null;
+ if(arena&&engage&&points.length===2){
+  const reach=list.map(a=>window.eldoria40ServantRole?.(a)?.reach||eg+16);
+  const valid=(q,i)=>baseLegal(q)&&dist(q,e)<=reach[i]+.0001;
+  const good=q=>q&&q.length===2&&valid(q[0],0)&&valid(q[1],1)&&!blocks(q[0],q[1],sg);
+  const cache=points[0].pair42;
+  if(good(points)){pair=points.map(p=>({x:p.x,y:p.y}));}
+  else if(cache&&cache.other===points[1]&&cache.offsets){
+   const q=cache.offsets.map(o=>({x:e.x+o.x,y:e.y+o.y}));if(good(q))pair=q;
+  }
+  if(!pair&&(!cache||cache.other!==points[1]||now-cache.t>=300||cache.offsets)){
+   const options=reach.map((r,i)=>{
+    const candidates=[];if(valid(points[i],i))candidates.push({...points[i]});
+    const radii=new Set([Math.min(65,r),r-.01,Math.max(65,r*.8)]);
+    for(let n=66;n<r;n+=6)radii.add(n);
+    for(const rad of radii)for(let j=0;j<72;j++){const t=j*Math.PI/36,q={x:e.x+Math.cos(t)*rad,y:e.y+Math.sin(t)*rad};if(valid(q,i))candidates.push(q);}
+    return candidates;
+   });
+   let best=Infinity;
+   for(const a of options[0])for(const b of options[1])if(!blocks(a,b,sg)){
+    const cost=dist(points[0],a)+dist(points[1],b);if(cost<best){best=cost;pair=[a,b];}
+   }
+   points[0].pair42={other:points[1],t:now,offsets:pair?.map(q=>({x:q.x-e.x,y:q.y-e.y}))||null};
+  }
+ }
  for(let i=0;i<points.length;i++){
   const p=points[i],a=list[i],others=points.filter((_,j)=>i!==j);
   const role=window.eldoria40ServantRole?.(a)||{},reach=role.reach||eg+16,anchor=engage?e:pos;
@@ -84,13 +110,13 @@ window.eldoria381StepServants=function(now,dt){
   const inReach=q=>dist(q,e)<=reach;
   const preferred=q=>!role.reach||dist(q,e)>=Math.max(eg,reach*.58);
   const stop=()=>{p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);p.phaseLeft381=0;if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;};
-  if(engage&&legal(p)&&clear(p)&&inReach(p)&&(preferred(p)||locked)){
+  if(engage&&legal(p)&&clear(p)&&inReach(p)&&(preferred(p)||locked)&&(!pair||dist(p,pair[i])<1.5)){
    reserved.push({x:p.x,y:p.y});p.goal42=null;stop();continue;
   }
   const old=p.goal42;
-  let goal=old&&old.engage===engage?{x:anchor.x+old.dx,y:arena?anchor.y+old.dy:lane+old.dy}:null;
+  let goal=pair?pair[i]:old&&old.engage===engage?{x:anchor.x+old.dx,y:arena?anchor.y+old.dy:lane+old.dy}:null;
   const usable=q=>q&&legal(q)&&(!engage||inReach(q));
-  if(!usable(goal)){
+  if(!pair&&!usable(goal)){
    const candidates=[],radii=engage?(role.reach?[Math.max(eg+2,reach*.8),Math.max(eg+2,reach*.95),eg+2]:[eg+3,eg+10,eg+15]):[pg+5,pg+sg+5,pg+sg*2+5];
    for(const r of radii)for(let j=0;j<24;j++){
     const t=j*Math.PI*2/24,q={x:anchor.x+Math.cos(t)*r,y:arena?anchor.y+Math.sin(t)*r:lane+Math.sin(t)*Math.min(depth,r)};
