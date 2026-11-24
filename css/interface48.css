@@ -100,3 +100,22 @@ body.play14 :is(.an44-header,.v27-banner,.section-banner11) h2{overflow-wrap:any
 body.play14 :is(.era-modal,dialog,.floating) :is(button,summary) svg{vertical-align:middle}
 body.play14 :is(.era-modal,dialog,.floating) :is(button,summary):not(:disabled):hover svg{animation:ui48-glow 2.8s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){body.play14 :is(.era-modal,dialog,.floating) :is(button,summary) svg{animation:none!important}}
+
+/* 0.45.0 — professions and crafting, same black/gold/silver interface. */
+body.play14 :is(.craft50-progress,.craft50-section,.g29-panel,.g29-banner,.g29-metrics article,.g29-prof-talents article,.g29-location,.g29-resources article,.gather43-live,.forge43-recipe,.forge44-choice,.forge43-result){background:linear-gradient(145deg,#242427,#121214)!important;border:1px solid #68696f!important;border-radius:7px!important;color:#dddfe4}
+body.play14 :is(.craft50-progress,.craft50-section){padding:10px;margin:8px 0}
+body.play14 .craft50-progress b,body.play14 .craft50-section h3{color:#e5c98f}
+body.play14 .craft50-progress small,body.play14 .craft50-section small,body.play14 .g29 small{color:#b9bdc4}
+body.play14 .craft50-chance{display:flex;height:8px;overflow:hidden;background:#6b3535;border-radius:4px;margin:8px 0;border:1px solid #777}
+body.play14 .craft50-chance i{display:block;height:100%;background:linear-gradient(90deg,#8c703d,#e2c68b)}
+body.play14 .craft50-base{display:flex;align-items:center;gap:8px;margin-top:8px}
+body.play14 .craft50-base img{width:38px;height:38px;object-fit:contain}
+body.play14 .craft50-base small{display:block}
+body.play14 .craft50-section select{width:100%;max-width:100%;min-width:0}
+body.play14 .craft50-section details{margin-top:9px}
+body.play14 .g29-banner{border-color:#9b865b!important}
+body.play14 .g29-meter i{background:linear-gradient(90deg,#83683d,#e3c588)!important}
+body.play14 #tracker35{border:1px solid #a58b5b!important;border-radius:6px!important;box-shadow:0 4px 12px #0009}
+body.play14 #tracker35>b{font:700 13px/1.3 system-ui,sans-serif!important;color:#e9d3a0}
+body.play14 #tracker35 .b35-meter i{background:linear-gradient(90deg,#816436,#e7c784)!important}
+body.play14 #tracker35 #b35-clear{background:#171719!important;border:1px solid #707176!important;color:#d5d7dc!important;border-radius:4px}
