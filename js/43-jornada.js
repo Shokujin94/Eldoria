@@ -5,8 +5,10 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const num=n=>Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2});
 const disabled=x=>x?' disabled':'';
 const bar=(n,total)=>'<div class="progress43"><i style="width:'+clamp(total?n/total*100:0,0,100)+'%"></i></div>';
+const cost43=kind=>kind==='talents'?100+state.level*50+spent(state.talents)*25:resetCost();
+window.eldoria47TalentResetCost=()=>cost43('talents');
 const resetHTML=kind=>{
- const n=spent(state[kind]),cost=resetCost(),label=kind==='attrs'?'atributos':'talentos';
+ const n=spent(state[kind]),cost=cost43(kind),label=kind==='attrs'?'atributos':'talentos';
  return '<section class="reset43"><div><b>Redistribuir '+label+'</b><small>'+n+' pontos serão devolvidos · Saldo '+fmt(state.gold)+' ◈</small></div><button class="secondary" data-reset43="'+kind+'"'+disabled(!n||state.gold<cost)+'>Resetar · '+fmt(cost)+' ◈</button>'+(!n?' <small>Nenhum ponto investido.</small>':state.gold<cost?' <small class="bad09">Ouro insuficiente.</small>':'')+'</section>';
 };
 respec=resetHTML;
@@ -32,7 +34,7 @@ function invest(kind,k,qty){
  if(kind==='talents'){const t=nodes().flat().find(n=>n.id===k);if(!t||!nodeAvailable(t))return 0;const max=Math.min(talentPoints(),t.max-rank(k)),n=qty==='max'?max:Math.min(max,qty);if(n>0){state.talents[k]=rank(k)+n;return n;}}
  return 0;
 }
-function reset(kind,approved){if(!approved||!['attrs','talents'].includes(kind)||!spent(state[kind])||state.gold<resetCost())return false;state.gold-=resetCost();state[kind]=kind==='attrs'?Object.fromEntries(Object.keys(ATTR).map(k=>[k,0])):{};if(kind==='talents'){state.cooldowns={};state.skillBuffs13={};}return true;}
+function reset(kind,approved){if(!approved||!['attrs','talents'].includes(kind)||!spent(state[kind])||state.gold<cost43(kind))return false;state.gold-=cost43(kind);state[kind]=kind==='attrs'?Object.fromEntries(Object.keys(ATTR).map(k=>[k,0])):{};if(kind==='talents'){state.cooldowns={};state.skillBuffs13={};if(state.era20){state.era20.rotation=null;state.era20.conditions={};}}return true;}
 window.eldoria43Points=Object.freeze({invest,reset});
 function commit(){validateEquipment();const s=stats();state.hp=Math.min(state.hp,s.h);state.mana=Math.min(state.mana,s.mana);render();save();}
 document.addEventListener('click',e=>{
@@ -40,7 +42,7 @@ document.addEventListener('click',e=>{
  if(b.dataset.view43){equipView43=b.dataset.view43==='list'?'list':'grid';renderRefined('bag');return;}
  if(b.dataset.forge43){forgeTab=b.dataset.forge43==='craft'?'craft':'upgrade';refreshWindows();return;}
  if(b.dataset.alloc43){const v=b.dataset.qty43,q=v==='max'?v:Number(v);if(q!=='max'&&![1,5].includes(q))return;if(invest(b.dataset.alloc43,b.dataset.key43,q))commit();}
- else if(b.dataset.reset43){const k=b.dataset.reset43;if(!['attrs','talents'].includes(k))return;const cost=resetCost();if(confirm('Devolver todos os pontos de '+(k==='attrs'?'atributos':'talentos')+' por '+fmt(cost)+' ouro? Equipamentos sem requisitos poderão ser desequipados.')){if(reset(k,true))commit();}}
+ else if(b.dataset.reset43){const k=b.dataset.reset43;if(!['attrs','talents'].includes(k))return;const cost=cost43(k);if(confirm('Devolver todos os pontos de '+(k==='attrs'?'atributos':'talentos')+' por '+fmt(cost)+' ouro? Equipamentos sem requisitos poderão ser desequipados.')){if(reset(k,true))commit();}}
 },true);
 // Forge keeps the existing crafting rules, costs and event handlers.
 let forgeTab='craft',forgeFeedback='',forgeOwner=null;
