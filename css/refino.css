@@ -13,3 +13,6 @@ body #world,body.play14 #world{background:transparent!important;position:relativ
 .window-body p.muted,.window-body .sheet-note,.window-body .era-desc{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;cursor:help}
 
 #update38{position:fixed;right:12px;top:60px;max-width:calc(100vw - 24px);padding:8px;border:1px solid #8d7956;background:#171b19;color:#e1d4af;z-index:1000;font:12px system-ui;box-shadow:0 4px 15px #0008}#update38 button{margin-left:5px}
+
+/* Criação de personagem */
+.creation-name381{display:grid;gap:5px;max-width:360px;margin:10px auto 14px;text-align:left}.creation-name381 label{font:600 14px Georgia,serif;color:#e1d2af}.creation-name381 input{width:100%;box-sizing:border-box;padding:9px 12px;color:#f1e5cc;background:#111916;border:1px solid #8b7957;border-radius:4px;font:14px system-ui}.creation-name381 input:focus{outline:1px solid #c4ab78;outline-offset:2px}.creation-name381 small{font:11px system-ui;color:#b3b6a7}

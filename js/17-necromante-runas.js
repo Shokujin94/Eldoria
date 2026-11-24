@@ -46,8 +46,14 @@ const uri='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.or
 itemIcon=function(it){return it&&(it.vocation==='necro'||/foice ritual|cajado funerário|lanterna sepulcral|diadema funerário|mortalha necromântica|vestes sepulcrais|luvas de ossomancia|botas do coveiro|filactério|sinete dos mortos|crânio oracular/i.test(it.name||''))?iconNec(it):iconOld(it);};
 // Derived necromancy attribute; universal investable attributes and requirements remain intact.
 const st=stats;stats=function(eq=state.equipment){const s=st(eq);if(state.cls==='necro'){s.necroPower=.28+Math.min(.15,(s.a.int*.8+s.a.wis*.4)/650);s.special=Math.min(s.special,4.1);s.h=Math.max(1,Math.round(s.h*(state.subclass===0?1.06:1)));if(state.subclass===1)s.special*=1.035;if(state.subclass===2)s.heal=Math.min(.9,s.heal+.04);}return s;};
-const freshBase=fresh;fresh=function(cls=null){const d=freshBase(cls);d.gender30='m';return d;};
-let gender='m';const chooseOld=choose;choose=function(cls){const r=chooseOld(cls);state.gender30=gender;if(state.inventory[0]&&!state.inventory[0].vocation)state.inventory[0].vocation=cls;avatar();render();save();return r;};
+let pendingName=null;
+const freshBase=fresh;fresh=function(cls=null){const d=freshBase(cls);d.gender30='m';if(cls&&pendingName!==null){d.profile=d.profile||{};d.profile.name=pendingName;}return d;};
+let gender='m';const chooseOld=choose;choose=function(cls){
+ if(state.cls||!CLASSES[cls])return;
+ const field=document.getElementById('characterName381'),name=field.value.normalize('NFC').trim().replace(/ +/g,' ');
+ if(name.length<2||name.length>24||!/^\p{L}[\p{L}\p{M}\p{N} _-]*$/u.test(name)){field.setCustomValidity('Informe de 2 a 24 caracteres, começando por uma letra. Use letras, números, espaços, hífen ou sublinhado.');field.reportValidity();field.focus();return;}
+ pendingName=name;try{const r=chooseOld(cls);state.gender30=gender;if(state.inventory[0]&&!state.inventory[0].vocation)state.inventory[0].vocation=cls;avatar();render();save();field.value='';return r;}finally{pendingName=null;}
+};
 const cards=$('classCards');const genderRow=document.createElement('div');genderRow.className='gender30-row';genderRow.innerHTML='<b>Aparência do personagem</b><div><button class="secondary active" data-gender30="m">Masculino</button><button class="secondary" data-gender30="f">Feminino</button></div>';cards.before(genderRow);
 function classCards30(){cards.innerHTML=Object.entries(CLASSES).map(([k,c])=>`<button class="classcard" data-class="${k}"><img class="classArt22" src="${window.eldoria30Portraits[k+(gender==='f'?'_f':'')]}" alt=""><h3>${gender==='f'?({war:'Guerreira',ranger:'Arqueira',mage:'Maga',cleric:'Clériga',necro:'Necromante'}[k]):c.name}</h3><p>${c.skill} · ${ATTR[c.main][0]}</p><p class="muted">${c.special} · ${c.branches.join(' / ')}</p></button>`).join('');}
 genderRow.addEventListener('click',e=>{const b=e.target.closest('[data-gender30]');if(!b)return;gender=b.dataset.gender30;genderRow.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));classCards30();});classCards30();

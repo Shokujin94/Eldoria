@@ -35,13 +35,9 @@ function servantPosition36(a,i,now=gameNow28()){
  if(!p||p.key!==key||p.owner!==state){const engaged=state.active&&state.enemyHp>0&&Math.hypot(e.x-pos.x,e.y-pos.y)<310&&!window.eldoria31Interlude?.(),gap=window.eldoria38ServantGap?.()||50;const q=fit34(engaged?{x:e.x+(i%2===0?-dir:dir)*gap,y:e.y}:{x:pos.x-dir*(44+i*44),y:pos.y+8+i*10});p={...q,key,owner:state,dir,moving:false};servantPositions36.set(a,p);}
  return p;
 }
-function servantTarget36(a,i,now){const p=servantPosition36(a,i,now),e=enemyPoint(now),dir=e.x>=pos.x?1:-1,engage=!window.eldoria31Interlude?.()&&state.enemyHp>0&&!state.rest&&Math.hypot(e.x-pos.x,e.y-pos.y)<310;let goal;
- if(engage){const gap=window.eldoria38ServantGap?.()||50;let side=i%2===0?-dir:dir;let x=e.x+side*gap;let y=state.mode==='hunt'?e.y:e.y+(i===0?-9:12);goal=fit34({x,y});if(Math.abs(goal.x-e.x)<gap-3||Math.abs(goal.x-pos.x)<42)goal=fit34({x:e.x-side*gap,y});}
- else {goal=fit34({x:pos.x-dir*(38+i*33),y:pos.y+8+i*12});if(Math.hypot(goal.x-pos.x,goal.y-pos.y)<25)goal=fit34({x:pos.x+dir*(38+i*33),y:pos.y});}
- return {p,e,goal,engage};}
-function stepServants36(now,dt){if(state.cls!=='necro'||!state.active||!['hunt','dungeon','boss','trial'].includes(state.mode)||state.rest)return;const list=state.necro30?.servants||[];list.forEach((a,i)=>{const {p,e,goal,engage}=servantTarget36(a,i,now),dx=goal.x-p.x,dy=goal.y-p.y,d=Math.hypot(dx,dy),speed=engage?.148:.17;const travel=Math.min(d,speed*Math.max(0,Math.min(100,dt)));if(d>3){const q=walk34(p,{x:p.x+dx/d*travel,y:p.y+dy/d*travel});p.moving=Math.hypot(q.x-p.x,q.y-p.y)>.05;p.x=q.x;p.y=q.y;}else p.moving=false;p.dir=engage?(e.x>=p.x?1:-1):Math.abs(dx)>3?Math.sign(dx):p.dir;});}
-window.eldoria36Minions={position:servantPosition36,step:stepServants36,canHit(a,i,now=gameNow28()){const {p,e,engage}=servantTarget36(a,i,now);return engage&&Math.hypot(p.x-e.x,p.y-e.y)<=(window.eldoria38ServantGap?.()||50)+16;},snapshot(){return (state.necro30?.servants||[]).map((a,i)=>{const p=servantPosition36(a,i);return {x:p.x,y:p.y,dir:p.dir,moving:p.moving,ready:this.canHit(a,i),left:a.left};});}};
-const move36=moveCombat11;moveCombat11=function(now,dt){const r=move36(now,dt);stepServants36(now,dt);return r;};
+function servantTarget36(a,i,now){const p=servantPosition36(a,i,now),e=enemyPoint(now),engage=state.active&&!window.eldoria31Interlude?.()&&state.enemyHp>0&&!state.rest;return {p,e,engage};}
+function stepServants36(now,dt){if(state.cls==='necro'&&state.active&&['hunt','dungeon','boss','trial'].includes(state.mode)&&!state.rest)window.eldoria381StepServants?.(now,dt);}
+window.eldoria36Minions={position:servantPosition36,step:stepServants36,canHit(a,i,now=gameNow28()){const {p,e,engage}=servantTarget36(a,i,now);return engage&&!(p.phaseLeft381>0)&&Math.hypot(p.x-e.x,p.y-e.y)<=(window.eldoria38ServantGap?.()||50)+16;},snapshot(){return (state.necro30?.servants||[]).map((a,i)=>{const p=servantPosition36(a,i);return {x:p.x,y:p.y,dir:p.dir,moving:p.moving,ready:this.canHit(a,i),left:a.left};});}};
 
 const drawOld=draw;draw=function(now){if(state.cls){pos=fit34(pos);if(dest)dest=fit34(dest);}return drawOld(now);};
 const switchOld=switchActivity;switchActivity=function(...args){const k=mapKey34(),r=switchOld(...args);if(k!==mapKey34()){clearRoute34();pos=fit34(pos);if(dest)dest=fit34(dest);}return r;};
