@@ -2,6 +2,12 @@
 (()=>{
 'use strict';
 const history=[
+ {version:'0.41.1',date:'2026-11-24',title:'Ecos de Eldoria',kind:'Estabilidade e refinamento',intro:'Uma aventura mais fluida, legível e sonora, com identidade visual própria.',groups:[
+ ['Lacaios',['Corrigida a validação de posições reservadas: a própria reserva não bloqueia mais o lacaio.','Deslocamento contínuo por obstáculos móveis, com contorno em profundidade nas caçadas e passagem espectral somente enquanto há sobreposição. Alcances e intervalos de ataque mantidos.']],
+ ['Equipamentos',['iLvl em destaque e atributos efetivos em uma única lista com suas faixas originais. Requisitos, raridade, afixos e poderes continuam visíveis.','Detalhes e comparação completa em janela própria, acessível pelo menu contextual, equipamento selecionado e tecla I com foco em um item.']],
+ ['Áudio',['Sons originais de ataque, derrota e habilidades de monstros, diferenciados por tipo de criatura e elemento; chefes com timbres mais graves. Respeitam as configurações de som e não tocam durante simulação offline.']],
+ ['Interface',['Inventário com iLvl discreto, equipamentos com inspeção destacada, ficha com separação de atributos e estatísticas, talentos com cores dos caminhos e ações mais legíveis.','Refinamentos específicos nas demais janelas, mantendo suas funções e identidades visuais.','Brasão original de Eldoria no carregamento, cabeçalho e favicon.']]
+ ]},
  {version:'0.41.0',date:'2026-11-24',title:'Legado da Forja',kind:'Expansão de sistemas',intro:'Uma nova geração de equipamentos, escolhas de build e progressão regional.',groups:[
  ['Equipamentos',['Itens novos possuem iLvl e nível mínimo de uso. A região delimita a faixa; monstros mais fortes, dungeons e chefes oferecem níveis mais altos.','Cada atributo tem sorteio independente dentro de seus limites. Nível, raridade, qualidade e tipo de peça definem a faixa.','Afixos adicionais por raridade: 0 no Comum, 1 no Incomum, 2 no Raro, 3 no Épico e 4 no Lendário. Os atributos naturais da peça permanecem separados.','Forja, runas, aprimoramentos, conjuntos e relíquias continuam disponíveis.']],
  ['Poderes exclusivos',['Épicos têm 12% e Lendários 30% de chance de um novo poder condicional, além dos sistemas anteriores.','Fúria do Ocaso: +8–12% de dano direto contra alvos abaixo de 30% de PV. Última Vigília: −5–8% de dano direto recebido quando o personagem está abaixo de 40% de PV.','Ressonância Arcana: +5–9% de dano de habilidades com pelo menos 60% de mana. Colheita Vital: recupera 1–2% do PV máximo por abate. Pacto Sepulcral: +2–4 p.p. de poder dos lacaios.','Poderes iguais não acumulam; vale o maior valor. Bônus ofensivos novos combinados limitados a 18%.']],
@@ -44,7 +50,7 @@ const topicStyle={
  'Equipamentos':['loot','◆'],'Poderes exclusivos':['power','✦'],'Balanceamento':['balance','⚖'],
  'Combate':['combat','⚔'],'Combate e derrota':['combat','⚔'],'Combate à distância':['combat','➶'],
  'Lacaios':['summon','☠'],'Necromante':['summon','☠'],'Interface':['ui','▣'],'Interface e atualização':['ui','▣'],
- 'Salvamento':['save','✓'],'Correções':['fix','✧']
+ 'Salvamento':['save','✓'],'Correções':['fix','✧'],'Áudio':['power','♫']
 };
 for(const entry of history){
  const details=document.createElement('details');details.className='patch41-entry';details.open=entry.version===base||entry===history[0];
