@@ -33,7 +33,7 @@ function foeWidth(){const id=ALIAS16[state.enemy]||state.enemy;if(state.mode==='
 window.eldoria38Gap=()=>Math.round(((fixed()?54:36)+foeWidth()/2+6)*num(cfg.visual?.bodySpacing,1,.7,1.3));
 window.eldoria38ServantGap=()=>Math.round(foeWidth()/2+(fixed()?32:23)+4);
 function space(a,b,g,prefer){if(Math.abs(a.y-b.y)>(fixed()?70:42)||Math.abs(a.x-b.x)>=g-.05)return;const dir=Math.sign(b.x-a.x)||prefer||1;let q=fit34({x:a.x+dir*g,y:b.y});if(Math.abs(q.x-a.x)<g-.1)q=fit34({x:a.x-dir*g,y:b.y});if(Math.abs(q.x-a.x)>=g-.1&&valid34(q)){b.x=q.x;b.y=q.y;}}
-let direction=1;function separate(now){if(!state.cls||!combat()||window.eldoria31Interlude?.()||state.rest)return;const e=enemyPoint(now);if(Math.abs(e.x-pos.x)>1)direction=Math.sign(e.x-pos.x);const g=window.eldoria38Gap();if(!state.active)space(e,pos,g,-direction);else space(pos,e,g,direction);if(Math.abs(e.x-pos.x)<g-.1&&Math.abs(e.y-pos.y)<=(fixed()?70:42))space(e,pos,g,-direction);}
+let direction=1;function separate(now){if(!state.cls||!combat()||window.eldoria31Interlude?.()||state.rest)return;const e=enemyPoint(now);if(state.mode==='hunt'&&window.eldoria40Escaping?.())return;if(Math.abs(e.x-pos.x)>1)direction=Math.sign(e.x-pos.x);const g=window.eldoria38Gap();if(!state.active)space(e,pos,g,-direction);else space(pos,e,g,direction);if(Math.abs(e.x-pos.x)<g-.1&&Math.abs(e.y-pos.y)<=(fixed()?70:42))space(e,pos,g,-direction);}
 // 0.38.1: reserve valid attack positions before walking; never fight the separation solver.
 window.eldoria381StepServants=function(now,dt){
  const list=state.necro30?.servants||[];if(!list.length)return;
