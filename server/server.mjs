@@ -12,6 +12,7 @@ setInterval(()=>{const now=Date.now();for(const [k,v] of buckets)if(v.until<now)
 async function body(req){if(!/^application\/json(?:;|$)/i.test(req.headers['content-type']||''))fail(415,'Use JSON.');let n=0,parts=[];for await(const c of req){n+=c.length;if(n>16384)fail(413,'Dados excessivos.');parts.push(c);}try{const p=JSON.parse(Buffer.concat(parts).toString());if(!p||typeof p!=='object'||Array.isArray(p))throw Error();return p;}catch{fail(400,'JSON inválido.');}}
 async function password(p,salt=randomBytes(16).toString('hex')){const b=await scrypt(p,salt,64);return salt+':'+b.toString('hex');}
 function auth(req){const raw=(req.headers.authorization||'').match(/^Bearer ([a-f0-9]{64})$/)?.[1];if(!raw)fail(401,'Entre na conta.');const key=hash(raw),s=db.prepare('SELECT account FROM sessions WHERE hash=? AND expires>?').get(key,Date.now());if(!s)fail(401,'Sessão expirada.');return {id:s.account,key};}
+const background=setInterval(()=>{try{g.tickBatch(10);}catch(e){console.error('Tick:',e.code||e.name);}},5000);background.unref();
 const server=createServer(async(req,res)=>{const origin=req.headers.origin;res.setHeader('Vary','Origin');res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');const reply=(code,v)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(v));};
  try{if(origin&&!origins.has(origin))fail(403,'Origem não autorizada.');if(origin){res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');}if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
  const url=new URL(req.url,'http://localhost'),path=url.pathname,method=req.method,ip=req.socket.remoteAddress||'unknown';if(path==='/health'&&method==='GET')return reply(200,{ok:true,mode:'online-preview'});
@@ -32,4 +33,5 @@ const server=createServer(async(req,res)=>{const origin=req.headers.origin;res.s
  fail(404,'Rota inexistente.');
  }catch(e){if(!(e instanceof Fault))console.error('Erro interno:',e.code||e.name);if(!res.headersSent)reply(e instanceof Fault?e.status:500,{error:e instanceof Fault?e.message:'Erro interno.'});else res.end();}
 });
+for(const signal of ['SIGTERM','SIGINT'])process.once(signal,()=>{clearInterval(background);server.close(()=>{db.close();process.exit(0);});setTimeout(()=>process.exit(1),10000).unref();});
 server.requestTimeout=15000;server.headersTimeout=10000;server.listen(Number(process.env.PORT||8787),process.env.HOST||'127.0.0.1',()=>console.log('Eldoria online API'));

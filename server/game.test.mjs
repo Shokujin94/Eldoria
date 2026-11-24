@@ -17,3 +17,13 @@ test('server-only state, elapsed time, ranking, custody and gold burn',()=>{
  const next=g.trade('b',{action:'list',itemId:'item',price:100}).id;assert.throws(()=>g.trade('a',{action:'cancel',id:next}));g.trade('b',{action:'cancel',id:next});
  assert.throws(()=>g.action('b',{action:'equip',itemId:'item'}));db.close();
 });
+
+test('regional port, real item ranges, timed battles, attributes and failed-action settlement',async()=>{
+ const c=await import('./content.mjs');assert.equal(c.enemy(0,0).hp,45);assert.equal(c.enemy(0,0).name,'Mucor, a Gosma Errante');assert.equal(c.sourceRange(4,'forge')[1],45);assert.equal(c.xpNeed(1),109);
+ const item=c.generate({tier:2,rarity:4,quality:2,vocation:'war',slot:'weapon'},'hunt',2,()=>.5);assert(item.level>=25&&item.level<=27);assert.equal(item.affixes.length,4);assert(c.itemPower45({name:'Teste',slot:'weapon',baseMods:item.baseMods})>0);
+ assert.equal(c.recipe('weapon',0,{}).cost,40);assert(c.recipe('weapon',1,{mob:3,mining:3,wood:3}).req['boss:1']===2);
+ const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.5});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Alda','war');
+ assert.throws(()=>g.action('a',{action:'attribute',key:'str',points:1}));g.action('a',{action:'start',mode:'gather',prof:'mining',zone:0});now+=6000;assert.throws(()=>g.action('a',{action:'grant',gold:999}));assert.equal(g.state('a').character.prof.mining.total,1);g.tickBatch();assert.equal(g.state('a').character.prof.mining.total,1);
+ g.action('a',{action:'stop'});g.action('a',{action:'start',mode:'hunt',zone:0});const init=g.state('a').character;assert(init.activity.enemy.hp>0);assert.equal(init.kills,0);now+=2000;const next=g.state('a').character;assert(next.activity.enemyHp<init.activity.enemyHp);assert.equal(g.state('a').character.activity.enemyHp,next.activity.enemyHp);
+ assert.throws(()=>g.action('a',{action:'start',mode:'boss',zone:0}));g.action('a',{action:'stop'});assert.throws(()=>g.action('a',{action:'start',mode:'dungeon',zone:0}));db.close();
+});
