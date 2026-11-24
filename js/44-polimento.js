@@ -33,7 +33,7 @@ document.addEventListener('click',e=>{
 // Enrich only newly recorded drops, without changing rewards or older saved entries.
 const drop0=recordDrop;recordDrop=function(it){
  const result=drop0(it),a=state.analyzer,d=a?.drops?.[0];
- if(d&&d.id===it.id){d.elapsed44=num(a.seconds);d.source44=enemy().name;}
+ if(d&&d.id===it.id){d.elapsed44=num(a.seconds);d.source44=enemy()?.name||'Inimigo';}
  return result;
 };
 let tab='summary',dropKind='items',dropSort='recent',owner=null;
@@ -76,13 +76,13 @@ function drops(a,m){
  if(dropSort==='rarity')list.sort((a,b)=>b.rarity-a.rarity||num(b.loot41?.level)-num(a.loot41?.level));
  if(dropSort==='value')list.sort((a,b)=>b.value-a.value);
  return nav+'<div class="an44-drop-tools"><span>'+list.length+' de '+nf(m.count)+' equipamentos</span><label>Ordenar <select id="an44-sort">'+[['recent','Recentes'],['rarity','Raridade / iLvl'],['value','Maior valor']].map(([k,n])=>'<option value="'+k+'"'+(k===dropSort?' selected':'')+'>'+n+'</option>').join('')+'</select></label></div>'+
- (list.length?list.map(it=>'<div class="an44-drop" style="--rar:'+RARITIES[it.rarity][1]+'"><img src="'+itemIcon(it)+'" alt=""><div><b title="'+esc(it.name)+'">'+esc(it.name)+'</b><small>'+esc(RARITIES[it.rarity][0])+' · '+esc(SLOTS[it.slot])+(it.loot41?.level?' · iLvl '+it.loot41.level:'')+'</small>'+(it.source44?'<small>'+esc(it.source44)+' · '+time(it.elapsed44)+'</small>':'')+'<details><summary>Atributos</summary><small>'+esc(modText(it))+'</small></details></div><strong>'+cash(it.value)+'</strong></div>').join(''):empty('Nenhum equipamento nesta seleção.'))+'<p class="an44-note">Histórico dos últimos 60 equipamentos. Contadores e valores abrangem toda a sessão.</p>';
+ (list.length?list.map(it=>'<div class="an44-drop" data-drop44="'+esc(it.id)+'" style="--rar:'+RARITIES[it.rarity][1]+'"><img src="'+itemIcon(it)+'" alt=""><div><b title="'+esc(it.name)+'">'+esc(it.name)+'</b><small>'+esc(RARITIES[it.rarity][0])+' · '+esc(SLOTS[it.slot])+(it.loot41?.level?' · iLvl '+it.loot41.level:'')+'</small>'+(it.source44?'<small>'+esc(it.source44)+' · '+time(it.elapsed44)+'</small>':'')+'<details><summary>Atributos</summary><small>'+esc(modText(it))+'</small></details></div><strong>'+cash(it.value)+'</strong></div>').join(''):empty('Nenhum equipamento nesta seleção.'))+'<p class="an44-note">Histórico dos últimos 60 equipamentos. Contadores e valores abrangem toda a sessão.</p>';
 }
 function paint(el,h){
  if(el._html44===h)return;
- const opened=new Set([...el.querySelectorAll('details[open]')].map(d=>d.closest('.an44-drop')?.querySelector('b')?.textContent));
+ const opened=new Set([...el.querySelectorAll('details[open]')].map(d=>d.closest('.an44-drop')?.dataset.drop44));
  const f=document.activeElement,keep=f?.id==='an44-sort'&&el.contains(f);el.innerHTML=h;el._html44=h;
- for(const d of el.querySelectorAll('details'))if(opened.has(d.closest('.an44-drop')?.querySelector('b')?.textContent))d.open=true;
+ for(const d of el.querySelectorAll('details'))if(opened.has(d.closest('.an44-drop')?.dataset.drop44))d.open=true;
  if(keep)el.querySelector('#an44-sort')?.focus({preventScroll:true});
 }
 renderAnalyzer=function(){
