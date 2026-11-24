@@ -2,6 +2,7 @@
 (()=>{
 'use strict';
 const history=[
+ {version:'0.43.3',date:'2026-11-24',title:'Ouro e Prata',kind:'Interface e personagem',intro:'Uma identidade visual unificada para as janelas e HUD.',groups:[['Interface',['Ficha e Equipamentos unidos em Personagem, com abas e acesso aos mesmos atributos, itens, bônus e conjuntos.','Detalhes de composição dos atributos em tooltip; estrutura escura, contornos prateados e destaques dourados.','Brilhos suaves nas habilidades disponíveis e ícones do menu; cores de vocação, raridade, vida e mana preservadas.']],['Salvamento',['Sem reinício de progresso ou mudanças de balanceamento.']]]},
  {version:'0.43.2',date:'2026-11-24',title:'Caminhos do Destino',kind:'Talentos e leitura de combate',intro:'Escolha seu caminho, compreenda suas habilidades e redistribua pontos com clareza.',groups:[
  ['Interface',['Talentos redesenhados: um caminho por vez, nós conectados, filtros, painel de detalhes e cores próprias por vocação. Tooltips exibem requisitos, efeitos e graduação.','Poções e habilidades da HUD com o mesmo padrão de inspeção, recarga atual, custo, estoque e recuperação conforme o recurso.']],
  ['Balanceamento',['Reset de talentos custa 100 + 50 × nível + 25 × pontos investidos, com confirmação e devolução dos pontos. Reset de atributos mantém custo anterior.','Identidade dos caminhos e ícones mais informativos; habilidades, pré-requisitos e sinergias existentes preservados.']],
