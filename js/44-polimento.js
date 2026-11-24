@@ -42,9 +42,11 @@ document.addEventListener('click',e=>{
  e.preventDefault();e.stopImmediatePropagation();sheetTab=b.dataset.sheet44;window.eldoria44SheetSync();
 },true);
 // Enrich only newly recorded drops, without changing rewards or older saved entries.
+let defeated44=null;
+const win44=win;win=function(...args){const previous=defeated44;defeated44=enemy()?.name||null;try{return win44(...args);}finally{defeated44=previous;}};
 const drop0=recordDrop;recordDrop=function(it){
  const result=drop0(it),a=state.analyzer,d=a?.drops?.[0];
- if(d&&d.id===it.id){d.elapsed44=num(a.seconds);d.source44=enemy()?.name||'Inimigo';}
+ if(d&&d.id===it.id){d.elapsed44=num(a.seconds);d.source44=defeated44||enemy()?.name||'Inimigo';}
  return result;
 };
 let tab='summary',dropKind='items',dropSort='recent',owner=null;
