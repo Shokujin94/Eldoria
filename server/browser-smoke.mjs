@@ -26,7 +26,7 @@ try{
  await page.locator('[data-cls61=necro]').click();
  await page.locator('#character button').last().click();
  await page.locator('#scene52').waitFor({state:'visible'});
- assert.equal(await page.locator('#window53').isHidden(),true);
+ assert.equal(await page.locator('.floating65:not([hidden])').count(),0);
  const layout=await page.evaluate(()=>({map:document.getElementById('scene52').getBoundingClientRect().toJSON(),nav:document.getElementById('tabs').getBoundingClientRect().toJSON(),hud:document.getElementById('combatHUD22').getBoundingClientRect().toJSON(),w:innerWidth,h:innerHeight}));
  assert.ok(Math.abs(layout.map.width-layout.w)<2&&Math.abs(layout.map.height-layout.h)<2,'full-screen original map');assert.ok(layout.nav.top<60&&layout.hud.bottom>layout.h-30,'edge mounted HUD');
  assert.match(await page.locator('#hero').innerText(),/Necromante/);
@@ -42,6 +42,8 @@ try{
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();
  await page.locator('[data-tab=bag]').click();
+ assert.equal(await page.locator('#win-character').isVisible(),true);
+ assert.equal(await page.locator('#win-bag').isVisible(),true);
  await page.locator('[data-filter61=weapon]').click();
  await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
  assert.equal(await page.locator('.bag56').count(),1);
@@ -54,11 +56,13 @@ try{
  assert.ok(await page.locator('.tal47-tier').count()>0);
  assert.match(await page.locator('.codex62-detail').innerText(),/Requisitos/);
  await page.locator('[data-tfilter62=all]').click();
- await page.locator('[data-tab=market]').click();
+ await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=market]').click();
+ await page.locator('[data-market65=sell]').click();
  await page.locator('#listing').waitFor();
- await page.locator('[data-tab=ranking]').click();
+ await page.locator('[data-group65="3"]').click();await page.locator('[data-tab=ranking]').click();
  await page.locator('#rankcat').waitFor();
- await page.locator('#window53-close').click();
+ for(const id of ['ranking','market','talent','bag','character'])await page.locator('#win-'+id+' [data-close65]').evaluate(b=>b.click());
+ await page.locator('[data-group65="3"]').click();await page.locator('[data-tab=security]').click();await page.locator('#security54-dialog[open]').waitFor();await page.locator('#security54-close').click();
  await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=gather]').click();
  await page.locator('#start61').click();

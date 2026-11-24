@@ -94,3 +94,6 @@ O cliente online passa a usar mapa em tela inteira, navegação superior, HUD de
 
 ## 0.47.12 — componentes originais
 Reutilização do CSS do códice de talentos da main, temas por caminho e linhas de dependência, tooltip de talentos/equipamentos e inventário compacto organizado por raridade. Filtros, perfis e configurações de habilidades permanecem acessíveis sem ocupar a tela inicial. Janelas arrastáveis e redimensionáveis no desktop, posição lembrada por sessão. Ainda usa uma janela ativa de cada vez e dados do servidor; não há comprovação de paridade visual integral com GitHub Pages.
+
+## 0.47.13 — janelas independentes
+Menu agrupado da versão 0.45.0, múltiplas janelas com foco, arraste, resize e preferências locais exclusivamente de layout. Subclasses, rotação, consumíveis, dungeons, analisador, registro, cidade e configurações separados. Mercado em Ofícios (ofertas, anúncio, meus anúncios), segurança em Gestão. Ações continuam na API. Ainda há diferenças de conteúdo e visual em relação ao cliente legado; não é reprodução integral.
