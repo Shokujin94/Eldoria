@@ -175,3 +175,120 @@ body .floating .window-body input:focus-visible,body .floating .window-body sele
 @media(prefers-reduced-motion:reduce){.progress43 i{transition:none}}
 
 #content-bag .stock19-grid.bag43-list{grid-template-columns:1fr!important}
+
+
+/* 0.42.1 — one outer frame, compact content, independent visual identities. */
+body.play14 .floating,body .floating{box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-width:calc(100vw - 12px)!important;max-height:calc(100dvh - 12px)!important;resize:none!important;border:1px solid #899083!important;border-radius:9px!important;overflow:hidden!important;box-shadow:0 12px 35px #000a,inset 0 0 0 1px #ffffff09!important}
+body .floating:not(.hidden){display:flex!important;flex-direction:column}
+body .floating .window-head{box-sizing:border-box;flex:0 0 43px;min-height:43px;max-height:43px;padding:5px 11px!important;border:0!important;border-bottom:1px solid #899083!important;border-radius:0!important;box-shadow:none!important;gap:8px}
+body .floating .window-head h2{margin:0!important;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px!important}
+body .floating .window-head>button{flex:0 0 28px;height:28px;width:28px;margin:0;padding:0!important;border-radius:5px!important}
+body .floating .window-body{box-sizing:border-box;flex:1 1 0;min-height:0!important;min-width:0!important;max-height:none!important;width:100%;padding:10px!important;overflow:auto!important;overscroll-behavior:contain;scrollbar-gutter:stable;container-type:inline-size}
+body .floating .window-body>.panel{max-width:100%;min-width:0;border:0!important;box-shadow:none!important;background:none!important}
+body .floating .window-body *,body .floating .window-body *::before,body .floating .window-body *::after{box-sizing:border-box}
+body .floating .window-body :is(section,article,nav,main,aside,header){min-width:0}
+body .floating .window-body :is(input,select){max-width:100%}
+body .floating .window-body :is(button,input,select):focus-visible{outline:2px solid #dfc38b;outline-offset:-2px}
+/* Expedition rows use identical widths, image boxes and line heights. */
+#content-dungeon .dungeon11{display:grid!important;grid-template-columns:240px minmax(0,1fr)!important;gap:12px;align-items:start}
+#content-dungeon .dungeon11>aside{display:grid!important;grid-template-columns:minmax(0,1fr);gap:5px!important;min-width:0;width:100%;padding:0 9px 0 0!important;border-right:1px solid #6e78634d;overflow:visible!important}
+#content-dungeon .dungeon11 .atlas-heading{display:block!important;margin:0 0 3px;padding:3px 2px;color:#cbb88a;letter-spacing:.08em}
+#content-dungeon .dungeon11 [data-dungeon-zone]{box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:none!important;height:57px!important;min-height:57px!important;max-height:57px!important;display:grid!important;grid-template-columns:65px minmax(0,1fr)!important;align-items:stretch!important;gap:8px!important;margin:0!important;padding:0!important;border:1px solid #786b53!important;border-radius:6px!important;overflow:hidden}
+#content-dungeon .dungeon11 [data-dungeon-zone].sel{border-color:#d5b47b!important;background:#38352b!important;box-shadow:inset 0 0 0 1px #d5b47b44!important}
+#content-dungeon .dungeon11 [data-dungeon-zone] img{width:65px!important;height:100%!important;max-height:100%!important;display:block;object-fit:cover!important;border-radius:0!important}
+#content-dungeon .dungeon11 [data-dungeon-zone] span{display:flex!important;flex-direction:column;justify-content:center;min-width:0;gap:2px!important;padding:3px 5px 3px 0!important}
+#content-dungeon .dungeon11 [data-dungeon-zone] b{white-space:normal!important;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font:650 12px/1.15 system-ui!important;color:#efdfbf;overflow-wrap:anywhere}
+#content-dungeon .dungeon11 [data-dungeon-zone] small{font:10px/1.2 system-ui!important;color:#bfc3b9;white-space:nowrap}
+@container(max-width:620px){#content-dungeon .dungeon11{grid-template-columns:1fr!important}#content-dungeon .dungeon11>aside{grid-template-columns:repeat(2,minmax(0,1fr));padding:0!important;border:0}#content-dungeon .dungeon11 .atlas-heading{grid-column:1/-1}}
+@container(max-width:390px){#content-dungeon .dungeon11>aside{grid-template-columns:1fr}}
+/* Inventory: compact header and filter controls, evenly sized equipment tiles. */
+#content-bag .bag43-banner{padding:9px 11px;margin-bottom:7px;border-radius:7px}
+#content-bag .bag43-banner h3{font-size:19px!important;margin:2px 0!important}
+#content-bag .bag43-controls{margin:6px 0 9px;gap:6px}
+#content-bag .stock19-grid:not(.bag43-list){grid-template-columns:repeat(auto-fill,minmax(76px,1fr))!important;gap:5px!important}
+#content-bag .stock19-grid:not(.bag43-list) .stock19-slot[data-itemid]{height:94px!important;min-height:94px!important;max-height:94px!important;padding:4px!important}
+#content-bag .stock19-grid:not(.bag43-list) .stock19-slot img{width:35px!important;height:35px!important}
+#content-bag .stock19-grid:not(.bag43-list) .stock19-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:27px}
+#content-bag .stock19-grid:not(.bag43-list) .rune-dots{bottom:34px!important}
+#content-bag .stock19-details{margin-top:8px;padding:8px}
+#content-bag .bag43-list .stock19-slot[data-itemid]{height:50px!important;min-height:50px!important;max-height:50px!important}
+/* Sheet: small persistent identity area with three focused pages. */
+#content-hero .identity13{padding:10px!important;gap:10px}
+#content-hero .identity13 h2{font-size:20px!important}
+#content-hero .identity13 .portrait13{max-width:84px}
+#content-hero .summary13{gap:5px;margin:7px 0!important}
+#content-hero .summary13 article{padding:6px!important}
+#content-hero .summary13 article b{font-size:15px!important}
+.sheet44-tabs{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:5px 0;background:#202a2a;margin:7px 0}
+.sheet44-tabs button{min-height:32px!important;white-space:normal}
+.sheet44-tabs button[aria-pressed=true]{border-color:#a7c3bb!important;background:#364a44!important;color:#e4f0e5!important}
+#sheetExtra .sheet44-pane{display:none}
+#sheetExtra:not([data-sheet44-active]) [data-pane44=attributes],#sheetExtra[data-sheet44-active=attributes] [data-pane44=attributes],#sheetExtra[data-sheet44-active=stats] [data-pane44=stats],#sheetExtra[data-sheet44-active=effects] [data-pane44=effects]{display:block}
+#content-hero .attrs43-list{gap:6px}
+#content-hero .attr43{padding:9px;gap:5px;background-image:none!important}
+#content-hero .attr43 p{font-size:11px}
+#content-hero .points43{margin:7px 0;padding:8px 12px}
+#content-hero .points43 strong{font-size:30px}
+#content-hero .attr43-actions button{min-height:28px!important}
+@container(max-width:430px){#content-hero .attrs43-list{grid-template-columns:1fr}}
+/* Skill codex: smaller spacing and cards without hiding any actions or requirements. */
+#content-talent .t32-banner{padding:9px!important;gap:10px}
+#content-talent .t32-banner h2{font-size:19px!important;margin:2px 0!important}
+#content-talent .t32-seal{width:36px;height:36px;flex-basis:36px;margin:4px}
+#content-talent .t32-seal svg{width:25px;height:25px}
+#content-talent .t32-summary{padding:6px 0;gap:6px}
+#content-talent .t32-routes{gap:5px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+#content-talent .t32-route{min-height:45px!important;padding:5px!important}
+#content-talent .t32-filters{gap:4px;margin:7px 0}
+#content-talent .t32-branches.overview{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px}
+#content-talent .t32-branches.focused{grid-template-columns:1fr!important}
+#content-talent .t32-branch{padding:6px!important}
+#content-talent .t32-node{padding:7px!important;gap:5px;background-image:none!important}
+#content-talent .t32-nodehead{gap:5px;align-items:center}
+#content-talent .t32-nodehead>div{min-width:0}
+#content-talent .t32-nodehead b{overflow-wrap:anywhere;font-size:12px!important}
+#content-talent .t32-nodehead strong{white-space:nowrap}
+#content-talent .t32-requires{min-height:0!important;white-space:normal}
+#content-talent .points43{padding:7px 10px;margin:0 0 7px;gap:10px}
+#content-talent .points43 strong{font-size:29px}
+@container(max-width:510px){#content-talent .t32-branches.overview{grid-template-columns:1fr!important}}
+/* Hunt Analyzer: report-style hierarchy, not a stack of duplicate legacy panels. */
+#content-analyzer [data-panel=analyzer]{width:100%;max-width:none!important;padding:0!important}
+#content-analyzer #huntDrops{max-height:none!important;overflow:visible!important;margin:0!important}
+#content-analyzer .an-controls{margin:7px 0;gap:6px}
+#content-analyzer .an-controls button[hidden]{display:none!important}
+.an44-header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid #688c81;background:linear-gradient(120deg,#243a36,#1d272e);border-radius:8px}
+.an44-header>div:first-child{min-width:0}.an44-header h2{font:700 17px/1.2 system-ui!important;color:#e1ede5;margin:3px 0!important;overflow-wrap:anywhere}
+.an44-header small,.an44-header span{display:block;color:#b8c9c4;font:10px/1.4 system-ui}.an44-header small{letter-spacing:.035em}
+.an44-clock{text-align:right;flex:none}.an44-clock strong{font:700 17px ui-monospace,monospace;color:#e3e7d8}
+.an44-nav,.an44-subnav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:8px 0}
+.an44-nav button,.an44-subnav button{min-height:30px!important;white-space:normal;line-height:1.2}
+.an44-nav button[aria-pressed=true],.an44-subnav button[aria-pressed=true]{border-color:#95b5a7!important;background:#354c46!important;color:#e6f5e8!important}
+.an44-subnav button b{display:block;font-size:10px;color:#d6d1a9}
+.an44-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#content-analyzer .an44-metric{display:grid;gap:3px;padding:9px!important;border:1px solid #52635e;border-radius:7px;background:#202c2d!important;background-image:none!important;min-width:0}
+.an44-metric small{font:600 11px system-ui;color:#c5ccc4}.an44-metric b{font:700 clamp(16px,4cqw,21px)/1.2 system-ui;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.an44-metric span{font:10px system-ui;color:#bcc8c0}
+.an44-metric.xp44 b,.xp44{color:#cbb5ed!important}.an44-metric.blue44 b,.blue44{color:#a9cce9!important}.an44-metric.gold44 b,.gold44{color:#ebca83!important}.an44-metric.green44 b,.green44{color:#b1e1ac!important}.an44-metric.red44 b,.red44{color:#f2a29c!important}
+.an44-section{margin:9px 0;padding:9px;border:1px solid #576762;border-radius:7px;background:#1b2527}
+#content-analyzer .an44-section h3{font:700 13px/1.3 system-ui!important;color:#d7e3da;margin:0 0 7px!important}
+.an44-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid #9fb5a914;font-size:12px}
+.an44-row span{color:#c9d3ce;overflow-wrap:anywhere}.an44-row b{font-variant-numeric:tabular-nums;color:#eee9d9;flex:none}
+.an44-note,.an44-empty{font:11px/1.45 system-ui;color:#b6c1ba;margin:6px 0!important}
+.an44-rarity{display:grid;grid-template-columns:minmax(0,1fr) 35px 43px;gap:4px 8px;align-items:center;padding:4px 0;font-size:11px}
+.an44-rarity b,.an44-rarity small{text-align:right;font-variant-numeric:tabular-nums}.an44-rarity .an44-meter{grid-column:1/-1}
+.an44-meter{height:5px;background:#111a1d;border-radius:4px;overflow:hidden}.an44-meter i{display:block;height:100%;border-radius:inherit}
+.an44-source{margin:8px 0}.an44-source>div:first-child{display:flex;justify-content:space-between;gap:6px;align-items:baseline;color:#ccd9d7;font-size:11px;margin-bottom:4px}.an44-source b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.an44-drop,.an44-best{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:start;gap:7px;padding:7px 6px;border:1px solid #52605c;border-left:2px solid var(--rar);border-radius:5px;background:#202a2c;margin:5px 0}
+.an44-drop img,.an44-best img{width:36px;height:36px;object-fit:contain}.an44-drop>div,.an44-best>div{min-width:0;display:grid;gap:3px}
+.an44-drop>div>b,.an44-best>div>b{font:650 12px/1.3 system-ui;color:var(--rar);overflow-wrap:anywhere}.an44-drop small,.an44-best small{font:10px/1.4 system-ui;color:#c2c9bf}.an44-drop>strong,.an44-best>strong{font:650 11px system-ui;color:#e6c783;white-space:nowrap}
+.an44-drop details summary{cursor:pointer;color:#b1c9c3;font-size:10px}.an44-drop details small{display:block;margin-top:3px}
+.an44-drop-tools{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;color:#c8d1c8;margin:7px 0}.an44-drop-tools label{display:flex;align-items:center;gap:5px}
+@container(max-width:330px){.an44-header{flex-wrap:wrap}.an44-drop,.an44-best{grid-template-columns:30px minmax(0,1fr)}.an44-drop>strong,.an44-best>strong{grid-column:2}.an44-drop-tools{flex-wrap:wrap}.an44-clock{text-align:left}}
+
+/* 0.42.1 — randomized forge, with material selection separate from outcome. */
+.forge44-choice{display:grid;grid-template-columns:35px minmax(0,1fr) auto;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #82715b44}
+.forge44-choice img{width:35px;height:35px;object-fit:contain}.forge44-choice label{display:grid;gap:4px;min-width:0}.forge44-choice label>b{font:650 12px/1.3 system-ui;overflow-wrap:anywhere}
+.forge44-choice select{width:100%;min-width:0}.forge44-choice>strong{font:650 12px ui-monospace,monospace;white-space:nowrap}
+.forge44-odds{margin:10px 0;padding:10px;background:#202723;border:1px solid #64705c;border-radius:7px}
+.forge44-odds .title43{margin:0 0 7px}.forge44-strip{display:flex;overflow:hidden;height:8px;border-radius:4px;background:#111916;margin:6px 0 8px}.forge44-strip i{display:block;height:100%;flex:none}
+.forge44-odds-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:3px 0;font:12px system-ui}.forge44-odds-row b{color:#e7e2d2;font-variant-numeric:tabular-nums}

@@ -7,6 +7,26 @@ const toward=(a,b,n)=>{const d=dist(a,b);return d?{x:a.x+(b.x-a.x)*Math.min(1,n/
 const blocked=side=>hasStatus(side,'stun')||hasStatus(side,'freeze');
 const slowed=side=>hasStatus(side,'slow')?.7:1;
 
+// Melee duel: approach a shared contact distance, then stay in range.
+window.eldoria44MeleeDuel=function(now,dt){
+ const e=enemyPoint(now),gap=window.eldoria38Gap(),reach=gap+3,spacing=gap+1,ms=clamp(dt,0,100);
+ dest=null;
+ // Both existing attack ranges include this band. No retreat or chasing inside it.
+ if(dist(pos,e)<=reach)return;
+ const hunt=state.mode==='hunt',dir=Math.sign(e.x-pos.x)||1;
+ const hs=(hunt?.188:.105)*slowed('hero'),fs=(hunt?.17:.155)*(hunt&&state.era20?.affixes?.includes('fast')?1.18:1)*slowed('enemy');
+ const move=(a,b,speed)=>walk34(a,toward(a,b,speed*ms));
+ // Match foot positions horizontally to avoid fighting the sprite separation solver.
+ if(now>=heroHold11&&!blocked('hero')){
+  const q={x:e.x-dir*spacing,y:e.y};
+  if(valid34(q))pos=move(pos,q,hs);
+ }
+ if(dist(pos,e)<=reach)return;
+ if(now>=foeHold11&&!blocked('enemy')){
+  const q={x:pos.x+dir*spacing,y:pos.y};
+  if(valid34(q)){const next=move(e,q,fs);e.x=next.x;e.y=next.y;}
+ }
+};
 // Reposition at the same movement speed as normal combat. Keep the ordinary attack clock.
 let escape40=null,cool40=0,lastOwner40=null,lastFoe40=null,lastMap40='';
 function activeEscape40(){return !!(escape40&&state.active&&combat()&&!state.rest&&escape40.owner===state&&escape40.foe===enemyPoint(gameNow28())&&escape40.map===mapKey34());}
