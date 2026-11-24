@@ -2,6 +2,11 @@
 (()=>{
 'use strict';
 const history=[
+ {version:'0.43.2',date:'2026-11-24',title:'Caminhos do Destino',kind:'Talentos e leitura de combate',intro:'Escolha seu caminho, compreenda suas habilidades e redistribua pontos com clareza.',groups:[
+ ['Interface',['Talentos redesenhados: um caminho por vez, nós conectados, filtros, painel de detalhes e cores próprias por vocação. Tooltips exibem requisitos, efeitos e graduação.','Poções e habilidades da HUD com o mesmo padrão de inspeção, recarga atual, custo, estoque e recuperação conforme o recurso.']],
+ ['Balanceamento',['Reset de talentos custa 100 + 50 × nível + 25 × pontos investidos, com confirmação e devolução dos pontos. Reset de atributos mantém custo anterior.','Identidade dos caminhos e ícones mais informativos; habilidades, pré-requisitos e sinergias existentes preservados.']],
+ ['Salvamento',['Sem reinício de personagem ou itens; demais janelas permanecem como estavam.']]
+ ]},
  {version:'0.43.1',date:'2026-11-24',title:'Identidade e Harmonia',kind:'Interface e combate',intro:'Uma HUD mais leve, vocações com sinergias próprias e cenários de coleta mais vivos.',groups:[
  ['Interface',['HUD de combate sem fundo sólido central, esferas compactas com efeito de líquido, textos contrastantes, atalhos essenciais e brilho discreto. Efeitos negativos à esquerda e positivos à direita, sem placas sólidas nos ícones.','Inventário com cabeçalho de capacidade, filtros avançados recolhíveis, ordenação e iLvl; ficha com hierarquia de atributos; equipamentos com abas de inspeção e bônus.','Árvore de talentos conectada por requisitos reais, ativa por padrão, com descrições expansíveis e conexões iluminadas.']],
  ['Combate',['Quinze sinergias de caminho distribuídas entre Guerreiro, Arqueiro, Mago, Clérigo e Necromante. Requerem investimento na passiva raiz e condições próprias de combate; efeitos defensivos exigem habilidade aprendida.','Sprites de personagem e monstros nas caçadas com escala semelhante às dungeons; alcance visual, lacaios e espaçamento ajustados.','Derrota em caça, dungeon, chefe ou provação encerra a atividade e retorna à cidade, inclusive offline.']],
