@@ -100,3 +100,6 @@ Menu agrupado da versão 0.45.0, múltiplas janelas com foco, arraste, resize e 
 
 ## 0.47.14 — referência 0.45.0 (Ofícios da Nova Era)
 Atlas de regiões e dungeons com nomes, descrições e andares extraídos do commit pré-online 9018633036cc60e20743e63038bdd3d7c5f8e71d; equipamento com seleção de slots e comparação de bônus calculada pelo servidor; inventário separado em equipamentos, materiais e runas; Hunt Analyzer com abas de resumo, combate e histórico. Corrige a espera assíncrona do teste de abertura de inventário da 0.47.13. Mercado e segurança preservados. O motor online ainda não reproduz integralmente a simulação e todos os componentes da versão offline. Sem reset.
+
+## 0.47.15 — conquistas e consumíveis da 0.45.0
+Seis títulos originais, desbloqueados pelos contadores reais do servidor, um bônus ativo; seis elixires originais com +3 de atributo ou +15% relativo de chance de equipamento em caçada e duração de 180 s. Duração separada dos buffs de habilidade e processada pelo relógio do servidor. Escolha da poção automática e limiar até 95%; contas anteriores sem escolha mantêm seleção por estoque. Nenhum reset. Ainda não há paridade integral de motor, receitas, efeitos ou interface.

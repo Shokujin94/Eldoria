@@ -38,6 +38,8 @@ try{
  await page.locator('#zoomOut61').click();
  await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
  await page.locator('#scene52').focus();await page.keyboard.press('ArrowUp');
+ await page.locator('[data-group65="0"]').click();await page.locator('[data-tab=achieve]').click();await page.locator('.achievement11').first().waitFor();assert.equal(await page.locator('.achievement11').count(),6);await page.locator('#win-achieve [data-close65]').click();
+ await page.locator('[data-group65="0"]').click();await page.locator('[data-tab=cons]').click();await page.locator('#auto-hp').waitFor();assert.equal(await page.locator('.cons-item11').count(),12);await page.locator('#win-cons [data-close65]').click();
  await page.locator('[data-tab=character]').click();
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();await page.locator('[data-gearslot66=weapon]').click();await page.locator('.gear-cell.chosen[data-gearslot66=weapon]').waitFor();
