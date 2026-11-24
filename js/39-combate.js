@@ -6,12 +6,41 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const toward=(a,b,n)=>{const d=dist(a,b);return d?{x:a.x+(b.x-a.x)*Math.min(1,n/d),y:a.y+(b.y-a.y)*Math.min(1,n/d)}:{x:a.x,y:a.y};};
 const blocked=side=>hasStatus(side,'stun')||hasStatus(side,'freeze');
 const slowed=side=>hasStatus(side,'slow')?.7:1;
+
+// A committed, finite escape: no firing during the run, no invulnerability.
+let escape40=null,cool40=0,lastOwner40=null,lastFoe40=null,lastMap40='';
+function activeEscape40(){return !!(escape40&&state.active&&combat()&&!state.rest&&escape40.owner===state&&escape40.foe===enemyPoint(gameNow28())&&escape40.map===mapKey34());}
+window.eldoria40Escaping=activeEscape40;
+window.eldoria40Sidestep=()=>{if(!activeEscape40()||state.mode!=='hunt')return 0;const d=Math.abs(pos.x-escape40.foe.x),g=window.eldoria38Gap();return Math.max(0,1-d/(g*1.5))*52;};
+function startEscape40(e,r,g){
+ const arena=state.mode!=='hunt',sign=Math.sign(e.x-pos.x)||1,dx=e.x-pos.x,dy=e.y-pos.y,d=Math.hypot(dx,dy)||1;
+ if(!arena){const [lo,hi]=bounds34();const edge=sign>0?hi:lo;if(Math.abs(edge-pos.x)<g+10)return false;escape40={owner:state,foe:e,map:mapKey34(),sign,edge,left:4400};return true;}
+ const ux=dx/d,uy=dy/d,opts=[];
+ for(const side of [-1,1]){const around={x:e.x-uy*side*(g+40),y:e.y+ux*side*(g+40)},far={x:e.x+ux*r*.87-uy*side*35,y:e.y+uy*r*.87+ux*side*35};if(valid34(around)&&valid34(far)&&segment34(pos,around)&&segment34(around,far))opts.push([around,far]);}
+ if(!opts.length)return false;
+ opts.sort((a,b)=>dist(pos,a[0])+dist(a[0],a[1])-dist(pos,b[0])-dist(b[0],b[1]));
+ escape40={owner:state,foe:e,map:mapKey34(),points:opts[0],left:4400,sign};return true;
+}
+function stepEscape40(now,ms,e,r,g){
+ if(!activeEscape40())return false;
+ const a=escape40;a.left-=ms;
+ if(now>=heroHold11&&!blocked('hero')){
+  if(state.mode==='hunt'){pos=walk34(pos,toward(pos,{x:a.edge,y:pos.y},.265*slowed('hero')*ms));}
+  else{while(a.points.length&&dist(pos,a.points[0])<5)a.points.shift();if(a.points.length)pos=walk34(pos,toward(pos,a.points[0],.235*slowed('hero')*ms));}
+ }
+ const crossed=state.mode==='hunt'&&(pos.x-e.x)*a.sign>0,done=state.mode==='hunt'?(crossed&&(dist(pos,e)>=r*.84||Math.abs(pos.x-a.edge)<3)):!a.points.length||dist(pos,e)>=r*.90;
+ if(done||a.left<=0){escape40=null;cool40=4500;}
+ return true;
+}
+const attack40=attackReady;attackReady=function(side){if(side==='hero'&&activeEscape40())return false;return attack40(side);};
+
 // Ranged combat: finite retreat, faster pursuers, and a stationary casting window.
 window.eldoria39MoveRanged=function(now,dt){
  const e=enemyPoint(now),d=dist(pos,e),r=range11(),gap=window.eldoria38Gap(),ranged=foeRanged11();
  const ms=clamp(dt,0,100),speed=({ranger:.145,mage:.118,cleric:.115,necro:.12}[state.cls]||.12)*slowed('hero');
+ if(lastOwner40!==state||lastFoe40!==e||lastMap40!==mapKey34()){escape40=null;cool40=0;lastOwner40=state;lastFoe40=e;lastMap40=mapKey34();}cool40=Math.max(0,cool40-ms);
  const dir=d>.01?{x:(e.x-pos.x)/d,y:(e.y-pos.y)/d}:{x:1,y:0};
- if(now>=heroHold11&&!blocked('hero')){
+ if(!stepEscape40(now,ms,e,r,gap)&&now>=heroHold11&&!blocked('hero')){
   const desired=r*.88;
   if(d>r*.96)pos=walk34(pos,toward(pos,e,Math.min(d-desired,speed*ms)));
   else if(d<r*.66){
@@ -20,6 +49,7 @@ window.eldoria39MoveRanged=function(now,dt){
    if(state.mode!=='hunt')for(const sign of [-1,1])opts.push({x:pos.x+sign*dir.y*retreat,y:pos.y-sign*dir.x*retreat});
    const valid=opts.map(q=>walk34(pos,q)).filter(q=>dist(q,pos)>.01).sort((a,b)=>dist(b,e)-dist(a,e));
    if(valid.length&&dist(valid[0],e)>d+.01)pos=valid[0];
+   else if(cool40<=0&&startEscape40(e,r,gap))stepEscape40(now,ms,e,r,gap);
   }
  }
  if(now>=foeHold11&&!blocked('enemy')){
@@ -44,9 +74,9 @@ window.eldoria381StepServants=function(now,dt){
   const p=points[i],a=list[i],others=points.filter((_,j)=>i!==j);
   const legal=q=>baseLegal(q)&&!slots.some(o=>blocks(q,o,sg));
   const actual=q=>legal(q)&&!others.some(o=>blocks(q,o,sg));
-  const hitDistance=dist(p,e),strikeAge=now-(a.attack31??-10000),locked=strikeAge>=0&&strikeAge<420;
+  const role=window.eldoria40ServantRole?.(a)||{reach:0},reach=role.reach||eg+16,hitDistance=dist(p,e),strikeAge=now-(a.attack31??-10000),locked=strikeAge>=0&&strikeAge<420;
   p.phaseLeft381=Math.max(0,(p.phaseLeft381||0)-ms);
-  const settled=engage&&actual(p)&&hitDistance<=eg+13;
+  const settled=engage&&actual(p)&&hitDistance<=reach-3&&(!role.reach||hitDistance>=role.reach*.55)&&(!role.guard||dist(p,pos)<150);
   if(settled){
    slots.push({x:p.x,y:p.y});p.goal39=null;p.stall39=0;p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);
    if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;continue;
@@ -55,19 +85,21 @@ window.eldoria381StepServants=function(now,dt){
   let goal=old&&engage?{x:e.x+old.dx,y:e.y+old.dy}:old&&{x:pos.x+old.dx,y:pos.y+old.dy};
   if(!old||old.engage!==engage||!legal(goal)||now-(p.planned39||0)>650&&p.stall39>120){
    const anchor=engage?e:pos,candidates=[];
-   for(const rad of engage?[eg+3,eg+10]:[pg+5,pg+sg+7,pg+sg*2+10]){
+   for(const rad of engage?(role.reach?[Math.max(eg+3,role.reach*.72),Math.max(eg+5,role.reach*.90),eg+3]:[eg+3,eg+10]):[pg+5,pg+sg+7,pg+sg*2+10]){
     for(let j=0;j<(arena?16:2);j++){
      const t=j*Math.PI*2/(arena?16:2),q={x:anchor.x+Math.cos(t)*rad,y:arena?anchor.y+Math.sin(t)*rad:anchor.y};
      if(legal(q))candidates.push(q);
     }
    }
-   candidates.sort((u,v)=>dist(p,u)-dist(p,v)+(others.some(o=>blocks(u,o,sg))?50:0)-(others.some(o=>blocks(v,o,sg))?50:0));
+   const score=q=>dist(p,q)+(others.some(o=>blocks(q,o,sg))?80:0)+(role.guard?dist(q,pos)*.65:role.reach?Math.abs(dist(q,e)-role.reach*.8)*.7:0);
+   candidates.sort((u,v)=>score(u)-score(v));
    goal=candidates[0];p.goal39=goal?{dx:goal.x-anchor.x,dy:goal.y-anchor.y,engage}:null;p.planned39=now;p.route39=null;
   }
   if(!goal){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
   slots.push(goal);
+  if(actual(p)&&dist(p,goal)<3){p.moving=false;p.stall39=0;p.motion39=(p.motion39||0)*Math.exp(-ms/95);if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;continue;}
   // Keep a valid attack pose still while its animation plays.
-  if(locked&&baseLegal(p)&&hitDistance<=eg+22){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
+  if(locked&&baseLegal(p)&&hitDistance<=reach+6){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
   const clear=(u,v)=>{const n=Math.max(1,Math.ceil(dist(u,v)/12));for(let k=1;k<=n;k++){const q=toward(u,v,dist(u,v)*k/n);if(!actual(q))return false;}return true;};
   let waypoint=goal;
   if(arena&&!clear(p,goal)){
