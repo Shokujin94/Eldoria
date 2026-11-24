@@ -85,3 +85,6 @@ Cidade: deslocamento visual por WASD/setas/clique, interação E com os sete NPC
 
 ## 0.47.9 — câmera e exploração
 Zoom compartilhado pelo cenário, atores e inversão do clique, câmera acompanha a posição sem extrapolar o enquadramento, minimapa visual com jogador, NPCs e alvo, miniatura temporária até carregar o mapa em alta resolução, interação por clique em NPC com aproximação automática e limpeza da posição ao trocar de conta. O navegador continua apenas apresentando snapshots; não recebe autoridade sobre combate ou progresso. O CI passa a rodar também em atualizações da branch online. A reprodução integral do motor legado ainda não está concluída: IA e colisão 2D, cadência, animações, regras e HUD ainda precisam de comparação e validação. Nenhuma migração de banco.
+
+## 0.47.10 — códice de talentos
+Janela por etapas de pré-requisitos, filtros, seleção de habilidade e detalhe separado com descrição, requisitos navegáveis, graduação, maestria e confirmação de reset com saldo. Inspirada no códice 0.43.2 original; ícones são símbolos simplificados, não os SVG originais. Investimento em lote de até três pontos, atômico e validado no servidor por graduação. Testes adicionados para limite, saldo de pontos e rollback. Nenhum reset ou mudança no banco. Paridade integral do motor e interface ainda não concluída.

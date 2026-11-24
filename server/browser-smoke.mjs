@@ -44,6 +44,11 @@ try{
  assert.equal(await page.locator('.bag56').count(),1);
  await page.locator('[data-tab=talent]').click();
  await page.locator('[data-path61]').first().waitFor();
+ await page.locator('[data-tfilter62=passive]').click();
+ await page.locator('[data-node62]').first().click();
+ await page.locator('.codex62-detail h3').waitFor();
+ assert.match(await page.locator('.codex62-detail').innerText(),/Requisitos/);
+ await page.locator('[data-tfilter62=all]').click();
  await page.locator('[data-tab=market]').click();
  await page.locator('#listing').waitFor();
  await page.locator('[data-tab=ranking]').click();
