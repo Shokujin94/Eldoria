@@ -2,6 +2,7 @@
 (()=>{
 'use strict';
 let effect=null;
+const choose45=choose;choose=function(...args){const r=choose45(...args);window.eldoria45RestoreUI?.();return r;};
 const xp0=gainXP;gainXP=function(n){
  const owner=state,before=state.level,result=xp0(n);
  if(state!==owner||!state.cls||state.level<=before||suppress||catchingUp||document.hidden)return result;
