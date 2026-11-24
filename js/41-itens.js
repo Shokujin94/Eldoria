@@ -94,11 +94,15 @@ const info0=itemInfo;itemInfo=function(it){
  }).join('');
  const u=m.power,p=u&&powers[u.key];
  return '<div class="loot41-meta"><b>iLvl '+m.level+'</b><span>Nv. '+m.required+' · '+esc(ZONES[it.tier].name)+' · '+esc(it.crafted?'Forja':sourceNames[m.source]||'Regional')+'</span></div>'+base+
- '<section class="loot41-rolls"><h4>Faixas originais · ◆ Afixo</h4><div class="loot41-row loot41-label"><span>Atributo</span><b>Valor</b><small>Faixa</small><i></i></div>'+rows+'<small>Valores antes de aprimoramentos, refinamento e runas.</small></section>'+
+ '<section class="loot41-rolls"><h4>Rolagens base · ◆ Afixo adicional</h4><div class="loot41-row loot41-label"><span>Atributo</span><b>Valor</b><small>Faixa</small><i></i></div>'+rows+'<small>Valores antes de aprimoramentos, refinamento e runas.</small></section>'+
  (p&&Number.isFinite(u.value)?'<div class="loot41-power"><b>✦ '+p.name+'</b><p>'+esc(p.desc(u.value))+'</p><small>Faixa: '+p.min+'–'+p.max+(u.key==='pact'?' p.p.':'%')+' · não acumula com o mesmo poder.</small></div>':'');
 };
 const atlas0=atlasLoot;atlasLoot=function(z,mode,id){const [lo,hi]=sourceRange(z,mode,id);return '<p class="loot41-atlas"><b>Nível de equipamento: '+lo+'–'+hi+'</b> · Atributos variam com nível, raridade e qualidade. Afixos de 0 a 4.</p>'+atlas0(z,mode,id);};
 const craft0=craftPanel10;craftPanel10=function(){const [lo,hi]=sourceRange(craftZone10,'forge');return craft0().replace('</h3>','</h3><p class="loot41-atlas">Nível de equipamento: <b>'+lo+'–'+hi+'</b> · atributos e afixos são sorteados na fabricação.</p>');};
+ATTR.str[1]='Força: 0,84 de dano base por ponto para o Guerreiro; 0,55 como secundário. Também aumenta o multiplicador crítico.';
+ATTR.dex[1]='Destreza: 0,84 de dano base por ponto para o Arqueiro; 0,35 como secundário. Melhora crítico, esquiva e chance de ataque extra.';
+ATTR.int[1]='Inteligência: 0,84 de dano base por ponto para Mago e Necromante; 0,35 como secundário. Melhora mana, habilidades e poder dos lacaios.';
+ATTR.wis[1]='Sabedoria: 0,84 de dano base por ponto para o Clérigo; 0,25 como secundário. Melhora cura, mana e poder dos lacaios.';
 const attr0=attrTable;attrTable=function(){const s=stats(),p=window.eldoria41DamageParts(s.a),fmt=n=>Number(n.toFixed(1)).toLocaleString('pt-BR');return attr0()+'<section class="loot41-breakdown"><h3>Composição do dano base</h3><div><span>Nível e base</span><b>'+fmt(p.level)+'</b><span>'+ATTR[C().main][0]+' (principal)</span><b>'+fmt(p.primary)+'</b><span>Atributos secundários</span><b>'+fmt(p.secondary)+'</b><span>Dano dos equipamentos</span><b>'+fmt(p.gear)+'</b></div><p>Dano médio final: <b>'+fmt(s.dmg)+'</b>. Maestria, talentos, buffs e ajustes de vocação são aplicados sobre a base; crítico, resistência e poderes condicionais são calculados no acerto.</p></section>';};
 // Expose pure generation helpers for balancing and reproducible tests, not for save mutation.
 window.eldoria41Loot=Object.freeze({regionRange,sourceRange,generate,affixCount:Object.freeze([...affixCount])});
