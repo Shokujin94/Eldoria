@@ -38,8 +38,32 @@ function disk(method,path,body){if(!diskToken||location.origin!=='http://127.0.0
 const browserRead=window.eldoria26ReadSave;window.eldoria26ReadSave=function(){const a=browserRead(),b=disk('GET','/save');return valid(b)&&(!a||b.savedAt>=a.savedAt)?b:a;};
 const browserSave=save;save=function(){const local=browserSave();if(!state.cls||!diskToken)return local;const result=disk('POST','/save',JSON.stringify(state));if(result?.ok){status('Progresso salvo em disco · verificado');return true;}if(!local)status('Falha de armazenamento · exporte o save');else status('Salvo no navegador · disco indisponível');return local;};
 window.eldoria28ResetDisk=()=>disk('POST','/reset','{}');
-// One-time cleanup of the old season, only after the new build is loaded.
-window.eldoria42SeasonReset=function(){let reset=false;try{for(const k of ['eldoria-idle-v023','eldoria-idle-v023-backup','eldoria-autosave-v023','eldoria-idle-v042','eldoria-idle-v042-backup']){if(localStorage.getItem(k)!==null){reset=true;localStorage.removeItem(k);}}}catch(e){console.warn('Limpeza de saves antigos indisponível',e);}const previous=disk('GET','/save');if(previous&&previous.revision45!==1){reset=true;disk('POST','/reset','{}');}return reset;};
+// Reset character data once, preserving only presentation preferences.
+const uiKey45='eldoria-ui-migration-043';
+function keepUI45(p){
+ if(!p||typeof p!=='object')return;
+ const out={ui19:true};
+ for(const k of ['target','damage','compact','labels12','detail12'])if(typeof p[k]==='boolean')out[k]=p[k];
+ for(const [k,min,max] of [['scale',50,150],['opacity12',20,100],['zoom12',.55,2]])if(Number.isFinite(p[k]))out[k]=clamp(p[k],min,max);
+ if(['left','right'].includes(p.side))out.side=p.side;
+ if(p.hud14&&typeof p.hud14==='object'){
+  out.hud14={...hudDefaults14,positions:{}};
+  for(const id of ['hero','auto','log']){if(typeof p.hud14[id]==='boolean')out.hud14[id]=p.hud14[id];const q=p.hud14.positions?.[id];if(q&&Number.isFinite(q.x)&&Number.isFinite(q.y))out.hud14.positions[id]={x:q.x,y:q.y};}
+ }
+ const ef=p.effects36;if(ef&&Number.isFinite(ef.x)&&Number.isFinite(ef.y))out.effects36={x:clamp(ef.x,0,1),y:clamp(ef.y,0,1)};
+ try{localStorage.setItem(uiKey45,JSON.stringify(out));}catch{}
+}
+window.eldoria42SeasonReset=function(){
+ let reset=false;
+ try{
+  if(!read(KEY))for(const k of ['eldoria-idle-v042','eldoria-idle-v042-backup','eldoria-idle-v023']){let d=null;try{d=JSON.parse(localStorage.getItem(k)||'null');}catch{}if(d?.profile){keepUI45(d.profile);break;}}
+  for(const k of ['eldoria-idle-v023','eldoria-idle-v023-backup','eldoria-autosave-v023','eldoria-idle-v042','eldoria-idle-v042-backup'])if(localStorage.getItem(k)!==null){reset=true;localStorage.removeItem(k);}
+ }catch(e){console.warn('Limpeza de saves antigos indisponível',e);}
+ const previous=disk('GET','/save');if(previous&&previous.revision45!==1){if(!read(KEY)&&previous.profile){try{if(!localStorage.getItem(uiKey45))keepUI45(previous.profile);}catch{}}reset=true;disk('POST','/reset','{}');}return reset;
+};
+window.eldoria45RestoreUI=function(){
+ try{const p=JSON.parse(localStorage.getItem(uiKey45)||'null');if(!p||!state.cls)return;ensure11();Object.assign(state.profile,p);zoom=state.profile.zoom12??zoom;place14();render();if(save())localStorage.removeItem(uiKey45);}catch(e){console.warn('Preferências de interface indisponíveis',e);}
+};
 const oldRestore=restore;restore=function(){const d=window.eldoria26ReadSave();if(d?.position28&&Number.isFinite(d.position28.x)&&Number.isFinite(d.position28.y)){pos={x:d.position28.x,y:d.position28.y};const f=d.position28.foe;foe11=f&&Number.isFinite(f.x)&&Number.isFinite(f.y)?f:null;}return oldRestore();};
 // Replace legacy import listener to validate before committing. Export is portable across paths/origins.
 const oldInput=$('import17file');if(oldInput){const input=oldInput.cloneNode();oldInput.replaceWith(input);$('import17').onclick=()=>input.click();input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{const d=JSON.parse(await f.text());if(d?.revision45!==1)throw Error('Save anterior à atualização 0.43.0. Crie um novo personagem.');if(!valid(d))throw Error('Save inválido');if(!confirm('Substituir o personagem atual pelo arquivo importado?'))return;const previous=state;try{state=d;state.active=false;state.pending11=[];normalizeWorld();lastMode='';dest=null;pos={x:400,y:300};foe11=null;render();if(!save())status('Importado nesta sessão · exporte antes de fechar');else status('Save importado e verificado');}catch(e){state=previous;render();throw e;}}catch(e){status('Importação recusada: '+e.message);}finally{input.value='';}};}
