@@ -71,7 +71,7 @@ const item0=item;item=function(...args){
  const it=item0(...args);if(it.relic!==null||!ZONES[it.tier]||!slotBase[it.slot])return it;
  const data=generate(it,lootMode,state.enemy);it.baseMods=data.baseMods;delete data.baseMods;it.loot41=data;return rebuildItem(it);
 };
-function meta(it){const m=it?.loot41;return m&&Number.isInteger(m.level)&&m.level>=1&&m.level<=100&&m.ranges&&Array.isArray(m.affixes)?m:null;}
+function meta(it){const m=it?.loot41;return m&&Number.isInteger(m.level)&&m.level>=1&&m.level<=100&&m.required===m.level&&m.ranges&&Array.isArray(m.affixes)?m:null;}
 const req0=reqItem;reqItem=function(it){const r=req0(it),m=meta(it);if(!m)return r;return {...r,level:m.required,value:Math.min(Math.round(3+m.level*(r.key==='vit'?.36:.49)+it.rarity*.5),Math.floor((m.level-1)*.65)+5)};};
 function bestPower(eq,key){let best=0;const p=powers[key];for(const id of Object.values(eq||{})){const it=state.inventory.find(x=>x.id===id),a=meta(it)?.power;if(a?.key===key&&Number.isInteger(a.value)&&a.value>=p.min&&a.value<=p.max)best=Math.max(best,a.value);}return best;}
 const stats0=stats;stats=function(eq=state.equipment){const s=stats0(eq);if(state.cls==='necro')s.necroPower=Math.min(.60,s.necroPower+bestPower(eq,'pact')/100);return s;};
@@ -99,6 +99,7 @@ const info0=itemInfo;itemInfo=function(it){
 };
 const atlas0=atlasLoot;atlasLoot=function(z,mode,id){const [lo,hi]=sourceRange(z,mode,id);return '<p class="loot41-atlas"><b>Nível de equipamento: '+lo+'–'+hi+'</b> · Atributos variam com nível, raridade e qualidade. Afixos de 0 a 4.</p>'+atlas0(z,mode,id);};
 const craft0=craftPanel10;craftPanel10=function(){const [lo,hi]=sourceRange(craftZone10,'forge');return craft0().replace('</h3>','</h3><p class="loot41-atlas">Nível de equipamento: <b>'+lo+'–'+hi+'</b> · atributos e afixos são sorteados na fabricação.</p>');};
+const attr0=attrTable;attrTable=function(){const s=stats(),p=window.eldoria41DamageParts(s.a),fmt=n=>Number(n.toFixed(1)).toLocaleString('pt-BR');return attr0()+'<section class="loot41-breakdown"><h3>Composição do dano base</h3><div><span>Nível e base</span><b>'+fmt(p.level)+'</b><span>'+ATTR[C().main][0]+' (principal)</span><b>'+fmt(p.primary)+'</b><span>Atributos secundários</span><b>'+fmt(p.secondary)+'</b><span>Dano dos equipamentos</span><b>'+fmt(p.gear)+'</b></div><p>Dano médio final: <b>'+fmt(s.dmg)+'</b>. Maestria, talentos, buffs e ajustes de vocação são aplicados sobre a base; crítico, resistência e poderes condicionais são calculados no acerto.</p></section>';};
 // Expose pure generation helpers for balancing and reproducible tests, not for save mutation.
 window.eldoria41Loot=Object.freeze({regionRange,sourceRange,generate,affixCount:Object.freeze([...affixCount])});
 })();
