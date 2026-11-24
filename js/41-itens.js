@@ -23,7 +23,7 @@ const powers={
  ward:{name:'Última Vigília',min:5,max:8,desc:v=>'Reduz em '+v+'% o dano direto recebido enquanto seu PV estiver abaixo de 40%.'},
  resonance:{name:'Ressonância Arcana',min:5,max:9,desc:v=>'+'+v+'% de dano direto de habilidades enquanto tiver ao menos 60% de mana.'},
  harvest:{name:'Colheita Vital',min:1,max:2,desc:v=>'Recupera '+v+'% do PV máximo ao derrotar um inimigo em combate.'},
- pact:{name:'Pacto Sepulcral',min:2,max:4,desc:v=>'+'+v+' pontos percentuais de poder dos lacaios do Necromante (limite total de 60%).'}
+ pact:{name:'Pacto Sepulcral',min:2,max:4,desc:v=>'+'+v+' pontos percentuais de poder dos lacaios do Necromante (limite total de 44%).'}
 };
 function regionRange(z){const a=ZONES[z]?.level||1,b=ZONES[z+1]?.level;return [a,b?b-1:a+9];}
 function sourceRange(z,mode,id){
@@ -78,7 +78,7 @@ const slotBudget45={weapon:10,offhand:7,armor:9,head:6,legs:6,hands:5,feet:5,rin
 function itemPower45(it){
  if(!it)return 0;
  const raw=it.baseMods||it.mods||{},budget=slotBudget45[it.slot]||7;
- const sum=Object.entries(raw).reduce((n,[k,v])=>n+(Number.isFinite(v)?Math.max(0,v)*(powerWeights45[k]||1):0),0);
+ const sum=Object.entries(raw).reduce((n,[k,v])=>n+(Number.isFinite(v)?window.eldoria49Model.itemMod(k,v,it.name.includes('de aprendiz'))*(powerWeights45[k]||1):0),0);
  return Math.max(1,Math.round(10*sum/budget));
 }
 window.eldoria45ItemPower=itemPower45;
@@ -115,7 +115,7 @@ function compactInfo42(it,expanded=false){
  const num=n=>Number(n).toLocaleString('pt-BR',{maximumFractionDigits:2});
  const short={hp:'Vida máxima',crit:'Crítico (p.p.)',skill:'Maestria',mana:'Mana máxima',regen:'Mana/s',haste:'Ataque extra (p.p.)',tenacity:'Tenacidade (p.p.)'};
  const rows=Object.entries(it.mods).map(([k,n])=>{
-  const r=m?.ranges?.[k],base=it.baseMods?.[k],range=Array.isArray(r)&&r.length===2?'['+num(r[0])+'–'+num(r[1])+']':'',affix=m?.affixes?.includes(k);
+  const r=m?.ranges?.[k],starter=it.name.includes('de aprendiz'),eff=v=>window.eldoria49Model.itemMod(k,v,starter),base=it.baseMods?.[k]===undefined?undefined:eff(it.baseMods[k]),range=Array.isArray(r)&&r.length===2?'['+num(eff(r[0]))+'–'+num(eff(r[1]))+']':'',affix=m?.affixes?.includes(k);
   return '<div class="it42-row"><span>'+(affix?'<i class="it42-affix" title="Afixo adicional">◆</i> ':'')+esc(short[k]||modNames[k]||k)+'</span><b>+'+num(n)+'</b><small>'+(range?(Number.isFinite(base)&&base!==n?'base '+num(base)+' ':'')+range:'')+'</small></div>';
  }).join('');
  const u=m?.power,p=u&&powers[u.key],effects=[];
