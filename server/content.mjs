@@ -89,3 +89,7 @@ export const craftOdds=[[70,24,5,.9,.1],[45,38,14,2.7,.3],[20,38,33,8,1],[8,22,4
 export function recipe(slot,z,grades={}){const kind=['weapon','offhand','head','armor','legs'].includes(slot)?'mining':['feet','hands'].includes(slot)?'wood':'herb',parts=[['mob',5],[kind,4],[kind==='mining'?'wood':'mining',2]],req={};let score=0,price=0;
  for(const [k,n] of parts){const r=grades[k]??0;if(!Number.isInteger(r)||r<0||r>4)throw RangeError('Qualidade inválida');req[k+':'+z+':'+r]=n;score+=r*n;price+=materialPrice[r]*n;}
  const quality=score/11,lo=Math.floor(quality),hi=Math.min(4,lo+1),t=quality-lo;if(lo>=2)req['boss:'+z]=lo-1;return {req,quality,cost:Math.ceil(40*(z+1)*price/11),odds:craftOdds[lo].map((v,i)=>v+(craftOdds[hi][i]-v)*t)};}
+
+export const creatureCatalog=names.flatMap((row,z)=>[...row.map((name,index)=>({key:z+':'+index,name,z,index,boss:false})),{key:'boss:'+z,name:bossNames[z],z,index:4,boss:true}]);
+export function materialSale(key){if(typeof key!=='string')return 0;const m=/^(mob|mining|wood|herb):([0-9]):([0-4])$/.exec(key);if(m)return (+m[2]+1)*(m[1]==='mob'&&+m[2]<3?[2,5,12,35,95]:[3,7,17,45,120])[+m[3]];const b=/^boss:([0-9])$/.exec(key);return b?90*(+b[1]+1):0;}
+export function masteryBonus(n){return Math.min(.035,Math.floor((n||0)/1000)*.005);}

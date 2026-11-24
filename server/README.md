@@ -56,3 +56,6 @@ O script de backup agora preserva caminhos Linux no Git Bash e verifica o SHA-25
 
 ## 0.47.0 — servidor doméstico compartilhado
 Modo opcional Cloudflare Quick Tunnel (temporário), porta local mantida em loopback, origem pública exata e cabeçalho de IP confiável apenas do peer Docker configurado. Scripts share-start/status/stop, backup antes de abrir, registro aberto por padrão. Não há provisionamento externo nem garantia de disponibilidade/capacidade. Consulte docs/HOST-PC.md. Teste HTTP cobre cadastro sem convite e rejeição de origem diferente; túnel real requer Docker Desktop e internet do operador.
+
+## 0.47.1 — inventário, mercadora e maestria
+Inventário separado, proteção persistente contra venda/desmantelamento/craft/mercado, venda de itens e materiais com preços originais, compra de runas, reset de atributos e treino sem XP de personagem, ouro ou loot. Treino segue a curva de maestria do servidor. Bestiário com 60 entradas, marcos originais e dano adicional por espécie até 3,5%; contadores começam a partir desta versão, não inferem espécies de abates históricos. Rotação automática ou personalizada de até seis habilidades aprendidas. Ações validadas no servidor, sem reset. Depósito, juramentos, expedições avançadas, regras de loot, eventos, legado e fidelidade de janelas/IA ainda pendentes. Hospedagem no PC continua por túnel com cadastro aberto.

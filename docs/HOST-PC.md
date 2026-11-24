@@ -8,3 +8,6 @@ Abra Docker Desktop, Git Bash e execute na pasta Eldoria-Online: `docker compose
 Mantenha Windows e Docker atualizados, não compartilhe senhas/backups, não publique outros serviços. Enquanto o computador estiver desligado, suspenso, sem internet ou Docker parado, ninguém consegue jogar. O progresso offline segue as regras e limites do servidor. Abertura pública permite cadastro a qualquer pessoa que encontre o endereço; há limites de requisições e autenticação, mas ainda não há moderação completa ou mitigação de abuso suficiente para grande lançamento. Teste inicialmente com poucos jogadores. Não há garantia de capacidade baseada no teste CI. Um domínio próprio e túnel nomeado são alternativas posteriores para endereço permanente, ainda usando o PC como servidor.
 
 Para atualizar a imagem antes do compartilhamento, execute `bash scripts/beta-update.sh` com o jogo local ativo. O campo de convite fica oculto quando o cadastro é aberto.
+
+### Atualizar sem perder progresso
+Se estiver compartilhando o jogo, avise os jogadores e execute `bash scripts/share-stop.sh`, depois `bash scripts/beta-update.sh` e por fim `bash scripts/share-start.sh`. O link temporário muda. Não use `docker compose down -v`.
