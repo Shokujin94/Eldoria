@@ -86,6 +86,17 @@ const impact0=impact11;impact11=function(side,n,crit,cast,s){
 const win0=win;win=function(...args){const eligible=state.cls&&['hunt','dungeon','boss'].includes(state.mode),bonus=eligible?bestPower(state.equipment,'harvest'):0,owner=state;const r=win0(...args);if(bonus&&state===owner&&state.hp>0&&['hunt','dungeon','boss'].includes(state.mode)){const h=stats().h;state.hp=Math.min(h,state.hp+Math.round(h*bonus/100));}return r;};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sourceNames={hunt:'Caçada',dungeon:'Dungeon',boss:'Chefe',forge:'Forja'};
+// Compare actual final character statistics, not only the values printed on a piece.
+comparison=function(it){
+ if(!it||state.equipment[it.slot]===it.id)return '';
+ if(!state.inventory.some(x=>x.id===it.id))return '<div class="rune-line">Retire o item do depósito para simular a troca.</div>';
+ if(!canEquip(it))return '<div class="rune-line">Comparação indisponível: requisitos de uso não atendidos.</div>';
+ const a=stats(),b=stats({...state.equipment,[it.slot]:it.id}),fmt=n=>Number(n.toFixed(2)).toLocaleString('pt-BR');
+ const rows=[['Dano médio','dmg',1],['Defesa','def',1],['PV','h',1],['Mana','mana',1],['Crítico','crit',100],['Dano crítico','critMult',1],['Esquiva','dodge',100],['Ataque extra','haste',100],['Redução','reduction',100],['Tenacidade','tenacity',100],['Poder de habilidade','special',1],['Cura','heal',100],['Mana/s','manaRegen',1]];
+ if(state.cls==='necro')rows.push(['Poder dos lacaios','necroPower',100]);
+ const html=rows.map(([label,key,f])=>[label,(b[key]-a[key])*f,f===100?' p.p.':'']).filter(([,d])=>Number.isFinite(d)&&Math.abs(d)>=.005).map(([label,d,u])=>'<span style="color:'+(d>0?'#a9d7ad':'#e38d84')+'">'+label+' '+(d>0?'+':'')+fmt(d)+u+'</span>').join(' · ');
+ return '<div class="rune-line"><b>Se equipar esta peça</b><br>'+(html||'Sem alteração nas estatísticas principais.')+'<br><small>Efeitos condicionais de acerto são descritos separadamente.</small></div>';
+};
 const info0=itemInfo;itemInfo=function(it){
  const m=meta(it),base=info0(it);if(!m)return base+'<div class="loot41-legacy">Equipamento anterior à 0.41 · valores preservados'+(it.relic!==null?' · Relíquia exclusiva':'')+'</div>';
  const rows=Object.entries(m.ranges).filter(([k,r])=>Array.isArray(r)&&r.length===2&&r.every(Number.isFinite)&&Number.isFinite(it.baseMods?.[k])).map(([k,[min,max]])=>{
