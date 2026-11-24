@@ -86,6 +86,38 @@ window.eldoria40DrawServant=function(a,p,now){
  const guardAge=now-(a.guardFlash40??-1e9);if(guardAge>=0&&guardAge<500){ctx.save();ctx.strokeStyle=r.color;ctx.globalAlpha=1-guardAge/500;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(pos.x,pos.y-25,23,33,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
  return true;
 };
+
+// Keep the last visible position of each invocation, independently of its gameplay lifetime.
+const smoke40=[],lastServants41=new Map();let smokeOwner41=null,smokeMap41='';
+function clearSmoke41(){lastServants41.clear();smoke40.length=0;smokeOwner41=null;smokeMap41='';}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearSmoke41();});
+function spawnSmoke41(p,now){
+ const motes=Array.from({length:12},(_,i)=>({dx:Math.sin(i*2.39)*(.25+i*.055),dy:Math.cos(i*1.9)*.26,r:.15+(i%4)*.035,delay:(i%5)*.045}));
+ smoke40.push({...p,t:now,motes});if(smoke40.length>12)smoke40.shift();
+}
+function updateSmoke41(now){
+ const area=state.mode+':'+state.zone;
+ if(smokeOwner41!==state||smokeMap41!==area||!live()){clearSmoke41();smokeOwner41=state;smokeMap41=area;}
+ if(!live()||state.cls!=='necro'||!['hunt','boss','dungeon','trial'].includes(state.mode))return;
+ const list=state.active?(state.necro30?.servants||[]):[],current=new Set(list);
+ for(const [a,p] of lastServants41)if(!current.has(a)){if(state.active)spawnSmoke41(p,now);lastServants41.delete(a);}
+ list.forEach((a,i)=>{const p=window.eldoria36Minions.position(a,i,now);lastServants41.set(a,{x:p.x,y:p.y,h:(state.mode==='hunt'?72:111.6)*window.ELDORIA_CONFIG.visual.servantScale});});
+ for(let i=smoke40.length-1;i>=0;i--){
+  const f=smoke40[i],t=(now-f.t)/850;if(t>=1||t<0){smoke40.splice(i,1);continue;}
+  if(f.x<cam.x-150||f.x>cam.x+cam.w+150)continue;
+  actor23((c,x,y)=>{c.save();try{
+   c.translate(x,y+11);const h=f.h;
+   for(const m of f.motes){
+    const u=Math.max(0,(t-m.delay)/(1-m.delay)),alpha=Math.sin(Math.PI*Math.min(1,u+.12))*(1-u)*.60;if(alpha<=0)continue;
+    const px=m.dx*h*(.3+u),py=-h*(.15+m.dy*.65+u*.85),r=h*m.r*(.65+u*1.25);
+    const g=c.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(165,240,170,'+(alpha*.80)+')');g.addColorStop(.45,'rgba(78,179,104,'+alpha+')');g.addColorStop(1,'rgba(34,96,55,0)');c.fillStyle=g;c.beginPath();c.arc(px,py,r,0,Math.PI*2);c.fill();
+   }
+   c.fillStyle='#b6f4ae';c.globalAlpha=(1-t)*.7;for(let j=0;j<7;j++){const a=j*2.39;c.fillRect(Math.cos(a)*h*.32*t,-h*(.25+.72*t)+Math.sin(a)*h*.16,1.5,1.5);}
+  }finally{c.restore();}},f.x,f.y);
+ }
+}
+const actors41=renderActors23;renderActors23=function(now,fixed){actors41(now,fixed);updateSmoke41(now);};
+
 // The normal verified save remains the single source of truth.
 window.eldoria40QuickSave=function(){if(!state.cls||!window.eldoriaBoot251?.ready)return false;advance();return !!save();};
 const nav=document.querySelector('.quicknav'),button=document.createElement('button');button.type='button';button.className='direct14 quick40-save';button.title='Salvar progresso imediatamente';button.innerHTML='<span class="navicon" aria-hidden="true">▣</span><span class="navtext">Salvar</span>';button.setAttribute('aria-label','Quick save: salvar progresso');
