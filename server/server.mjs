@@ -2,9 +2,13 @@ import {createServer} from 'node:http';
 import {DatabaseSync} from 'node:sqlite';
 import {randomBytes,randomUUID,scrypt as derive,timingSafeEqual,createHash} from 'node:crypto';
 import {promisify} from 'node:util';
+import {readFileSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
 import {schema,game,Fault} from './game.mjs';
 const scrypt=promisify(derive),db=new DatabaseSync(process.env.DB_PATH||'eldoria.sqlite');schema(db);const g=game(db);
-const origins=new Set((process.env.ALLOWED_ORIGINS||'http://localhost:8000,http://127.0.0.1:8000').split(',').map(s=>s.trim()).filter(Boolean));
+const origins=new Set((process.env.ALLOWED_ORIGINS||'http://localhost:8000,http://127.0.0.1:8000,http://localhost:8787,http://127.0.0.1:8787').split(',').map(s=>s.trim()).filter(Boolean));
+const staticFiles=new Map([['/',['../index.html','text/html; charset=utf-8']],['/index.html',['../index.html','text/html; charset=utf-8']],['/css/online51.css',['../css/online51.css','text/css; charset=utf-8']],['/js/51-online.js',['../js/51-online.js','text/javascript; charset=utf-8']],['/version.json',['../version.json','application/json; charset=utf-8']]]);
+const staticEnabled=process.env.SERVE_PREVIEW==='1';
 const hash=s=>createHash('sha256').update(s).digest('hex'),age=7*86400000,buckets=new Map();
 function fail(status,message){throw new Fault(status,message);}
 function rate(key,max,ms){const now=Date.now(),v=buckets.get(key);if(!v||v.until<now){if(buckets.size>=10000)fail(429,'Servidor ocupado.');buckets.set(key,{n:1,until:now+ms});}else if(++v.n>max)fail(429,'Muitas tentativas.');}
@@ -16,6 +20,8 @@ const background=setInterval(()=>{try{g.tickBatch(10);}catch(e){console.error('T
 const server=createServer(async(req,res)=>{const origin=req.headers.origin;res.setHeader('Vary','Origin');res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');const reply=(code,v)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(v));};
  try{if(origin&&!origins.has(origin))fail(403,'Origem não autorizada.');if(origin){res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');}if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
  const url=new URL(req.url,'http://localhost'),path=url.pathname,method=req.method,ip=req.socket.remoteAddress||'unknown';if(path==='/health'&&method==='GET')return reply(200,{ok:true,mode:'online-preview'});
+ if(staticEnabled&&method==='GET'&&path==='/config/conteudo.js'){const version=JSON.parse(readFileSync(new URL('../version.json',import.meta.url),'utf8')).version;res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8'});res.end('window.ELDORIA_CONFIG={versao:'+JSON.stringify(version)+',onlineApi:window.location.origin};');return;}
+ if(staticEnabled&&method==='GET'&&staticFiles.has(path)){const [file,type]=staticFiles.get(path);res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");res.writeHead(200,{'Content-Type':type});res.end(readFileSync(fileURLToPath(new URL(file,import.meta.url))));return;}
  rate('ip:'+ip,600,60000);
  if(method==='POST'&&['/auth/register','/auth/login'].includes(path)){
   rate('auth:'+ip,12,60000);const p=await body(req),u=typeof p.username==='string'?p.username.trim().toLowerCase():'',pw=p.password;if(!/^[a-z0-9_]{3,24}$/.test(u)||typeof pw!=='string'||pw.length<12||pw.length>128)fail(400,'Usuário: 3–24 letras, números ou _. Senha: 12–128 caracteres.');rate('user:'+u,10,300000);
@@ -34,4 +40,4 @@ const server=createServer(async(req,res)=>{const origin=req.headers.origin;res.s
  }catch(e){if(!(e instanceof Fault))console.error('Erro interno:',e.code||e.name);if(!res.headersSent)reply(e instanceof Fault?e.status:500,{error:e instanceof Fault?e.message:'Erro interno.'});else res.end();}
 });
 for(const signal of ['SIGTERM','SIGINT'])process.once(signal,()=>{clearInterval(background);server.close(()=>{db.close();process.exit(0);});setTimeout(()=>process.exit(1),10000).unref();});
-server.requestTimeout=15000;server.headersTimeout=10000;server.listen(Number(process.env.PORT||8787),process.env.HOST||'127.0.0.1',()=>console.log('Eldoria online API'));
+server.requestTimeout=15000;server.headersTimeout=10000;server.listen(Number(process.env.PORT||8787),process.env.HOST||'127.0.0.1',()=>console.log('Eldoria online API '+server.address().port));

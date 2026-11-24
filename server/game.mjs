@@ -61,7 +61,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   a.enemyHp=Math.max(0,a.enemyHp-dmg);
   if(a.enemyHp>0){s.hp-=Math.max(1,Math.round(e.atk*(1-balance.armor(st.def,a.z))));if(s.hp<=0){s.deaths=(s.deaths||0)+1;s.hp=st.hp;s.activity=null;s.lastEvent='Derrota · retorno a Vespera.';}return;}
   s.kills++;const levelUp=earnXP(s,e.xp);credit(id,e.gold);s.skill??=1;s.skillXp??=0;s.skillXp+=boss?5:2;while(s.skill<100&&s.skillXp>=Math.round((12+s.skill*3)*1.2)){s.skillXp-=Math.round((12+s.skill*3)*1.2);s.skill++;}if(s.skill===100)s.skillXp=0;
-  if(boss)mat(s,'boss:'+a.z,1);else if(random()<.8)mat(s,'mob:'+a.z+':'+content.rollOdds([82,15,2.7,.28,.02],random),1);
+  if(boss)mat(s,'boss:'+a.z,1);else if(random()<.8)mat(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random),1);
   const source=boss?a.mode:'hunt';let found=false;if((boss||random()<content.dropRates[a.index])&&count(id)<120){const rarity=content.rollOdds(source==='boss'?content.bossOdds:source==='dungeon'?content.dungeonOdds:content.monsterOdds[a.index],random),slot=Object.keys(slots)[Math.floor(random()*9)];issue(id,slot,a.z,a.index,rarity,source);found=true;}
   const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.');
   if(a.mode==='boss')s.bosses=(s.bosses||0)+1;else if(a.mode==='dungeon'){if(a.wave===4){s.dungeons=(s.dungeons||0)+1;a.wave=1;a.floorKills=0;s.lastEvent='Dungeon concluída · '+s.lastEvent;}else if(++a.floorKills===3){a.wave++;a.floorKills=0;}}
@@ -71,7 +71,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   if(!s.activity){s.hp=Math.min(stats(id,r,s).hp,s.hp+Math.floor(Math.max(0,now-s.last)/1000)*2);s.last=Math.max(s.last,now);persist(id,s);return s;}
   const {mode,z,prof}=s.activity,interval=mode==='gather'?6000:1000;
   const elapsed=Math.max(0,now-s.last);let n=Math.floor(Math.min(7_200_000,elapsed)/interval);if(n<1)return s;
-  s.last=now-(elapsed%interval);
+  s.last=Math.max(s.last,now-(elapsed%interval));
   for(let j=0;j<n&&s.activity;j++){
    if(mode==='gather'){const p=s.prof[prof],rar=content.rollOdds([65,27,7,.9,.1],random);mat(s,prof+':'+z+':'+rar,1);p.total++;p.xp+=craft.gatherXP(p.level,z);while(p.level<100&&p.xp>=20+p.level*12){p.xp-=20+p.level*12;p.level++;}if(p.level===100)p.xp=0;s.lastEvent='+1 recurso · '+profs[prof];}
    else combatTick(id,r,s);

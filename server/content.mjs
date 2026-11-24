@@ -8,6 +8,7 @@ const bossNames=['Aldren, o Coração das Raízes','Odran, Rei do Juramento Part
 export const xpNeed=l=>Math.round(62+22*l+11*l*l+14*l**1.55+Math.max(0,l-100)**2*14);
 export const dropRates=[.055,.07,.085,.105,.13];
 export const monsterOdds=[[86,12,1.85,.14,.01],[82,15,2.7,.28,.02],[77,18,4.4,.55,.05],[71,22,6.2,.72,.08],[66,25,7.8,1.08,.12]];
+export const materialOdds=[[65,27,7,.9,.1],[55,30,12,2.7,.3],[47,32,16,4.5,.5],[38,34,20,7,1],[28,35,25,10,2]];
 export const dungeonOdds=[38,38,20,3.8,.2],bossOdds=[48,34,15,2.85,.15];
 export function rollOdds(odds,rng){let n=rng()*100;for(let i=0;i<odds.length;i++){n-=odds[i];if(n<0)return i;}return odds.length-1;}
 function baseEnemy(z,i){const l=1+10*z;return {name:names[z][i],hp:Math.round((36+8.5*(l-1)+1.40*(l-1)**1.38)*[1,1.23,1.48,1.82,2.10][i]*(1+z*.045)),atk:Math.round((7+1.83*(l-1)+.025*(l-1)**1.5)*[1,1.14,1.29,1.52,1.75][i]),xp:Math.round((12+3.7*(l-1)+.19*(l-1)**1.5)*[1,1.16,1.35,1.56,1.83][i]),gold:Math.round((5+.52*(l-1))*[1,1.15,1.3,1.5,1.75][i])};}
