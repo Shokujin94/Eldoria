@@ -2,7 +2,8 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8787 DB_PATH=/data/eldoria.sqlite
 COPY server/ ./server/
-COPY js/49-modelo.js js/50-oficios-modelo.js js/51-online.js ./js/
+COPY js/49-modelo.js js/50-oficios-modelo.js js/51-online.js js/52-scene-art.js js/52-scene.js ./js/
+COPY assets/ ./assets/
 COPY index.html version.json ./
 COPY css/online51.css ./css/
 ENV SERVE_PREVIEW=1
