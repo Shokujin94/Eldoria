@@ -16,5 +16,7 @@ cfg=out/'config/conteudo.js';cfg.write_text(re.sub(r"versao:\s*'[^']+'",f"versao
 # Images may be replaced by the editor without changing filenames. Bust their cache as well.
 for f in list((out/'js').glob('*.js'))+list((out/'css').glob('*.css'))+[idx,cfg]:
  s=f.read_text(encoding='utf-8');s=re.sub(r'(assets/(?:images|maps)/[\w.-]+\.(?:png|jpg|webp|gif))(?![\w?])',r'\1?v='+a.versao,s);f.write_text(s,encoding='utf-8')
-(out/'version.json').write_text(json.dumps({'version':a.versao})+'\n',encoding='utf-8')
+manifest=json.loads((root/'version.json').read_text(encoding='utf-8'))
+manifest['version']=a.versao
+(out/'version.json').write_text(json.dumps(manifest,ensure_ascii=False)+'\n',encoding='utf-8')
 print(f'Publicação {a.versao} preparada em {out}. Envie o conteúdo dessa pasta, não a pasta de saves.')
