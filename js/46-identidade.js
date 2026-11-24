@@ -29,7 +29,7 @@ window.eldoria46GatherSprite=function(c,x,y,kind,z,i,now){
  const hue=herbs[z];for(const [a,b] of [[-12,-17],[0,-26],[12,-20]]){poly('#35543a',[[0,0],[a-3,b],[a,b-4],[a+3,b],[2,0]]);poly('#72975c',[[0,-4],[a-11,b-2],[a-4,b+9],[0,-1]]);poly(hue,[[a-7,b],[a-6,b-7],[a,b-11],[a+6,b-7],[a+7,b],[a,b+3]]);c.fillStyle='#f4e4a2';c.fillRect(a-2,b-5,4,4);}
  }
  const target=Math.floor(profState10().total)%18===i&&state.active;
- if(target){c.strokeStyle='#e9dca3';c.globalAlpha=.45+.18*Math.sin(now/260);c.lineWidth=1.4;c.beginPath();c.ellipse(0,0,kind==='wood'?28:23,8,0,0,Math.PI*2);c.stroke();}
+ if(target){c.strokeStyle='#e9dca3';c.globalAlpha=.45+.18*Math.sin(now/260);c.lineWidth=1.4;c.beginPath();c.ellipse(0,0,kind==='wood'?28:23,8,0,0,Math.PI*2);c.stroke();c.globalAlpha=1;c.font='bold 10px system-ui';c.textAlign='center';c.lineWidth=3;c.strokeStyle='#111519';c.fillStyle='#f3e8c8';const label=PROF10[kind]?.resource[z]||PROF10[kind]?.name||'';c.strokeText(label,0,19);c.fillText(label,0,19);}
  }finally{c.restore();}
 };
 // Distinct active/passive interactions for the three base paths of each vocation.
@@ -59,8 +59,8 @@ const paths={
 const id46=(cl,i)=>'t33_'+cl+'_'+i+'_0',pct=v=>Number((v*100).toFixed(2)).toLocaleString('pt-BR')+'%';
 const amount=(p,r)=>p.effect==='lacaio'?1:p.base+p.per*r;
 function description(p,r){
- const v=amount(p,r);
- return p.name+': se '+p.condition+', '+({dano:'+'+pct(v)+' de dano direto da habilidade',defesa:'−'+pct(v)+' de dano direto recebido (passiva com técnica do caminho aprendida)',mana:'recupera '+pct(v)+' da mana máxima no acerto',cura:'cura adicional de '+pct(v)+' do PV máximo',dreno:'recupera '+pct(v)+' do dano direto efetivamente causado como PV',lacaio:'prolonga o lacaio com menor duração em 1 s (até '+(12+r)+' s)'})[p.effect]+'.';
+ const v=amount(p,Math.max(1,r));
+ return p.name+' (requer a passiva raiz do caminho): se '+p.condition+', '+({dano:'+'+pct(v)+' de dano direto da habilidade',defesa:'−'+pct(v)+' de dano direto recebido (passiva com técnica do caminho aprendida)',mana:'recupera '+pct(v)+' da mana máxima no acerto',cura:'cura adicional de '+pct(v)+' do PV máximo',dreno:'recupera '+pct(v)+' do dano direto efetivamente causado como PV',lacaio:'prolonga o lacaio com menor duração em 1 s (até '+(12+r)+' s)'})[p.effect]+'.';
 }
 const nodes0=nodes;nodes=function(){return nodes0().map((arr,i)=>arr.map(n=>{
  const p=paths[state.cls]?.[i];if(!p||n.id!==id46(state.cls,i))return n;
@@ -70,10 +70,10 @@ function pathIndex(id){return window.eldoria33?.trees?.[state.cls]?.base?.findIn
 const skill0=skillDescription;skillDescription=function(k){const p=paths[state.cls]?.[pathIndex(k.id)];if(!p||k.buff13||p.effect==='defesa')return skill0(k);return skill0(k)+' · '+description(p,rank(id46(state.cls,pathIndex(k.id))));};
 let memory={owner:null,element:null};
 const spawn0=spawn;spawn=function(...args){memory={owner:state,element:null};return spawn0(...args);};
-function context(s,cast){if(memory.owner!==state)memory={owner:state,element:null};const d=Math.abs(enemyPoint(gameNow28()).x-pos.x),el=cast?skillElement12(cast.id):null,has=k=>hasStatus('enemy',k);return {bleed:has('bleed'),expose:has('expose'),poison:has('poison'),burn:has('burn'),ice:has('slow')||has('freeze'),guard:state.guardTurns>0,far:d>=range11()*.75,near:d<range11()*.55,low60:state.hp<s.h*.60,healing:!!cast?.heal,servant:!!state.necro30?.servants?.length,alternate:!!el&&!!memory.element&&el!==memory.element,element:el};}
+function context(s,cast){if(memory.owner!==state)memory={owner:state,element:null};const foe=enemyPoint(gameNow28()),d=Math.hypot(foe.x-pos.x,foe.y-pos.y),el=cast?skillElement12(cast.id):null,has=k=>hasStatus('enemy',k);return {bleed:has('bleed'),expose:has('expose'),poison:has('poison'),burn:has('burn'),ice:has('slow')||has('freeze'),guard:state.guardTurns>0,far:d>=range11()*.75,near:d<range11()*.55,low60:state.hp<s.h*.60,healing:!!cast?.heal,servant:!!state.necro30?.servants?.length,alternate:!!el&&!!memory.element&&el!==memory.element,element:el};}
 const impact0=impact11;impact11=function(side,n,crit,cast,s){
  if(!state.cls||!state.active||state.rest||!['hunt','dungeon','boss','trial'].includes(state.mode)||!(n>0))return impact0(side,n,crit,cast,s);
- const owner=state,mode=state.mode,before=state.enemyHp,c=context(s,cast),ps=paths[state.cls]||[],i=cast&&!cast.buff13?pathIndex(cast.id):-1,p=ps[i],r=rank(id46(state.cls,i)),trigger=side==='hero'&&p&&p.test(c);
+ const owner=state,mode=state.mode,before=state.enemyHp,c=context(s,cast),ps=paths[state.cls]||[],i=cast&&!cast.buff13?pathIndex(cast.id):-1,p=ps[i],r=rank(id46(state.cls,i)),trigger=side==='hero'&&p&&r>0&&p.test(c);
  if(trigger&&p.effect==='dano')n=Math.round(n*(1+amount(p,r)));
  if(side==='enemy'){
   for(let j=0;j<ps.length;j++){const q=ps[j],pr=rank(id46(state.cls,j)),learned=window.eldoria33.trees[state.cls].base[j].some(t=>t.active&&rank(t.id)>0);if(q.effect==='defesa'&&pr>0&&learned&&q.test(c)){n=Math.max(1,Math.round(n*(1-amount(q,pr))));break;}}
@@ -81,7 +81,7 @@ const impact0=impact11;impact11=function(side,n,crit,cast,s){
  const ret=impact0(side,n,crit,cast,s);
  if(side!=='hero'||state!==owner||state.mode!==mode||state.enemyHp>=before||!cast||cast.buff13)return ret;
  memory.element=c.element;
- if(trigger){const v=amount(p,r);if(p.effect==='mana')state.mana=Math.min(s.mana,state.mana+Math.max(1,Math.round(s.mana*v)));else if(p.effect==='cura')state.hp=Math.min(s.h,state.hp+Math.max(1,Math.round(s.h*v)));else if(p.effect==='dreno')state.hp=Math.min(s.h,state.hp+Math.round((before-state.enemyHp)*v));else if(p.effect==='lacaio'){const a=(state.necro30?.servants||[]).reduce((best,a)=>!best||a.left<best.left?a:best,null);if(a&&a.left<12+r)a.left=Math.min(12+r,a.left+1);}}
+ if(trigger){window.eldoria35Proc?.(id46(state.cls,i));const v=amount(p,r);if(p.effect==='mana')state.mana=Math.min(s.mana,state.mana+Math.max(1,Math.round(s.mana*v)));else if(p.effect==='cura')state.hp=Math.min(s.h,state.hp+Math.max(1,Math.round(s.h*v)));else if(p.effect==='dreno')state.hp=Math.min(s.h,state.hp+Math.round((before-state.enemyHp)*v));else if(p.effect==='lacaio'){const a=(state.necro30?.servants||[]).reduce((best,a)=>!best||a.left<best.left?a:best,null);if(a&&a.left<12+r)a.left=Math.min(12+r,a.left+1);}}
  return ret;
 };
 window.eldoria46Synergy={paths,description,amount};
