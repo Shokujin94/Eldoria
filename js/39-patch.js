@@ -2,6 +2,12 @@
 (()=>{
 'use strict';
 const history=[
+ {version:'0.43.1',date:'2026-11-24',title:'Identidade e Harmonia',kind:'Interface e combate',intro:'Uma HUD mais leve, vocações com sinergias próprias e cenários de coleta mais vivos.',groups:[
+ ['Interface',['HUD de combate sem fundo sólido central, esferas compactas com efeito de líquido, textos contrastantes, atalhos essenciais e brilho discreto. Efeitos negativos à esquerda e positivos à direita, sem placas sólidas nos ícones.','Inventário com cabeçalho de capacidade, filtros avançados recolhíveis, ordenação e iLvl; ficha com hierarquia de atributos; equipamentos com abas de inspeção e bônus.','Árvore de talentos conectada por requisitos reais, ativa por padrão, com descrições expansíveis e conexões iluminadas.']],
+ ['Combate',['Quinze sinergias de caminho distribuídas entre Guerreiro, Arqueiro, Mago, Clérigo e Necromante. Requerem investimento na passiva raiz e condições próprias de combate; efeitos defensivos exigem habilidade aprendida.','Sprites de personagem e monstros nas caçadas com escala semelhante às dungeons; alcance visual, lacaios e espaçamento ajustados.','Derrota em caça, dungeon, chefe ou provação encerra a atividade e retorna à cidade, inclusive offline.']],
+ ['Ofícios',['Cenários de mineração, lenhador e herbalismo com sprites de recursos, paletas regionais e identificação do alvo atual.']],
+ ['Salvamento',['Progresso e itens da versão 0.43.0 preservados. Nenhum novo reset.']]
+ ]},
  {version:'0.43.0',date:'2026-11-24',title:'Obsidiana e Ascensão',kind:'Interface e progressão',intro:'Um novo acabamento para a HUD e uma leitura mais precisa do poder dos equipamentos.',groups:[
  ['Interface',['HUD escura de alto contraste, esferas de vida e mana com ondas e partículas de líquido, brilho em habilidades disponíveis e ícones de efeitos. Movimento reduzido respeitado.','Tooltips de efeitos ativos com categoria, descrição, duração, origem e valores quando disponíveis. Acessíveis por mouse, foco e toque.','Bestiário com ícone e janela próprios no menu principal.']],
  ['Equipamentos',['iLvl passa a representar a soma ponderada dos atributos base e afixos, normalizada por tipo de peça. Não depende do nível do personagem. Requisitos de uso e faixas regionais continuam separados.','Inventário, inspeção, forja e Hunt Analyzer utilizam o novo indicador. Melhorias, runas e poderes condicionais não integram o iLvl base.']],
