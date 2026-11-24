@@ -38,8 +38,12 @@ jobs:
       - name: Preparar publicacao
         shell: bash
         run: |
+          # Pages remains the original offline game; the online API runs on its own host.
+          cp docs/legacy-client.html index.html
+          cp docs/legacy-version.json version.json
           BASE=$(python3 -c 'import json; print(json.load(open("version.json"))["version"])')
           python3 tools/publicar.py --versao "${BASE}-gh${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}" --saida public
+          rm -f public/js/51-online.js public/js/52-scene.js public/js/52-scene-art.js public/css/online51.css
           python3 tools/verificar_publicacao.py public
 
       - name: Enviar arquivos publicos
