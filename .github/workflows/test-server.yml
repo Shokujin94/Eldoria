@@ -31,3 +31,5 @@ jobs:
 
       - run: bash -n scripts/share-update.sh
       - run: node --check js/51-online.js && node --check js/52-scene.js
+
+      - run: node --check js/52-scene-art.js
