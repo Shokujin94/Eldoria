@@ -36,7 +36,7 @@ function renderActors23(now,fixed){
   actors.push({x:p.x,y:p.y,paint:()=>{if(boss)actor23((c,x,y)=>drawBoss(c,x,y,state.zone,ehit),p.x,p.y);else actor23((c,x,y)=>creature(c,state.enemy,x,y,state.mode==='trial'?1.7:1.2,ehit),p.x,p.y);queueName15(enemyName13,p.x,p.y);health23(p.x,p.y,state.enemyHp/enemy().hp,'#ac4b47');}});
  }
  if(state.mode==='gather'){for(let i=0;i<18;i++){const {x,y}=gatherPoint34(i);actors.push({x,y,paint:()=>{ctx.save();ctx.fillStyle='#15171a';ctx.beginPath();ctx.ellipse(x,y+6,14,5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=PROF10[state.profession]?.col||'#a5b18b';ctx.fillRect(x-5,y-11*stageRatio23,10,11*stageRatio23);ctx.restore();}});}}
- actors.push({x:pos.x,y:pos.y,paint:()=>{const yy=pos.y+(window.eldoria40Sidestep?.()||0);actor23(hero,pos.x,yy,['dungeon','boss','trial'].includes(state.mode)?1.55:1,hhit);queueName15(heroName13,pos.x,yy);if(combat)health23(pos.x,pos.y,state.hp/stats().h,'#83ac75');}});
+ actors.push({x:pos.x,y:pos.y,paint:()=>{const yy=pos.y+(window.eldoria40Sidestep?.()||0);actor23(hero,pos.x,yy,combat?1.55:1,hhit);queueName15(heroName13,pos.x,yy);if(combat)health23(pos.x,pos.y,state.hp/stats().h,'#83ac75');}});
  actors.sort((a,b)=>a.y-b.y).forEach(a=>{if(a.x>=cam.x-150&&a.x<=cam.x+cam.w+150&&a.y>=cam.y-100&&a.y<=cam.y+cam.h+100)a.paint()});
 }
 // Keep nameplates in screen-pixel typography, but align them to the new height.
