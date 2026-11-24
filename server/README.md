@@ -97,3 +97,6 @@ Reutilização do CSS do códice de talentos da main, temas por caminho e linhas
 
 ## 0.47.13 — janelas independentes
 Menu agrupado da versão 0.45.0, múltiplas janelas com foco, arraste, resize e preferências locais exclusivamente de layout. Subclasses, rotação, consumíveis, dungeons, analisador, registro, cidade e configurações separados. Mercado em Ofícios (ofertas, anúncio, meus anúncios), segurança em Gestão. Ações continuam na API. Ainda há diferenças de conteúdo e visual em relação ao cliente legado; não é reprodução integral.
+
+## 0.47.14 — referência 0.45.0 (Ofícios da Nova Era)
+Atlas de regiões e dungeons com nomes, descrições e andares extraídos do commit pré-online 9018633036cc60e20743e63038bdd3d7c5f8e71d; equipamento com seleção de slots e comparação de bônus calculada pelo servidor; inventário separado em equipamentos, materiais e runas; Hunt Analyzer com abas de resumo, combate e histórico. Corrige a espera assíncrona do teste de abertura de inventário da 0.47.13. Mercado e segurança preservados. O motor online ainda não reproduz integralmente a simulação e todos os componentes da versão offline. Sem reset.
