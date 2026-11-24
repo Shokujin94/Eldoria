@@ -45,11 +45,13 @@ try{
  await page.locator('[data-filter61=weapon]').click();
  await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
  assert.equal(await page.locator('.bag56').count(),1);
+ await page.locator('[data-bag64]').first().click();await page.locator('.stock19-details').waitFor();
  await page.locator('[data-tab=talent]').click();
  await page.locator('[data-path61]').first().waitFor();
  await page.locator('[data-tfilter62=passive]').click();
  await page.locator('[data-node62]').first().click();
- await page.locator('.codex62-detail h3').waitFor();
+ await page.locator('.codex62-detail h3').waitFor();await page.locator('.tal47-grid').waitFor();
+ assert.ok(await page.locator('.tal47-tier').count()>0);
  assert.match(await page.locator('.codex62-detail').innerText(),/Requisitos/);
  await page.locator('[data-tfilter62=all]').click();
  await page.locator('[data-tab=market]').click();
