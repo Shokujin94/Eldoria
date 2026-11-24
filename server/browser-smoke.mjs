@@ -27,6 +27,14 @@ try{
  await page.locator('#character button').last().click();
  await page.locator('#journey61').waitFor({state:'visible'});
  assert.match(await page.locator('#hero').innerText(),/Necromante/);
+ await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale===1);
+ await page.locator('#zoomIn61').click();
+ await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale>1);
+ const camera=await page.evaluate(()=>window.eldoria52Scene.view());
+ assert.ok(camera.ox<=0&&camera.oy<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.oy>=camera.h*(1-camera.scale)-.01);
+ await page.locator('#zoomOut61').click();
+ await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
+ await page.locator('#scene52').focus();await page.keyboard.press('ArrowUp');
  await page.locator('[data-tab=character]').click();
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();
