@@ -1,7 +1,7 @@
 
 /* 0.36 — Ferro e Vidro: visual, scale, targeting and indicators. */
 (()=>{
- const combat=()=>['hunt','dungeon','boss','trial'].includes(state.mode), fixed=()=>['dungeon','boss','trial'].includes(state.mode), heroScale=()=>fixed()?1.55:1;
+ const combat=()=>['hunt','dungeon','boss','trial'].includes(state.mode), fixed=()=>['dungeon','boss','trial'].includes(state.mode), heroScale=()=>combat()?1.55:1;
  const early=l=>.56+.44*clamp((l-1)/29,0,1), baseStats=stats,baseEnemy=enemy;
  // Scale PV and outgoing power together with regional monster PV/ATK. Mana, XP and loot are unchanged.
  stats=function(...a){const s=baseStats(...a);if(state.cls){const f=early(state.level);s.h=Math.max(1,Math.round(s.h*f));s.dmg=Math.max(1,s.dmg*f);}return s;};
@@ -10,7 +10,7 @@
  const f0=fresh;fresh=function(...a){const d=f0(...a);d.scale35=1;return d;};
  // Relative silhouette sizes, independent of player level and enemy rarity.
  const hHero=()=>72*heroScale(), footHero=()=>13*heroScale(), isBoss=()=>state.mode==='boss'||state.mode==='dungeon'&&state.wave===4;
- const sizeEnemy=(id,s)=>{const alias=typeof ALIAS16==='object'?(ALIAS16[id]||id):id;const small=['slime','bat','spider','imp'].includes(alias), large=['golem','drake','elemental','boar'].includes(alias);return (small?.96:large?1.38:1.25)*(s/1.2)*(fixed()?1.23:1);};
+ const sizeEnemy=(id,s)=>{const alias=typeof ALIAS16==='object'?(ALIAS16[id]||id):id;const small=['slime','bat','spider','imp'].includes(alias), large=['golem','drake','elemental','boar'].includes(alias);return (small?.96:large?1.38:1.25)*(s/1.2)*(combat()?1.23:1);};
  const heightEnemy=()=>isBoss()?116:56*sizeEnemy(state.enemy,state.mode==='trial'?1.7:1.2);
  const grade=()=>isBoss()?['Chefe','#e0bb70']:GRADE13[clamp(monsterIndex(),0,4)]||GRADE13[0];
  let enemyAttack=-1e9;const impact0=impact11;impact11=function(side,...args){if(side==='enemy')enemyAttack=gameNow28();return impact0(side,...args);};
@@ -35,7 +35,7 @@
  const move=moveCombat11;moveCombat11=function(now,dt){return move(now,dt*.82);};
  // Keep status feedback by mana. Recent conditional passives pulse only after a real activation.
  const procs=new Map();window.eldoria35Proc=id=>procs.set(id,gameNow28());
- const bar=document.createElement('div');bar.id='effects35';bar.className='hidden';bar.innerHTML='<div class="e35-head">Efeitos ativos <button type="button" title="Ver talentos passivos" id="e35-open">✧</button></div><div class="e35-icons"></div>';document.body.append(bar);bar.querySelector('button').onclick=()=>openWindow('talent');
+ const bar=document.createElement('div');bar.id='effects35';bar.className='hidden';bar.innerHTML='<div class="e35-head">Efeitos ativos <button type="button" title="Ver talentos passivos" id="e35-open">✧</button></div><div class="effect46-side effect46-negative"><small>Negativos</small><div class="e35-icons"></div></div><div class="effect46-side effect46-positive"><small>Positivos</small><div class="e35-icons"></div></div>';document.body.append(bar);bar.querySelector('button').onclick=()=>openWindow('talent');
  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
  const tip45=document.createElement('aside');tip45.id='effect45-tip';tip45.setAttribute('role','tooltip');tip45.hidden=true;document.body.append(tip45);
@@ -66,15 +66,15 @@
   const servants=state.necro30?.servants||[];if(servants.length)add('servants','Lacaios ativos',icon11('dark','#92b7a2'),servants.length+'×','#92d9b2','Invocação','Invocações auxiliam no combate conforme seu papel e alcance.','Grimório',servants.length+' ativos',servants.map(a=>(window.eldoria40ServantRole?.(a)?.name||'Servo')+': '+a.left+' s').join(' · '));
   const pass=nodes().flat().filter(n=>!n.active&&rank(n.id)>0),always=new Set(['str','dex','int','wis','vit','crit','critDamage','hp','def','mana','regen','haste','tenacity','dodge','spell','heal','servant','move','duration','manaCost','bleed','burn','poison','exposeDuration']);
   for(const n of pass.filter(n=>always.has(eldoria33.passives[n.id]?.type)||now-(procs.get(n.id)??-1e9)<4000)){const d=eldoria34.fx.def(n.id),recent=now-(procs.get(n.id)??-1e9)<4000,col=d?.color||'#b6ad86';add('pass:'+n.id,n.name,icon11(n.iconKey||'attr',col),recent?'✦':rank(n.id)+'p',col,'Talento passivo',n.desc,'Graduação '+rank(n.id)+'/'+n.max,always.has(eldoria33.passives[n.id]?.type)?'Permanente':'Ativação recente',recent?'Ativou recentemente.':'');}
-  const icons=bar.querySelector('.e35-icons'),ids=new Set(list.map(d=>d.id));
+  const ids=new Set(list.map(d=>d.id));
   for(const [id,el] of chips45)if(!ids.has(id)){if(active45===el)close45();el.remove();chips45.delete(id);}
-  list.forEach((d,i)=>{let el=chips45.get(d.id);if(!el){el=document.createElement('button');el.type='button';el.className='e35-chip';el.setAttribute('aria-describedby','effect45-tip');chips45.set(d.id,el);}el._effect45=d;el.style.setProperty('--e35',d.color);el.setAttribute('aria-label',d.name+' · '+d.duration);const markup=d.icon+'<small>'+escape(d.value)+'</small>';if(el._markup45!==markup){el.innerHTML=markup;el._markup45=markup;}if(icons.children[i]!==el)icons.insertBefore(el,icons.children[i]||null);});
-  bar.classList.toggle('hidden',!list.length||hud.classList.contains('hidden')||hud.classList.contains('hud-hide15'));positionEffects36();
+  const counts=[0,0];list.forEach(d=>{const side=d.id.startsWith('status:')?0:1,icons=bar.querySelectorAll('.e35-icons')[side],i=counts[side]++;let el=chips45.get(d.id);if(!el){el=document.createElement('button');el.type='button';el.className='e35-chip';el.setAttribute('aria-describedby','effect45-tip');chips45.set(d.id,el);}el._effect45=d;el.style.setProperty('--e35',d.color);el.setAttribute('aria-label',d.name+' · '+d.duration);const markup=d.icon+'<small>'+escape(d.value)+'</small>';if(el._markup45!==markup){el.innerHTML=markup;el._markup45=markup;}if(icons.children[i]!==el)icons.insertBefore(el,icons.children[i]||null);});
+  bar.querySelectorAll('.effect46-side').forEach((el,i)=>el.classList.toggle('empty46',!counts[i]));bar.classList.toggle('hidden',!list.length||hud.classList.contains('hidden')||hud.classList.contains('hud-hide15'));positionEffects36();
   if(bar.classList.contains('hidden'))close45();else if(active45)show45(active45);
  }
  let drag36=null;
  const grip36=document.createElement('button');grip36.type='button';grip36.className='e36-grip';grip36.textContent='⠿';grip36.title='Arraste para mover os efeitos · clique duas vezes para voltar à mana';grip36.setAttribute('aria-label',grip36.title);bar.querySelector('.e35-head').prepend(grip36);bar.querySelector('.e35-head').childNodes.forEach(n=>{if(n.nodeType===3)n.textContent='';});
- function positionEffects36(){if(!state.cls||bar.classList.contains('hidden'))return;const mp=$('c22-mp'),hud=$('combatHUD22');bar.style.setProperty('--e36-cols',String(Math.max(1,Math.min(innerWidth<=700?5:7,bar.querySelectorAll('.e35-chip').length))));const r=mp.getBoundingClientRect(),hr=hud.getBoundingClientRect(),w=bar.offsetWidth,h=bar.offsetHeight,mx=Math.max(0,innerWidth-w-8),my=Math.max(0,innerHeight-h-8),p=state.profile?.effects36;let x=drag36?drag36.x:p&&Number.isFinite(p.x)?p.x*mx:r.right-w,y=drag36?drag36.y:p&&Number.isFinite(p.y)?p.y*my:hr.top-h-13;bar.style.left=Math.round(clamp(x,4,Math.max(4,mx)))+'px';bar.style.top=Math.round(clamp(y,4,Math.max(4,my)))+'px';}
+ function positionEffects36(){if(!state.cls||bar.classList.contains('hidden'))return;const mp=$('c22-mp'),hud=$('combatHUD22');bar.style.setProperty('--e36-cols',String(Math.max(1,Math.min(innerWidth<=700?5:7,bar.querySelectorAll('.e35-chip').length))));const r=mp.getBoundingClientRect(),hr=hud.getBoundingClientRect(),w=bar.offsetWidth,h=bar.offsetHeight,mx=Math.max(0,innerWidth-w-8),my=Math.max(0,innerHeight-h-8),p=state.profile?.effects36;let x=drag36?drag36.x:p&&Number.isFinite(p.x)?p.x*mx:hr.left+(hr.width-w)/2,y=drag36?drag36.y:p&&Number.isFinite(p.y)?p.y*my:hr.top-h-13;bar.style.left=Math.round(clamp(x,4,Math.max(4,mx)))+'px';bar.style.top=Math.round(clamp(y,4,Math.max(4,my)))+'px';}
  grip36.addEventListener('pointerdown',e=>{if(e.button!==0||!state.cls)return;e.preventDefault();e.stopPropagation();const r=bar.getBoundingClientRect();drag36={id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top,x:r.left,y:r.top,moved:false};grip36.setPointerCapture(e.pointerId);bar.classList.add('drag36');});
  grip36.addEventListener('pointermove',e=>{if(!drag36||e.pointerId!==drag36.id)return;const x=e.clientX-drag36.dx,y=e.clientY-drag36.dy;drag36.moved||=Math.hypot(x-drag36.x,y-drag36.y)>2;drag36.x=x;drag36.y=y;positionEffects36();});
  function endDrag36(e){if(!drag36||drag36.id!==e.pointerId)return;const moved=drag36.moved,r=bar.getBoundingClientRect();drag36=null;bar.classList.remove('drag36');if(moved){state.profile.effects36={x:clamp(r.left/Math.max(1,innerWidth-bar.offsetWidth-8),0,1),y:clamp(r.top/Math.max(1,innerHeight-bar.offsetHeight-8),0,1)};save();}positionEffects36();}
