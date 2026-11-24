@@ -88,3 +88,6 @@ Zoom compartilhado pelo cenário, atores e inversão do clique, câmera acompanh
 
 ## 0.47.10 — códice de talentos
 Janela por etapas de pré-requisitos, filtros, seleção de habilidade e detalhe separado com descrição, requisitos navegáveis, graduação, maestria e confirmação de reset com saldo. Inspirada no códice 0.43.2 original; ícones são símbolos simplificados, não os SVG originais. Investimento em lote de até três pontos, atômico e validado no servidor por graduação. Testes adicionados para limite, saldo de pontos e rollback. Nenhum reset ou mudança no banco. Paridade integral do motor e interface ainda não concluída.
+
+## 0.47.11 — restauração da disposição imersiva
+O cliente online passa a usar mapa em tela inteira, navegação superior, HUD de orbes PV/PM e habilidades na base, painéis translúcidos nas bordas e janelas centrais. Reutiliza os SVG originais de navegação e habilidades e regras de estilo do HUD da 0.45.0; a seleção de regiões torna-se uma janela, não uma coluna permanente. O servidor mantém ações e snapshots existentes, sem reset. Ainda é adaptação visual, não igualdade pixel a pixel: faltam janelas independentes simultâneas, edição/arraste do HUD, algumas imagens e detalhes das janelas originais, e comparação de screenshots em execução.

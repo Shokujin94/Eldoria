@@ -25,7 +25,10 @@ try{
  await page.locator('#character input[name=name]').fill('Herói Teste');
  await page.locator('[data-cls61=necro]').click();
  await page.locator('#character button').last().click();
- await page.locator('#journey61').waitFor({state:'visible'});
+ await page.locator('#scene52').waitFor({state:'visible'});
+ assert.equal(await page.locator('#window53').isHidden(),true);
+ const layout=await page.evaluate(()=>({map:document.getElementById('scene52').getBoundingClientRect().toJSON(),nav:document.getElementById('tabs').getBoundingClientRect().toJSON(),hud:document.getElementById('combatHUD22').getBoundingClientRect().toJSON(),w:innerWidth,h:innerHeight}));
+ assert.ok(Math.abs(layout.map.width-layout.w)<2&&Math.abs(layout.map.height-layout.h)<2,'full-screen original map');assert.ok(layout.nav.top<60&&layout.hud.bottom>layout.h-30,'edge mounted HUD');
  assert.match(await page.locator('#hero').innerText(),/Necromante/);
  await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale===1);
  await page.locator('#zoomIn61').click();
@@ -54,11 +57,13 @@ try{
  await page.locator('[data-tab=ranking]').click();
  await page.locator('#rankcat').waitFor();
  await page.locator('#window53-close').click();
+ await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=gather]').click();
  await page.locator('#start61').click();
  await page.waitForFunction(()=>document.getElementById('world52-location').textContent.includes('Bosque'));
  await page.locator('[data-quick61=stop]').click();
  await page.waitForFunction(()=>document.getElementById('world52-location').textContent.includes('Vespera'));
+ await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=hunt]').click();
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
