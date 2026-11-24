@@ -76,7 +76,7 @@ window.eldoria381StepServants=function(now,dt){
  for(let i=0;i<points.length;i++){
   const p=points[i],a=list[i],others=points.filter((_,j)=>i!==j);
   const role=window.eldoria40ServantRole?.(a)||{},reach=role.reach||eg+16,anchor=engage?e:pos;
-  const legal=q=>baseLegal(q)&&!reserved.some(o=>blocks(q,o,sg));
+  const prior=reserved.slice();const legal=q=>baseLegal(q)&&!prior.some(o=>blocks(q,o,sg));
   const clear=q=>legal(q)&&!others.some(o=>blocks(q,o,sg));
   const strikeAge=now-(a.attack31??-1e9),locked=strikeAge>=0&&strikeAge<420;
   const inReach=q=>dist(q,e)<=reach;
