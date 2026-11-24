@@ -45,7 +45,7 @@ function bounds(k,n,level,rarity,quality,affix=false){
 }
 function generate(it,mode,id,rng=Math.random){
  const z=it.tier,r=clamp41(it.rarity|0,0,4),q=clamp41(it.quality??1,0,3)|0,v=it.vocation||state.cls;
- const [lo,hi]=sourceRange(z,mode,id),level=roll(lo,hi,rng),main=CLASSES[v].main;
+ const [lo,hi]=sourceRange(z,mode,id),level=Number.isInteger(window.eldoria50CraftLevel)&&!mode?clamp41(window.eldoria50CraftLevel,lo,hi):roll(lo,hi,rng),main=CLASSES[v].main;
  const inherent={...slotBase[it.slot]},raw={},ranges={},affixes=[];
  inherent[main]=(inherent[main]||0)+1;
  if(['armor','head','legs','offhand'].includes(it.slot)){const k=v==='ranger'?'dex':v==='mage'?'int':'vit';inherent[k]=(inherent[k]||0)+.65;}
