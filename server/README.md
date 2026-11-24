@@ -71,3 +71,6 @@ Receitas regionais permanentes (8% por chefe), joia épica por 150 × tier gold,
 
 ## 0.47.5 — combate avançado e especializações
 Dez afixos originais, resistência/vulnerabilidade elemental, quatro combos, estados no herói, fases 70/35/10% dos chefes e aviso de especial com recuo defensivo. Afixo Voraz usa um ataque adicional a cada oito segundos, aproximação em um eixo. Receitas de alquimia e joalheria, XP dos quatro ofícios, coleção de categorias obtidas a partir desta versão. Ainda existem diferenças de implementação frente ao original (movimentação 2D, múltiplos lacaios, cadência, afinidades e apresentação visual; reroll e algumas regras de relíquia). Preserva o banco e cadastro aberto. Não é paridade integral comprovada.
+
+## 0.47.6 — grimório e recalibração
+Quatro papéis de servo, duas invocações para Senhor dos Ossos, ataque e deslocamento independentes, sentinela, arqueiro, arauto e sacrifício do Ceifador. Recalibração do último atributo com referência base persistente (sem crescimento cumulativo). Representação de servos ainda usa sprite compartilhado e eixo único; interface original, animações e balanço exato não estão integralmente reproduzidos. Sem reset.
