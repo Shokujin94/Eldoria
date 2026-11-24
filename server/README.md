@@ -80,3 +80,5 @@ Lacaios atacam independentemente do alcance/controle do herói, duração real a
 
 ## 0.47.8 — apresentação do Eldoria original
 Interface online com seleção de vocação ilustrada, brasão, navegação lateral de regiões/atividades, cena ampliada, zoom visual, atalhos de poções/retorno, registro da aventura, inventário com ícones do atlas original e filtro por slot, ficha em abas e equipamento em manequim, talentos por caminho e cor da vocação, custo de reset explícito e distribuição em lote. Ícones de Necromante utilizam o atlas de Mago como fallback porque o atlas original de equipamento tem quatro classes; nomes e atributos persistidos não foram alterados. O cliente antigo não é carregado, e o servidor mantém autoridade. Ainda não constitui equivalência integral com movimento WASD/cidade, todos os efeitos/animações e balanceamento da 0.45.0. Sem reset.
+
+Cidade: deslocamento visual por WASD/setas/clique, interação E com os sete NPCs, abrindo serviços já validados no servidor. A posição urbana é apenas apresentação, não concede recursos, XP ou acesso a operações bloqueadas. A geometria e arte dos NPCs são adaptações do cliente original.
