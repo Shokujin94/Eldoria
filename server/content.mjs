@@ -93,3 +93,8 @@ export function recipe(slot,z,grades={}){const kind=['weapon','offhand','head','
 export const creatureCatalog=names.flatMap((row,z)=>[...row.map((name,index)=>({key:z+':'+index,name,z,index,boss:false})),{key:'boss:'+z,name:bossNames[z],z,index:4,boss:true}]);
 export function materialSale(key){if(typeof key!=='string')return 0;const m=/^(mob|mining|wood|herb):([0-9]):([0-4])$/.exec(key);if(m)return (+m[2]+1)*(m[1]==='mob'&&+m[2]<3?[2,5,12,35,95]:[3,7,17,45,120])[+m[3]];const b=/^boss:([0-9])$/.exec(key);return b?90*(+b[1]+1):0;}
 export function masteryBonus(n){return Math.min(.035,Math.floor((n||0)/1000)*.005);}
+
+export const professionTalents={speed:{max:3,level:1,name:'Eficiência',desc:'−1 s por ponto'},yield:{max:3,level:4,name:'Rendimento',desc:'+15 p.p. chance de recurso extra por ponto'},quality:{max:5,level:7,name:'Perícia',desc:'Melhora a chance de raridades'}};
+export const professionInterval=p=>1000*(6-Math.min(3,p.talents?.speed||0));
+export function professionOdds(p){const b=Math.min(10,(p.talents?.quality||0)*2),k=p.level>=15&&p.spec==='quality'?(p.level>=40?1.8:1):0;return [65-b-k,27,7+b*.7+k*.82,.9+b*.25+k*.16,.1+b*.05+k*.02];}
+export function gatherRoll(p,random){const rarity=rollOdds(professionOdds(p),random),chance=.15*(p.talents?.yield||0),spec=p.level>=15&&p.spec==='yield'?(p.level>=40?.16:.09):0,tool=.08*(p.tool||0);return {rarity,amount:1+(chance>0&&random()<chance?1:0)+(spec>0&&random()<spec?1:0),common:tool>0&&random()<tool?1:0};}
