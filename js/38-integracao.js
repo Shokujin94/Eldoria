@@ -29,9 +29,9 @@ window.eldoria38Terrain=function(now,cw,ch,im){const dpr=Math.min(num(cfg.visual
 // Collision uses conservative horizontal silhouettes and projected ground depth, not an art alpha mask.
 const combat=()=>['hunt','boss','dungeon','trial'].includes(state.mode);
 const fixed=()=>state.mode!=='hunt';
-function foeWidth(){const id=ALIAS16[state.enemy]||state.enemy;if(state.mode==='boss'||(state.mode==='dungeon'&&state.wave===4))return 112;return (['slime','bat','spider','imp'].includes(id)?49:['golem','drake','elemental','boar'].includes(id)?78:66)*(fixed()?1.23:1)*(state.mode==='trial'?1.42:1);}
-window.eldoria38Gap=()=>Math.round(((fixed()?54:36)+foeWidth()/2+6)*num(cfg.visual?.bodySpacing,1,.7,1.3));
-window.eldoria38ServantGap=()=>Math.round(foeWidth()/2+(fixed()?32:23)+4);
+function foeWidth(){const id=ALIAS16[state.enemy]||state.enemy;if(state.mode==='boss'||(state.mode==='dungeon'&&state.wave===4))return 112;return (['slime','bat','spider','imp'].includes(id)?49:['golem','drake','elemental','boar'].includes(id)?78:66)*1.23*(state.mode==='trial'?1.42:1);}
+window.eldoria38Gap=()=>Math.round((54+foeWidth()/2+6)*num(cfg.visual?.bodySpacing,1,.7,1.3));
+window.eldoria38ServantGap=()=>Math.round(foeWidth()/2+32+4);
 function space(a,b,g,prefer){if(Math.abs(a.y-b.y)>(fixed()?70:42)||Math.abs(a.x-b.x)>=g-.05)return;const dir=Math.sign(b.x-a.x)||prefer||1;let q=fit34({x:a.x+dir*g,y:b.y});if(Math.abs(q.x-a.x)<g-.1)q=fit34({x:a.x-dir*g,y:b.y});if(Math.abs(q.x-a.x)>=g-.1&&valid34(q)){b.x=q.x;b.y=q.y;}}
 let direction=1;function separate(now){if(!state.cls||!combat()||window.eldoria31Interlude?.()||state.rest)return;const e=enemyPoint(now);if(state.mode==='hunt'&&window.eldoria40Escaping?.())return;if(Math.abs(e.x-pos.x)>1)direction=Math.sign(e.x-pos.x);const g=window.eldoria38Gap();if(!state.active)space(e,pos,g,-direction);else space(pos,e,g,direction);if(Math.abs(e.x-pos.x)<g-.1&&Math.abs(e.y-pos.y)<=(fixed()?70:42))space(e,pos,g,-direction);}
 // 0.38.1: reserve valid attack positions before walking; never fight the separation solver.

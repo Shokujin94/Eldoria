@@ -51,7 +51,7 @@ function line(c,x1,y1,x2,y2,color,width=1.5){c.strokeStyle=color;c.lineWidth=wid
 window.eldoria40DrawServant=function(a,p,now){
  const r=role(a);if(r===roles.bone)return false;
  const strike=Number.isFinite(a.attack31)&&now>=a.attack31&&now-a.attack31<420,phase=strike?(now-a.attack31)/420:0;
- const pulse=Math.sin(phase*Math.PI),h=(state.mode==='hunt'?72:111.6)*window.ELDORIA_CONFIG.visual.servantScale;
+ const pulse=Math.sin(phase*Math.PI),h=111.6*window.ELDORIA_CONFIG.visual.servantScale;
  actor23((c,x,y)=>{
   c.save();try{
    c.translate(x,y+11);c.globalAlpha*=p.phaseLeft381>0?.65:1;c.fillStyle='#101a1788';c.beginPath();c.ellipse(0,-1,16,5,0,0,Math.PI*2);c.fill();
@@ -101,7 +101,7 @@ function updateSmoke41(now){
  if(!live()||state.cls!=='necro'||!['hunt','boss','dungeon','trial'].includes(state.mode))return;
  const list=state.active?(state.necro30?.servants||[]):[],current=new Set(list);
  for(const [a,p] of lastServants41)if(!current.has(a)){if(state.active)spawnSmoke41(p,now);lastServants41.delete(a);}
- list.forEach((a,i)=>{const p=window.eldoria36Minions.position(a,i,now);lastServants41.set(a,{x:p.x,y:p.y,h:(state.mode==='hunt'?72:111.6)*window.ELDORIA_CONFIG.visual.servantScale});});
+ list.forEach((a,i)=>{const p=window.eldoria36Minions.position(a,i,now);lastServants41.set(a,{x:p.x,y:p.y,h:111.6*window.ELDORIA_CONFIG.visual.servantScale});});
  for(let i=smoke40.length-1;i>=0;i--){
   const f=smoke40[i],t=(now-f.t)/850;if(t>=1||t<0){smoke40.splice(i,1);continue;}
   if(f.x<cam.x-150||f.x>cam.x+cam.w+150)continue;
@@ -127,5 +127,5 @@ button.onclick=()=>{const ok=window.eldoria40QuickSave();button.classList.toggle
 function autosave(){if(state.cls&&window.eldoriaBoot251?.ready)window.eldoria40QuickSave();}
 setInterval(autosave,15000);
 window.addEventListener('beforeunload',autosave);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)autosave();else if(state.huntDeath40&&state.cls){delete state.huntDeath40;if($('notice')){$('notice').textContent='Você foi derrotado enquanto estava ausente e retornou a Vespera. A caçada foi encerrada.';$('notice').classList.remove('hidden');}save();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)autosave();else if(state.huntDeath40&&state.cls){delete state.huntDeath40;if($('notice')){$('notice').textContent='Você foi derrotado enquanto estava ausente e retornou a Vespera. A atividade foi encerrada.';$('notice').classList.remove('hidden');}save();}});
 })();
