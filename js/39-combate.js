@@ -7,40 +7,44 @@ const toward=(a,b,n)=>{const d=dist(a,b);return d?{x:a.x+(b.x-a.x)*Math.min(1,n/
 const blocked=side=>hasStatus(side,'stun')||hasStatus(side,'freeze');
 const slowed=side=>hasStatus(side,'slow')?.7:1;
 
-// A committed, finite escape: no firing during the run, no invulnerability.
+// Reposition at the same movement speed as normal combat. Keep the ordinary attack clock.
 let escape40=null,cool40=0,lastOwner40=null,lastFoe40=null,lastMap40='';
 function activeEscape40(){return !!(escape40&&state.active&&combat()&&!state.rest&&escape40.owner===state&&escape40.foe===enemyPoint(gameNow28())&&escape40.map===mapKey34());}
 window.eldoria40Escaping=activeEscape40;
-window.eldoria40Sidestep=()=>{if(!activeEscape40()||state.mode!=='hunt')return 0;const d=Math.abs(pos.x-escape40.foe.x),g=window.eldoria38Gap();return Math.max(0,1-d/(g*1.5))*52;};
+window.eldoria40Sidestep=()=>{if(!activeEscape40()||state.mode!=='hunt')return 0;const d=Math.abs(pos.x-escape40.foe.x),g=window.eldoria38Gap();const t=Math.max(0,1-d/(g*1.5));return t*t*(3-2*t)*52;};
 function startEscape40(e,r,g){
  const arena=state.mode!=='hunt',sign=Math.sign(e.x-pos.x)||1,dx=e.x-pos.x,dy=e.y-pos.y,d=Math.hypot(dx,dy)||1;
- if(!arena){const [lo,hi]=bounds34();const edge=sign>0?hi:lo;if(Math.abs(edge-pos.x)<g+10)return false;escape40={owner:state,foe:e,map:mapKey34(),sign,edge,left:4400};return true;}
+ if(!arena){const [lo,hi]=bounds34();const edge=sign>0?hi:lo;if(Math.abs(edge-pos.x)<g+10)return false;escape40={owner:state,foe:e,map:mapKey34(),sign,edge,left:8000};return true;}
  const ux=dx/d,uy=dy/d,opts=[];
  for(const side of [-1,1]){const around={x:e.x-uy*side*(g+40),y:e.y+ux*side*(g+40)},far={x:e.x+ux*r*.87-uy*side*35,y:e.y+uy*r*.87+ux*side*35};if(valid34(around)&&valid34(far)&&segment34(pos,around)&&segment34(around,far))opts.push([around,far]);}
  if(!opts.length)return false;
  opts.sort((a,b)=>dist(pos,a[0])+dist(a[0],a[1])-dist(pos,b[0])-dist(b[0],b[1]));
- escape40={owner:state,foe:e,map:mapKey34(),points:opts[0],left:4400,sign};return true;
+ escape40={owner:state,foe:e,map:mapKey34(),points:opts[0],left:8000,sign};return true;
 }
-function stepEscape40(now,ms,e,r,g){
+function stepEscape40(now,ms,e,r,g,speed){
  if(!activeEscape40())return false;
- const a=escape40;a.left-=ms;
+ const a=escape40;
+ // Count movement time only: casting and control effects must not consume the route budget.
  if(now>=heroHold11&&!blocked('hero')){
-  if(state.mode==='hunt'){pos=walk34(pos,toward(pos,{x:a.edge,y:pos.y},.265*slowed('hero')*ms));}
-  else{while(a.points.length&&dist(pos,a.points[0])<5)a.points.shift();if(a.points.length)pos=walk34(pos,toward(pos,a.points[0],.235*slowed('hero')*ms));}
+  a.left-=ms;
+  if(state.mode==='hunt'){pos=walk34(pos,toward(pos,{x:a.edge,y:pos.y},speed*ms));}
+  else{while(a.points.length&&dist(pos,a.points[0])<5)a.points.shift();if(a.points.length)pos=walk34(pos,toward(pos,a.points[0],speed*ms));}
  }
  const crossed=state.mode==='hunt'&&(pos.x-e.x)*a.sign>0,done=state.mode==='hunt'?(crossed&&(dist(pos,e)>=r*.84||Math.abs(pos.x-a.edge)<3)):!a.points.length||dist(pos,e)>=r*.90;
- if(done||a.left<=0){escape40=null;cool40=4500;}
+ // Do not hand back to the separation solver while the sprites are crossing.
+ const clear=state.mode!=='hunt'||Math.abs(pos.x-e.x)>=g-.05;
+ if((done||a.left<=0)&&clear){escape40=null;cool40=4500;}
  return true;
 }
-const attack40=attackReady;attackReady=function(side){if(side==='hero'&&activeEscape40())return false;return attack40(side);};
+// Do not override attackReady: cooldowns, attack turns, range and cast pauses remain unchanged.
 
-// Ranged combat: finite retreat, faster pursuers, and a stationary casting window.
+// Ranged combat: normal movement rates, finite retreat, and the normal stationary casting window.
 window.eldoria39MoveRanged=function(now,dt){
  const e=enemyPoint(now),d=dist(pos,e),r=range11(),gap=window.eldoria38Gap(),ranged=foeRanged11();
  const ms=clamp(dt,0,100),speed=({ranger:.145,mage:.118,cleric:.115,necro:.12}[state.cls]||.12)*slowed('hero');
  if(lastOwner40!==state||lastFoe40!==e||lastMap40!==mapKey34()){escape40=null;cool40=0;lastOwner40=state;lastFoe40=e;lastMap40=mapKey34();}cool40=Math.max(0,cool40-ms);
  const dir=d>.01?{x:(e.x-pos.x)/d,y:(e.y-pos.y)/d}:{x:1,y:0};
- if(!stepEscape40(now,ms,e,r,gap)&&now>=heroHold11&&!blocked('hero')){
+ if(!stepEscape40(now,ms,e,r,gap,speed)&&now>=heroHold11&&!blocked('hero')){
   const desired=r*.88;
   if(d>r*.96)pos=walk34(pos,toward(pos,e,Math.min(d-desired,speed*ms)));
   else if(d<r*.66){
@@ -49,14 +53,14 @@ window.eldoria39MoveRanged=function(now,dt){
    if(state.mode!=='hunt')for(const sign of [-1,1])opts.push({x:pos.x+sign*dir.y*retreat,y:pos.y-sign*dir.x*retreat});
    const valid=opts.map(q=>walk34(pos,q)).filter(q=>dist(q,pos)>.01).sort((a,b)=>dist(b,e)-dist(a,e));
    if(valid.length&&dist(valid[0],e)>d+.01)pos=valid[0];
-   else if(cool40<=0&&startEscape40(e,r,gap))stepEscape40(now,ms,e,r,gap);
+   else if(cool40<=0&&startEscape40(e,r,gap))stepEscape40(now,ms,e,r,gap,speed);
   }
  }
  if(now>=foeHold11&&!blocked('enemy')){
   const n=dist(e,pos),reach=ranged?110:gap;
   const fs=(ranged?.137:.185)*(state.era20?.affixes?.includes('fast')?1.18:1)*slowed('enemy');
   if(n>reach){const q=walk34(e,toward(e,pos,Math.min(n-reach,fs*ms)));e.x=q.x;e.y=q.y;}
-  else if(ranged&&n<Math.max(65,gap)){const q=walk34(e,{x:e.x-dir.x*-fs*.45*ms,y:e.y-dir.y*-fs*.45*ms});e.x=q.x;e.y=q.y;}
+  else if(ranged&&n<Math.max(65,gap)){const dx=e.x-pos.x,dy=e.y-pos.y,ux=n>.01?dx/n:1,uy=n>.01?dy/n:0;const q=walk34(e,{x:e.x+ux*fs*.45*ms,y:e.y+uy*fs*.45*ms});e.x=q.x;e.y=q.y;}
  }
  dest=null;
 };
