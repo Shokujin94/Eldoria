@@ -70,38 +70,40 @@ window.eldoria381StepServants=function(now,dt){
  const e=enemyPoint(now),arena=state.mode!=='hunt',eg=window.eldoria38ServantGap(),pg=arena?62:44,sg=arena?60:43;
  const engage=state.enemyHp>0&&!window.eldoria31Interlude?.(),ms=clamp(dt,0,100);
  const points=list.map((a,i)=>window.eldoria36Minions.position(a,i,now)),reserved=[];
- const blocks=(q,o,g)=>arena?((q.x-o.x)/g)**2+((q.y-o.y)/Math.min(65,g))**2<.998:Math.abs(q.x-o.x)<g-.05;
- const baseLegal=q=>valid34(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
- const lane=arena?0:lane34();
+ const lane=arena?0:lane34(),depth=38;
+ const blocks=(q,o,g)=>((q.x-o.x)/g)**2+((q.y-o.y)/(arena?Math.min(65,g):Math.min(38,g)))**2<.998;
+ const floor=q=>arena?valid34(q):valid34({x:q.x,y:lane})&&Math.abs(q.y-lane)<=depth+.01;
+ const baseLegal=q=>floor(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
+ const walk=(a,b)=>{if(arena)return walk34(a,b);const [lo,hi]=bounds34();return {x:clamp(b.x,lo,hi),y:clamp(b.y,lane-depth,lane+depth)};};
  for(let i=0;i<points.length;i++){
   const p=points[i],a=list[i],others=points.filter((_,j)=>i!==j);
   const role=window.eldoria40ServantRole?.(a)||{},reach=role.reach||eg+16,anchor=engage?e:pos;
   const prior=reserved.slice();const legal=q=>baseLegal(q)&&!prior.some(o=>blocks(q,o,sg));
-  const clear=q=>legal(q)&&!others.some(o=>blocks(q,o,sg));
+  const clear=q=>baseLegal(q)&&!others.some(o=>blocks(q,o,sg));
   const strikeAge=now-(a.attack31??-1e9),locked=strikeAge>=0&&strikeAge<420;
   const inReach=q=>dist(q,e)<=reach;
   const preferred=q=>!role.reach||dist(q,e)>=Math.max(eg,reach*.58);
   const stop=()=>{p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);p.phaseLeft381=0;if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;};
-  if(engage&&clear(p)&&inReach(p)&&(preferred(p)||locked)){
+  if(engage&&legal(p)&&clear(p)&&inReach(p)&&(preferred(p)||locked)){
    reserved.push({x:p.x,y:p.y});p.goal42=null;stop();continue;
   }
   const old=p.goal42;
-  let goal=old&&old.engage===engage?{x:anchor.x+old.dx,y:arena?anchor.y+old.dy:lane}:null;
+  let goal=old&&old.engage===engage?{x:anchor.x+old.dx,y:arena?anchor.y+old.dy:lane+old.dy}:null;
   const usable=q=>q&&legal(q)&&(!engage||inReach(q));
   if(!usable(goal)){
    const candidates=[],radii=engage?(role.reach?[Math.max(eg+2,reach*.8),Math.max(eg+2,reach*.95),eg+2]:[eg+3,eg+10,eg+15]):[pg+5,pg+sg+5,pg+sg*2+5];
-   for(const r of radii)for(let j=0;j<(arena?24:2);j++){
-    const t=j*Math.PI*2/(arena?24:2),q={x:anchor.x+Math.cos(t)*r,y:arena?anchor.y+Math.sin(t)*r:lane};
+   for(const r of radii)for(let j=0;j<24;j++){
+    const t=j*Math.PI*2/24,q={x:anchor.x+Math.cos(t)*r,y:arena?anchor.y+Math.sin(t)*r:lane+Math.sin(t)*Math.min(depth,r)};
     if(usable(q))candidates.push(q);
    }
    // If all preferred slots are occupied, choose a legal waiting point near the enemy.
    if(!candidates.length){
-    for(const r of [eg+sg+6,eg+sg*2+10,eg+sg*3+10])for(let j=0;j<(arena?16:2);j++){
-     const t=j*Math.PI*2/(arena?16:2),q={x:e.x+Math.cos(t)*r,y:arena?e.y+Math.sin(t)*r:lane};
+    for(const r of [eg+sg+6,eg+sg*2+10,eg+sg*3+10])for(let j=0;j<16;j++){
+     const t=j*Math.PI*2/16,q={x:e.x+Math.cos(t)*r,y:arena?e.y+Math.sin(t)*r:lane+Math.sin(t)*depth};
      if(legal(q))candidates.push(q);
     }
    }
-   const score=q=>dist(p,q)+(others.some(o=>blocks(q,o,sg))?sg*1.5:0)+(role.guard?dist(q,pos)*.45:0)+(engage&&!inReach(q)?200:0);
+   const score=q=>dist(p,q)+(others.some(o=>blocks(q,o,sg))?sg*1.5:0)+(role.guard?dist(q,pos)*.45:0)+(!arena?Math.abs(q.y-lane)*.45:0)+(engage&&!inReach(q)?200:0);
    candidates.sort((u,v)=>score(u)-score(v));goal=candidates[0]||null;
    p.goal42=goal&&inReach(goal)?{dx:goal.x-anchor.x,dy:goal.y-anchor.y,engage}:null;
   }
@@ -111,7 +113,7 @@ window.eldoria381StepServants=function(now,dt){
   if(dist(p,goal)<1&&clear(p)){stop();continue;}
   // Never reset the route simply because the next step crosses an actor.
   // Phasing is visual and attack eligibility resumes only after clearing the obstruction.
-  const before={x:p.x,y:p.y},q=walk34(p,toward(p,goal,(engage?.22:.18)*ms));
+  const before={x:p.x,y:p.y},q=walk(p,toward(p,goal,(engage?.22:.18)*ms));
   p.x=q.x;p.y=q.y;
   const moved=dist(before,p)>.01;
   p.phaseLeft381=clear(p)?0:1;
