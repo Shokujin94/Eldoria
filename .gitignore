@@ -12,3 +12,6 @@ Thumbs.db
 personagem.json
 backup.json
 eldoria-save*.json
+
+server/*.sqlite*
+server/.env

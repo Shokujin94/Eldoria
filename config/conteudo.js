@@ -1,7 +1,8 @@
 /* Edite apenas este arquivo para ajustes usuais; preserve IDs de saves.
  * Consulte docs/CATALOGO.json para chaves e números atuais. */
 window.ELDORIA_CONFIG = {
-  versao: '0.45.0',
+  versao: '0.46.0',
+  onlineApi: '', // URL HTTPS do servidor; vazio bloqueia o modo online.
   balance: {xpRequired:1, damage:1, enemyDamage:1, gold:1, loot:1},
   visual: {mapDprMax:2.5, servantScale:0.86, bodySpacing:1},
   // Exemplo: wolf: {hp:42, atk:5, xp:12, gold:8, name:'Lobo da noite'}

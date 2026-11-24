@@ -1,0 +1,19 @@
+name: Testar servidor Eldoria
+on:
+  pull_request:
+    paths: ['server/**', 'js/49-modelo.js', 'js/50-oficios-modelo.js', '.github/workflows/test-server.yml']
+  push:
+    branches: [main]
+    paths: ['server/**']
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+        working-directory: server
