@@ -27,6 +27,7 @@ const tree0=skillTree;skillTree=function(){const h=tree0();return h.replace(/(<d
  return '<div class="talent43-actions"><button class="secondary" data-alloc43="talents" data-key43="'+esc(id)+'" data-qty43="1"'+disabled(!available||max<=0)+'>'+ (left===0?'Dominado':!available?'Bloqueado':free<=0?'Sem pontos':'+ 1 ponto')+'</button><button class="secondary" data-alloc43="talents" data-key43="'+esc(id)+'" data-qty43="max"'+disabled(!available||max<=1)+'>+'+Math.max(0,max)+'</button></div>';
  });};
 function invest(kind,k,qty){
+ if(qty!=='max'&&(!Number.isSafeInteger(qty)||qty<=0))return 0;
  if(kind==='attrs'&&Object.hasOwn(ATTR,k)){const free=attrPoints(),n=qty==='max'?free:Math.min(free,qty);if(n>0){state.attrs[k]=(state.attrs[k]||0)+n;return n;}}
  if(kind==='talents'){const t=nodes().flat().find(n=>n.id===k);if(!t||!nodeAvailable(t))return 0;const max=Math.min(talentPoints(),t.max-rank(k)),n=qty==='max'?max:Math.min(max,qty);if(n>0){state.talents[k]=rank(k)+n;return n;}}
  return 0;
@@ -70,6 +71,6 @@ const prof0=profPanel10;profPanel10=function(){
  const p=profState10(),v=PROF10[state.profession],z=state.profZone,running=state.mode==='gather'&&state.active,interval=6-(p.talents.speed||0),h=prof0();
  const latest=recent?.owner===state&&recent.prof===state.profession&&recent.z===z?recent:null;
  const dash='<section class="gather43-live"><div class="title43"><h3>'+ (running?'● Coleta em andamento':'○ Coleta pausada')+'</h3><small>'+esc(ZONES[z].name)+'</small></div><div class="gather43-cycle"><img src="'+materialIcon19(state.profession+':'+z+':0')+'" alt=""><div><b>'+esc(MAT10[state.profession+':'+z+':0']?.name||v.name)+'</b><small>Próximo ciclo '+Math.max(0,interval-p.ticks)+' s · intervalo '+interval+' s</small>'+bar(p.ticks,interval)+'</div></div><div class="gather43-last"><b>Última coleta</b><span>'+(latest?latest.delta.map((n,i)=>n>0?'<span style="color:'+RARITIES[i][1]+'">+'+n+' '+esc(RARITIES[i][0])+'</span>':'').filter(Boolean).join(' · ')||'+'+latest.count+' recursos':'Nenhum ciclo registrado nesta sessão')+'</span>'+(latest?.levelUp?'<strong>Nível '+latest.level+' alcançado!</strong>':'')+'</div></section>';
- return h.replace(/(<\/header>)/,'$1'+dash);
+ return h.includes('data-p29-run')?h.replace('<section class="g29-panel"><div class="g29-between"><h3>Expedição de coleta</h3>',dash+'<section class="g29-panel"><div class="g29-between"><h3>Expedição de coleta</h3>').replace(/<div class="g29-between"><span>Próxima coleta<\/span>[\s\S]*?<div class="g29-actions">/,'<div class="g29-actions">'):h;
 };
 })();
