@@ -34,7 +34,7 @@ function invest(kind,k,qty){
  if(kind==='talents'){const t=nodes().flat().find(n=>n.id===k);if(!t||!nodeAvailable(t))return 0;const max=Math.min(talentPoints(),t.max-rank(k)),n=qty==='max'?max:Math.min(max,qty);if(n>0){state.talents[k]=rank(k)+n;return n;}}
  return 0;
 }
-function reset(kind,approved){if(!approved||!['attrs','talents'].includes(kind)||!spent(state[kind])||state.gold<cost43(kind))return false;state.gold-=cost43(kind);state[kind]=kind==='attrs'?Object.fromEntries(Object.keys(ATTR).map(k=>[k,0])):{};if(kind==='talents'){state.cooldowns={};state.skillBuffs13={};}return true;}
+function reset(kind,approved){if(!approved||!['attrs','talents'].includes(kind)||!spent(state[kind])||state.gold<cost43(kind))return false;state.gold-=cost43(kind);state[kind]=kind==='attrs'?Object.fromEntries(Object.keys(ATTR).map(k=>[k,0])):{};if(kind==='talents'){state.cooldowns={};state.skillBuffs13={};if(state.era20){state.era20.rotation=null;state.era20.conditions={};}}return true;}
 window.eldoria43Points=Object.freeze({invest,reset});
 function commit(){validateEquipment();const s=stats();state.hp=Math.min(state.hp,s.h);state.mana=Math.min(state.mana,s.mana);render();save();}
 document.addEventListener('click',e=>{
