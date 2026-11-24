@@ -344,7 +344,7 @@ body.play14 #effects35 .e35-chip:hover,body.play14 #effects35 .e35-chip:focus-vi
 
 
 /* 0.43.1 — lightweight HUD, isolated effects and window polish. */
-body.play14 #combatHUD22{--orb:72px!important;--slot:29px!important;gap:8px;filter:none!important;bottom:12px}
+body.play14 #combatHUD22{--orb:72px;--slot:29px;gap:8px;filter:none!important;bottom:12px}
 body.play14 #combatHUD22.c22-compact{--orb:62px!important;--slot:25px!important}
 body.play14 #combatHUD22 .c22-core,body.play14.hunt26 #combatHUD22 .c22-core{background:none!important;border:0!important;box-shadow:none!important;min-width:0!important;padding:1px 2px!important;margin:0!important;border-radius:0!important}
 body.play14 #combatHUD22 .c22-core:after{display:none!important}
