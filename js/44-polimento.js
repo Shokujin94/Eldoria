@@ -19,6 +19,17 @@ fitWindow=function(w){
  w.style.top=clamp(r.top,0,Math.max(0,innerHeight-size.h))+'px';
 };
 const open0=openWindow;openWindow=function(id){const ret=open0(id),w=windows[id==='attr'?'hero':id];if(w&&!w.classList.contains('hidden'))fitWindow(w);return ret;};
+// Dismiss informational banners, never errors or the update confirmation.
+const notice=$('notice');
+let noticeTimer=null;
+function scheduleNotice44(){
+ clearTimeout(noticeTimer);
+ if(!notice||notice.classList.contains('hidden'))return;
+ const message=notice.textContent;
+ if(!/^(Nova temporada de Eldoria|Retorno offline|Derrota durante a ausência|Você foi derrotado)/.test(message))return;
+ noticeTimer=setTimeout(()=>{if(notice.textContent===message)notice.classList.add('hidden');},6000);
+}
+if(notice){new MutationObserver(scheduleNotice44).observe(notice,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});scheduleNotice44();}
 let sheetTab='attributes';
 window.eldoria44SheetSync=function(){
  const root=$('sheetExtra');if(!root)return;
