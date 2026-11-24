@@ -5,6 +5,7 @@ import {once} from 'node:events';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
 test('HTTP: private accounts, no state uploads, restart persistence, staging allowlist', {timeout:30000}, async()=>{
  const dir=await mkdtemp(join(tmpdir(),'eldoria-http-'));let child;
  async function start(){child=spawn(process.execPath,['server.mjs'],{cwd:new URL('.',import.meta.url),env:{...process.env,DB_PATH:join(dir,'test.sqlite'),PORT:'0',HOST:'127.0.0.1',SERVE_PREVIEW:'1',ALLOWED_ORIGINS:'https://test.example'},stdio:['ignore','pipe','pipe']});const port=await new Promise((resolve,reject)=>{let log='';const timer=setTimeout(()=>reject(Error('Startup timeout')),7000);child.stdout.on('data',c=>{log+=c;const m=log.match(/Eldoria online API (\d+)/);if(m){clearTimeout(timer);resolve(+m[1]);}});child.once('error',e=>{clearTimeout(timer);reject(e);});child.once('exit',c=>{clearTimeout(timer);reject(Error('Server exit '+c));});});return 'http://127.0.0.1:'+port;}
@@ -22,6 +23,12 @@ test('HTTP: private accounts, no state uploads, restart persistence, staging all
  assert.equal((await send('/auth/logout','POST',{},token)).status,200);assert.equal((await send('/state','GET',null,token)).status,401);
  await stop();base=await start();const login=await send('/auth/login','POST',{username:'alfa',password:'Senha de teste 123!'});assert.equal(login.status,200);assert.equal((await send('/state','GET',null,login.body.token)).body.character.name,'Alfa');
  assert.equal((await send('/server/server.mjs','GET',null,login.body.token)).status,404);
+ // Competing HTTP purchases against one real escrow listing.
+ const b=await send('/auth/register','POST',{username:'beta',password:'Senha teste beta 123!'}),c=await send('/auth/register','POST',{username:'gama',password:'Senha teste gama 123!'});assert.equal(b.status,200);assert.equal(c.status,200);
+ assert.equal((await send('/character','POST',{name:'Beta',cls:'war'},b.body.token)).status,201);assert.equal((await send('/character','POST',{name:'Gama',cls:'war'},c.body.token)).status,201);
+ const seed=new DatabaseSync(join(dir,'test.sqlite'));try{seed.exec('PRAGMA busy_timeout=5000');const seller=seed.prepare("SELECT id FROM accounts WHERE username='alfa'").get().id;seed.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run('http-gear',seller,'Espada','weapon',0,1,0,'hunt',10,JSON.stringify({baseMods:{damage:10},mods:{damage:6.2}}));seed.prepare("UPDATE characters SET gold=1000 WHERE name IN ('Beta','Gama')").run();}finally{seed.close();}
+ const sale=await send('/market','POST',{action:'list',itemId:'http-gear',price:500},login.body.token);assert.equal(sale.status,200);
+ const buys=await Promise.all([b,c].map(v=>send('/market','POST',{action:'buy',id:sale.body.id,price:500},v.body.token)));assert.deepEqual(buys.map(x=>x.status).sort(),[200,409]);const buyerStates=await Promise.all([b,c].map(v=>send('/state','GET',null,v.body.token)));assert.equal(buyerStates.filter(v=>v.body.items.some(i=>i.id==='http-gear')).length,1);assert.equal(buyerStates.reduce((n,v)=>n+v.body.character.gold,0),1500);assert.equal((await send('/market','GET',null,login.body.token)).body.totals.burned,15);assert.equal((await send('/state','GET',null,login.body.token)).body.character.gold,485);
  const old=auth.body.recoveryCode;assert.match(old,/^[a-f0-9]{48}$/);const code=await send('/auth/recovery-code','POST',{password:'Senha de teste 123!'},login.body.token);assert.equal(code.status,200);assert.notEqual(code.body.recoveryCode,old);
  assert.equal((await send('/auth/recover','POST',{username:'alfa',password:'Nova senha 12345!',code:old})).status,400);
  const attempts=await Promise.all([1,2].map(()=>send('/auth/recover','POST',{username:'alfa',password:'Nova senha 12345!',code:code.body.recoveryCode})));assert.deepEqual(attempts.map(x=>x.status).sort(),[200,400]);const replacement=attempts.find(x=>x.status===200).body.recoveryCode;assert.match(replacement,/^[a-f0-9]{48}$/);

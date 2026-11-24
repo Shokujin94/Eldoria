@@ -39,3 +39,5 @@ Recuperação por código aleatório de 192 bits, armazenado apenas como SHA-256
 
 ### Beta pública opcional
 Em VPS Linux com Docker, DNS apontado e firewall configurado, defina ELDORIA_DOMAIN (somente hostname) e execute docker compose -f compose.yaml -f compose.public.yaml up -d --build. Caddy solicita TLS automaticamente; serve a interface e API na mesma origem. TRUST_PROXY só deve ser ativado atrás do proxy controlado, com cabeçalho X-Real-IP sobrescrito pelo proxy; não exponha a porta 8787 a terceiros. O modo local continua igual. Nenhum domínio/VPS foi provisionado. Antes de abrir ao público, realizar teste real de carga, revisão de segurança, restauração em ambiente separado e política de privacidade/termos.
+
+Testes adicionais: duas compras HTTP simultâneas do mesmo anúncio devem resultar em uma única transferência e uma única queima. Teste de backup com base WAL aberta e reabertura da cópia confirma persistência dos itens e gold, além de rejeitar sobrescrita.
