@@ -43,3 +43,15 @@ body #world,body.play14 #world{background:transparent!important;position:relativ
 @keyframes update41-glow{0%,100%{box-shadow:0 10px 36px #000b,0 0 12px #c7a35855,inset 0 0 12px #d2b36c26}50%{box-shadow:0 10px 36px #000b,0 0 24px #e6c37288,inset 0 0 16px #d2b36c44}}
 @keyframes update41-shine{0%,55%{transform:translateX(-130%)}80%,100%{transform:translateX(130%)}}
 @media(prefers-reduced-motion:reduce){#update38,#update38 .update41-apply::after{animation:none}}
+
+
+/* 0.41.0 — item details; keep inventory tiles uncluttered. */
+.loot41-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid #9d84554d;font:11px/1.4 system-ui}
+.loot41-meta b{background:#3a301c;border:1px solid #af8e4b;border-radius:4px;padding:2px 6px;color:#f4d797;font:700 11px ui-monospace,monospace}
+.loot41-meta span{color:#bdb49f}.loot41-legacy{font-size:10px;color:#a9a59c;border-top:1px solid #655b48;margin-top:6px;padding-top:5px}
+.loot41-rolls{margin-top:8px;border-top:1px solid #74613d;padding-top:6px}.loot41-rolls h4{font:700 11px system-ui;color:#e1bf80;margin:0 0 5px}
+.loot41-row{display:grid;grid-template-columns:minmax(88px,1fr) 32px 47px 24px;gap:5px;align-items:center;font:11px/1.3 system-ui;margin:3px 0;color:#d3d0c3}
+.loot41-row b{text-align:right;color:#c4e6b3;font:700 11px ui-monospace,monospace}.loot41-row small{text-align:right;font:10px ui-monospace,monospace;color:#b5ac98}.loot41-row i{height:4px;background:#363a34;position:relative;border-radius:2px;overflow:hidden}.loot41-row i::before{content:'';position:absolute;inset:0 auto 0 0;width:var(--roll,0%);background:#c5b875}
+.loot41-label,.loot41-label b,.loot41-label small{color:#aa9e89;font:10px system-ui}.loot41-rolls>small{color:#afa899;font-size:10px}.loot41-power{margin-top:8px;padding:8px;border:1px solid #9676b4;background:#241d30;border-radius:5px;color:#e1c1f8}.loot41-power p{margin:4px 0;font-size:12px}.loot41-power small{color:#c0b0cc;font-size:10px}
+.loot41-atlas{padding:7px 10px;border-left:2px solid #c7a968;background:#28251e;color:#d8c69f;font-size:12px}
+.loot41-breakdown{margin:12px 0;padding:12px;background:#202522;border:1px solid #66775e;border-radius:6px}.loot41-breakdown h3{color:#c8d9b5;margin:0 0 7px;font:700 15px Georgia,serif}.loot41-breakdown>div{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:12px}.loot41-breakdown b{color:#c7dea9;font-variant-numeric:tabular-nums}.loot41-breakdown p{font-size:11px;color:#bdbfb3;margin:8px 0 0}
