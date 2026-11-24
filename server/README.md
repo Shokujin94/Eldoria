@@ -74,3 +74,6 @@ Dez afixos originais, resistência/vulnerabilidade elemental, quatro combos, est
 
 ## 0.47.6 — grimório e recalibração
 Quatro papéis de servo, duas invocações para Senhor dos Ossos, ataque e deslocamento independentes, sentinela, arqueiro, arauto e sacrifício do Ceifador. Recalibração do último atributo com referência base persistente (sem crescimento cumulativo). Representação de servos ainda usa sprite compartilhado e eixo único; interface original, animações e balanço exato não estão integralmente reproduzidos. Sem reset.
+
+## 0.47.7 — consolidação online
+Lacaios atacam independentemente do alcance/controle do herói, duração real acompanha os agentes, origem de itens de elites de dungeon mantém taxação correta, morte em recuperação não é adiada. Cliques aguardam a consulta em andamento, dados completos se atualizam em mudança de nível/atividade e após anúncio, HUD de alvo/status/XP e atualização manual dos painéis. Script share-update.sh preserva o túnel ativo durante a reconstrução do serviço (há interrupção breve e novo login; URL depende da continuidade do túnel). Sem reset. Ainda não equivale integralmente às animações, mapas interativos, IA 2D, sprites e ao balanceamento do motor legado; precisa de teste de navegador real.

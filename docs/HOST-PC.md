@@ -11,3 +11,6 @@ Para atualizar a imagem antes do compartilhamento, execute `bash scripts/beta-up
 
 ### Atualizar sem perder progresso
 Se estiver compartilhando o jogo, avise os jogadores e execute `bash scripts/share-stop.sh`, depois `bash scripts/beta-update.sh` e por fim `bash scripts/share-start.sh`. O link temporário muda. Não use `docker compose down -v`.
+
+### Atualização com o túnel ativo (0.47.7)
+Após obter a nova versão do script com `git pull --ff-only`, use `bash scripts/share-update.sh` para backup, atualização, build e reinício somente do serviço eldoria. O túnel fica ativo, portanto o endereço normalmente permanece igual. Existe breve interrupção e pode ser necessário entrar novamente. Se o túnel estiver parado, use beta-update.sh e share-start.sh. Nunca use down -v.

@@ -28,3 +28,6 @@ jobs:
       - run: bash scripts/test-beta-backup.sh
 
       - run: bash -n scripts/share-start.sh scripts/share-stop.sh scripts/share-status.sh
+
+      - run: bash -n scripts/share-update.sh
+      - run: node --check js/51-online.js && node --check js/52-scene.js
