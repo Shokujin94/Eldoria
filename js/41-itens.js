@@ -71,6 +71,17 @@ const item0=item;item=function(...args){
  const it=item0(...args);if(it.relic!==null||!ZONES[it.tier]||!slotBase[it.slot])return it;
  const data=generate(it,lootMode,state.enemy);it.baseMods=data.baseMods;delete data.baseMods;it.loot41=data;return rebuildItem(it);
 };
+// Item power is independent of the hero, equip requirements and temporary upgrades.
+// Normalize base stat budgets by slot; affixes are part of the original roll.
+const powerWeights45={damage:1,def:1.35,hp:.17,mana:.26,str:1.8,dex:1.8,int:1.8,vit:1.8,wis:1.8,skill:1.5,crit:2,haste:2,tenacity:1.5,regen:2,r30regen:1.8,r30reduction:2,r30recovery:1.5,r30dodge:2,r30critmult:1.3,r30special:1.5,r30heal:1.5};
+const slotBudget45={weapon:10,offhand:7,armor:9,head:6,legs:6,hands:5,feet:5,ring:6,accessory:6};
+function itemPower45(it){
+ if(!it)return 0;
+ const raw=it.baseMods||it.mods||{},budget=slotBudget45[it.slot]||7;
+ const sum=Object.entries(raw).reduce((n,[k,v])=>n+(Number.isFinite(v)?Math.max(0,v)*(powerWeights45[k]||1):0),0);
+ return Math.max(1,Math.round(10*sum/budget));
+}
+window.eldoria45ItemPower=itemPower45;
 function meta(it){const m=it?.loot41;return m&&Number.isInteger(m.level)&&m.level>=1&&m.level<=100&&m.required===m.level&&m.ranges&&Array.isArray(m.affixes)?m:null;}
 const req0=reqItem;reqItem=function(it){const r=req0(it),m=meta(it);if(!m)return r;return {...r,level:m.required,value:Math.min(Math.round(3+m.level*(r.key==='vit'?.36:.49)+it.rarity*.5),Math.floor((m.level-1)*.65)+5)};};
 function bestPower(eq,key){let best=0;const p=powers[key];for(const id of Object.values(eq||{})){const it=state.inventory.find(x=>x.id===id),a=meta(it)?.power;if(a?.key===key&&Number.isInteger(a.value)&&a.value>=p.min&&a.value<=p.max)best=Math.max(best,a.value);}return best;}
@@ -116,12 +127,12 @@ function compactInfo42(it,expanded=false){
  if(it.unique20)extra.push(it.unique20==='echo'?'Eco profano: a cada 5 habilidades, +40% dano.':'Última sentença: consome sangramento, causando 70% do restante.');
  if(it.corrupt20)extra.push('Corrompido: '+(it.corrupt20==='ward'?'+2,5% resistências':it.corrupt20==='power'?'+3,5% dano':'sem efeito adicional'));
  if(it.awake20)extra.push('Desperto: +4% poder de habilidade.');
- return '<div class="it42" style="--item-color:'+rar[1]+'"><div class="it42-head"><b>'+esc(it.name)+'</b><small>'+esc(rar[0])+' · '+esc(QUALITY[it.quality??1])+' · '+esc(SLOTS[it.slot])+'</small></div><div class="it42-level">'+(m?'<strong>iLvl '+m.level+'</strong>':'<small>Legado</small>')+'<span class="'+(ok?'':'it42-denied')+'">Nv. '+req.level+' · '+req.value+' '+esc(ATTR[req.key][0])+'</span>'+(equipped?'<span class="it42-equipped">Equipado</span>':'')+(it.vocation&&it.vocation!==state.cls?'<span class="it42-denied">'+esc(CLASSES[it.vocation]?.name||it.vocation)+'</span>':'')+'</div><div class="it42-stats">'+rows+'</div>'+(m?'<small class="it42-hint">Valor efetivo · [faixa base] · ◆ afixo</small>':'')+effects.join('')+extra.map(x=>'<p class="it42-extra">'+x+'</p>').join('')+'<div class="it42-foot"><span>+'+it.upgrade+' · Runas '+it.runes.length+'/'+sockets(it)+(it.refine20?' · Refino '+it.refine20+'/3':'')+'</span><span>'+num(it.value)+' ◈</span></div>'+(expanded?'<div class="it42-origin">'+esc(ZONES[it.tier]?.name||'')+' · '+esc(it.crafted?'Forja':sourceNames[m?.source]||'Regional')+' · '+esc(CLASSES[it.vocation]?.name||'Todas as vocações')+'</div>'+comparison(it)+(p?'<small>Faixa do poder: '+p.min+'–'+p.max+' · não acumula.</small>':''):'<button class="secondary it42-more" data-inspect42="'+it.id+'">Detalhes e comparação ↗</button>')+'</div>';
+ return '<div class="it42" style="--item-color:'+rar[1]+'"><div class="it42-head"><b>'+esc(it.name)+'</b><small>'+esc(rar[0])+' · '+esc(QUALITY[it.quality??1])+' · '+esc(SLOTS[it.slot])+'</small></div><div class="it42-level">'+('<strong title="Poder base dos atributos originais, sem melhorias">iLvl '+itemPower45(it)+'</strong>')+'<span class="'+(ok?'':'it42-denied')+'">Requer Nv. '+req.level+' · '+req.value+' '+esc(ATTR[req.key][0])+'</span>'+(equipped?'<span class="it42-equipped">Equipado</span>':'')+(it.vocation&&it.vocation!==state.cls?'<span class="it42-denied">'+esc(CLASSES[it.vocation]?.name||it.vocation)+'</span>':'')+'</div><div class="it42-stats">'+rows+'</div>'+(m?'<small class="it42-hint">Valor efetivo · [faixa base] · ◆ afixo</small>':'')+effects.join('')+extra.map(x=>'<p class="it42-extra">'+x+'</p>').join('')+'<div class="it42-foot"><span>+'+it.upgrade+' · Runas '+it.runes.length+'/'+sockets(it)+(it.refine20?' · Refino '+it.refine20+'/3':'')+'</span><span>'+num(it.value)+' ◈</span></div>'+(expanded?'<p class="it45-explain">iLvl mede o poder dos atributos base e afixos, não o requisito de nível. Runas, aprimoramentos e poderes condicionais são avaliados separadamente.</p><div class="it42-origin">'+esc(ZONES[it.tier]?.name||'')+' · '+esc(it.crafted?'Forja':sourceNames[m?.source]||'Regional')+' · '+esc(CLASSES[it.vocation]?.name||'Todas as vocações')+'</div>'+comparison(it)+(p?'<small>Faixa do poder: '+p.min+'–'+p.max+' · não acumula.</small>':''):'<button class="secondary it42-more" data-inspect42="'+it.id+'">Detalhes e comparação ↗</button>')+'</div>';
 }
 itemInfo=function(it){return compactInfo42(it);};
 window.eldoria42Inspect=compactInfo42;
-const atlas0=atlasLoot;atlasLoot=function(z,mode,id){const [lo,hi]=sourceRange(z,mode,id);return '<p class="loot41-atlas"><b>Nível de equipamento: '+lo+'–'+hi+'</b> · Atributos variam com nível, raridade e qualidade. Afixos de 0 a 4.</p>'+atlas0(z,mode,id);};
-const craft0=craftPanel10;craftPanel10=function(){const [lo,hi]=sourceRange(craftZone10,'forge');return craft0().replace('</h3>','</h3><p class="loot41-atlas">Nível de equipamento: <b>'+lo+'–'+hi+'</b> · atributos e afixos são sorteados na fabricação.</p>');};
+const atlas0=atlasLoot;atlasLoot=function(z,mode,id){const [lo,hi]=sourceRange(z,mode,id);return '<p class="loot41-atlas"><b>Faixa de nível de uso: '+lo+'–'+hi+'</b> · Atributos variam com nível, raridade e qualidade. Afixos de 0 a 4.</p>'+atlas0(z,mode,id);};
+const craft0=craftPanel10;craftPanel10=function(){const [lo,hi]=sourceRange(craftZone10,'forge');return craft0().replace('</h3>','</h3><p class="loot41-atlas">Faixa de nível de uso: <b>'+lo+'–'+hi+'</b> · atributos e afixos são sorteados na fabricação.</p>');};
 ATTR.str[1]='Força: 0,84 de dano base por ponto para o Guerreiro; 0,55 como secundário. Também aumenta o multiplicador crítico.';
 ATTR.dex[1]='Destreza: 0,84 de dano base por ponto para o Arqueiro; 0,35 como secundário. Melhora crítico, esquiva e chance de ataque extra.';
 ATTR.int[1]='Inteligência: 0,84 de dano base por ponto para Mago e Necromante; 0,35 como secundário. Melhora mana, habilidades e poder dos lacaios.';

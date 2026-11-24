@@ -5,7 +5,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const num=v=>Number.isFinite(+v)?+v:0;
 const nf=v=>num(v).toLocaleString('pt-BR',{maximumFractionDigits:1});
 const time=v=>duration(Math.max(0,Math.floor(num(v))));
-const sizes={bag:[620,610],hero:[650,640],equip:[660,650],attr:[650,640],talent:[710,650],dungeon:[900,650],analyzer:[460,630],forge:[650,640],prof:[680,640],zones:[880,650],sub:[520,600]};
+const sizes={bag:[620,610],hero:[650,640],equip:[660,650],attr:[650,640],talent:[710,650],dungeon:[900,650],analyzer:[460,630],forge:[650,640],prof:[680,640],zones:[880,650],bestiary:[680,640],sub:[520,600]};
 for(const [id,def] of Object.entries(WINDOW_DEFS)){if(sizes[id]){def[2]=sizes[id][0];def[3]=sizes[id][1];}else{def[2]=Math.min(def[2],680);def[3]=Math.min(def[3],640);}}
 function dimensions(w,h,vw,vh){return {w:Math.max(1,Math.min(w,vw-12)),h:Math.max(1,Math.min(h,vh-12))};}
 window.eldoria44Dimensions=dimensions;
@@ -66,7 +66,7 @@ const row=(k,v,cls='')=>'<div class="an44-row"><span>'+esc(k)+'</span><b class="
 const bar=(fraction,color)=>'<div class="an44-meter"><i style="width:'+clamp(fraction*100,0,100)+'%;background:'+color+'"></i></div>';
 const empty=t=>'<p class="an44-empty">'+esc(t)+'</p>';
 function rarity(a){return section('Raridades · equipamentos',RARITIES.map(([name,color],i)=>{const n=num(a.rarities?.[i]);return '<div class="an44-rarity"><span style="color:'+color+'">'+esc(name)+'</span><b>'+nf(n)+'</b><small>'+nf(a.itemCount?n/a.itemCount*100:0)+'%</small>'+bar(a.itemCount?n/a.itemCount:0,color)+'</div>';}).join(''));}
-function best(a){const it=a.best;if(!it||!RARITIES[it.rarity])return '';return section('Melhor drop registrado','<div class="an44-best" style="--rar:'+RARITIES[it.rarity][1]+'"><img src="'+itemIcon(it)+'" alt=""><div><b>'+esc(it.name)+'</b><small>'+esc(RARITIES[it.rarity][0])+(it.loot41?.level?' · iLvl '+it.loot41.level:'')+'</small></div><strong>'+cash(it.value)+'</strong></div>');}
+function best(a){const it=a.best;if(!it||!RARITIES[it.rarity])return '';return section('Melhor drop registrado','<div class="an44-best" style="--rar:'+RARITIES[it.rarity][1]+'"><img src="'+itemIcon(it)+'" alt=""><div><b>'+esc(it.name)+'</b><small>'+esc(RARITIES[it.rarity][0])+(' · iLvl '+window.eldoria45ItemPower(it))+'</small></div><strong>'+cash(it.value)+'</strong></div>');}
 function summary(a,m){
  return '<div class="an44-grid">'+card('XP / hora',rate(m.rate(num(a.xp))),nf(a.xp)+' XP obtida','xp44')+card('Lucro estimado / h',m.seconds?cash(m.rate(m.net)):'—',cash(m.net)+' na sessão',m.net>=0?'green44':'red44')+card('Abates / hora',rate(m.rate(m.kills)),nf(m.kills)+' abates','blue44')+card('Equipamentos / h',rate(m.rate(m.count)),nf(m.count)+' itens','gold44')+'</div>'+
  section('Economia da caçada',row('Ouro recebido',cash(m.gold),'gold44')+row('Valor de venda do loot',cash(m.value))+row('Receita bruta estimada',cash(m.gross))+row('Custo de consumíveis','− '+cash(m.cost),'red44')+row('Lucro estimado',cash(m.net),m.net>=0?'green44':'red44')+'<p class="an44-note">O lucro considera o valor registrado de venda dos drops ao NPC e o custo de reposição dos consumíveis. Não representa ouro já realizado nem inclui compras e resets.</p>')+best(a)+rarity(a);
@@ -86,10 +86,10 @@ function drops(a,m){
   return nav+section(dropKind==='materials'?'Materiais da sessão':'Runas da sessão',list.length?list.sort((a,b)=>b[1]-a[1]).map(([k,n])=>{const d=dict[k],r=RARITIES[d.rarity]||RARITIES[0];return '<div class="an44-drop" style="--rar:'+r[1]+'"><img src="'+icon(k)+'" alt=""><div><b>'+esc(d.name)+'</b><small>'+esc(r[0])+' · '+cash(d.price)+'/un.</small></div><strong>×'+nf(n)+'</strong></div>';}).join(''):empty('Nenhum recurso desta categoria.'))+'<p class="an44-note">Contagem acumulada na sessão. Preços unitários atuais de referência.</p>';
  }
  let list=(a.drops||[]).filter(it=>RARITIES[it.rarity]&&(!rareOnly||it.rarity>=2));
- if(dropSort==='rarity')list.sort((a,b)=>b.rarity-a.rarity||num(b.loot41?.level)-num(a.loot41?.level));
+ if(dropSort==='rarity')list.sort((a,b)=>b.rarity-a.rarity||window.eldoria45ItemPower(b)-window.eldoria45ItemPower(a));
  if(dropSort==='value')list.sort((a,b)=>b.value-a.value);
  return nav+'<div class="an44-drop-tools"><span>'+list.length+' de '+nf(m.count)+' equipamentos</span><label>Ordenar <select id="an44-sort">'+[['recent','Recentes'],['rarity','Raridade / iLvl'],['value','Maior valor']].map(([k,n])=>'<option value="'+k+'"'+(k===dropSort?' selected':'')+'>'+n+'</option>').join('')+'</select></label></div>'+
- (list.length?list.map(it=>'<div class="an44-drop" data-drop44="'+esc(it.id)+'" style="--rar:'+RARITIES[it.rarity][1]+'"><img src="'+itemIcon(it)+'" alt=""><div><b title="'+esc(it.name)+'">'+esc(it.name)+'</b><small>'+esc(RARITIES[it.rarity][0])+' · '+esc(SLOTS[it.slot])+(it.loot41?.level?' · iLvl '+it.loot41.level:'')+'</small>'+(it.source44?'<small>'+esc(it.source44)+' · '+time(it.elapsed44)+'</small>':'')+'<details><summary>Atributos</summary><small>'+esc(modText(it))+'</small></details></div><strong>'+cash(it.value)+'</strong></div>').join(''):empty('Nenhum equipamento nesta seleção.'))+'<p class="an44-note">Histórico dos últimos 60 equipamentos. Contadores e valores abrangem toda a sessão.</p>';
+ (list.length?list.map(it=>'<div class="an44-drop" data-drop44="'+esc(it.id)+'" style="--rar:'+RARITIES[it.rarity][1]+'"><img src="'+itemIcon(it)+'" alt=""><div><b title="'+esc(it.name)+'">'+esc(it.name)+'</b><small>'+esc(RARITIES[it.rarity][0])+' · '+esc(SLOTS[it.slot])+(' · iLvl '+window.eldoria45ItemPower(it))+'</small>'+(it.source44?'<small>'+esc(it.source44)+' · '+time(it.elapsed44)+'</small>':'')+'<details><summary>Atributos</summary><small>'+esc(modText(it))+'</small></details></div><strong>'+cash(it.value)+'</strong></div>').join(''):empty('Nenhum equipamento nesta seleção.'))+'<p class="an44-note">Histórico dos últimos 60 equipamentos. Contadores e valores abrangem toda a sessão.</p>';
 }
 function paint(el,h){
  if(el._html44===h)return;
