@@ -87,10 +87,10 @@ window.eldoria39MoveRanged=function(now,dt){
 // Stable attack slots. Actor collisions are soft while travelling, solid at the destination.
 window.eldoria381StepServants=function(now,dt){
  const list=state.necro30?.servants||[];if(!list.length)return;
- const e=enemyPoint(now),arena=state.mode!=='hunt',eg=window.eldoria38ServantGap(),pg=arena?62:44,sg=arena?60:43;
+ const e=enemyPoint(now),arena=state.mode!=='hunt',eg=window.eldoria38ServantGap(),pg=62,sg=60;
  const engage=state.enemyHp>0&&!window.eldoria31Interlude?.(),ms=clamp(dt,0,100);
  const points=list.map((a,i)=>window.eldoria36Minions.position(a,i,now)),reserved=[];
- const lane=arena?0:lane34(),depth=38;
+ const lane=arena?0:lane34(),depth=52;
  const blocks=(q,o,g)=>((q.x-o.x)/g)**2+((q.y-o.y)/(arena?Math.min(65,g):Math.min(38,g)))**2<.998;
  const floor=q=>arena?valid34(q):valid34({x:q.x,y:lane})&&Math.abs(q.y-lane)<=depth+.01;
  const baseLegal=q=>floor(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
