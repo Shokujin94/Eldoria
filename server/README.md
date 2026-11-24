@@ -50,3 +50,6 @@ Limite de 120 ciclos por processamento, preservando o restante do tempo no banco
 
 ## 0.46.9 — restauração e atualização segura
 Restauração offline com validação de integridade, estrutura e chaves estrangeiras, cópia de emergência, troca atômica e invalidação das sessões/códigos restaurados. Testes usam SQLite temporário, inclusive backup corrompido e confirmação ausente. Scripts de atualização e backup distinguem modo local e público por ELDORIA_PUBLIC=1. Não há reset automático, nem provisionamento público. Uma restauração explícita perde progresso após o snapshot e pode restaurar senhas antigas; os jogadores devem gerar novos códigos após entrar. Procedimento documentado em docs/BETA-DEPLOY.md. O teste HTTP isolado anterior de 12 clientes/96 requisições registrou zero erros, p95 de 40 ms no CI; não constitui capacidade real de produção.
+
+### Correção Windows (0.46.9)
+O script de backup agora preserva caminhos Linux no Git Bash e verifica o SHA-256 da cópia transferida. Teste simulado no CI cobre flags MSYS, transferência binária e rejeição de cópia truncada; Docker Desktop no Windows precisa de confirmação local.

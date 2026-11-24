@@ -24,3 +24,5 @@ jobs:
       - run: npm run load:http -- 40 10
         working-directory: server
       - run: bash -n scripts/beta-backup.sh scripts/beta-update.sh scripts/beta-restore.sh
+
+      - run: bash scripts/test-beta-backup.sh
