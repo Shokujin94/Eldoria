@@ -5,9 +5,11 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
+import { createServer } from 'node:net';
 import assert from 'node:assert/strict';
 const dir=await mkdtemp(join(tmpdir(),'eldoria-browser-'));
-const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,DB_PATH:join(dir,'test.sqlite'),PORT:'0',HOST:'127.0.0.1',SERVE_PREVIEW:'1',REGISTRATION_MODE:'open'},stdio:['ignore','pipe','pipe']});
+const probe=createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');const chosenPort=probe.address().port;await new Promise((resolve,reject)=>probe.close(e=>e?reject(e):resolve()));
+const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,DB_PATH:join(dir,'test.sqlite'),PORT:String(chosenPort),HOST:'127.0.0.1',ALLOWED_ORIGINS:'http://127.0.0.1:'+chosenPort,SERVE_PREVIEW:'1',REGISTRATION_MODE:'open'},stdio:['ignore','pipe','pipe']});
 let browser;
 try{
  const port=await new Promise((resolve,reject)=>{let log='';const timer=setTimeout(()=>reject(Error('startup timeout')),10000);child.stdout.on('data',d=>{log+=d;const m=log.match(/Eldoria online API (\d+)/);if(m){clearTimeout(timer);resolve(+m[1]);}});child.once('exit',c=>{clearTimeout(timer);reject(Error('server exit '+c));});});
@@ -30,6 +32,7 @@ try{
  await page.locator('.paper61-hero').waitFor();
  await page.locator('[data-tab=bag]').click();
  await page.locator('[data-filter61=weapon]').click();
+ await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
  assert.equal(await page.locator('.bag56').count(),1);
  await page.locator('[data-tab=talent]').click();
  await page.locator('[data-path61]').first().waitFor();
