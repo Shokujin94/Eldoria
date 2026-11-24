@@ -7,6 +7,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test *.test.mjs"
+    "test": "node --test *.test.mjs",
+    "load:http": "node http-load.mjs"
   }
 }

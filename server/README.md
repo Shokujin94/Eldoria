@@ -44,3 +44,6 @@ Testes adicionais: duas compras HTTP simultâneas do mesmo anúncio devem result
 
 ## 0.46.7 — beta privada
 Cadastro público fechado por padrão no compose público; modo invite exige hash SHA-256 de um convite compartilhado. Modo local permanece aberto. Scripts de backup e atualização para Linux e guia em docs/BETA-DEPLOY.md. A verificação HTTP /health testa uma consulta SQLite. Sem provisionamento de infraestrutura.
+
+## 0.46.8 — controle de carga e recuperação offline
+Limite de 120 ciclos por processamento, preservando o restante do tempo no banco (janela máxima de duas horas). Enquanto houver ciclos pendentes, alterações e operações de mercado retornam 409 e a interface exibe a sincronização; consultar estado e o processamento em segundo plano avançam a fila. Derrota encerra a atividade e descarta os ciclos posteriores. Recuperação de cidade mantém frações de segundo. Consultas de estatísticas usam somente equipamentos equipados; tick em lotes usa orçamento cooperativo de 40 ms entre personagens, não limite rígido por personagem. Teste HTTP isolado: cd server && npm run load:http -- 12 8. Usa base temporária e 12 contas sintéticas com atraso de duas horas; relata p50, p95, máximo, erros, vazão e tamanho de resposta. Não representa capacidade de VPS ou tráfego real. Nenhum reset ou deploy público.

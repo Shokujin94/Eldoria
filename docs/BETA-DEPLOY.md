@@ -14,3 +14,6 @@ Para abrir cadastro de beta, gere um segredo forte com openssl rand -hex 24. Gua
 bash scripts/beta-backup.sh cria cópia verificada em ~/eldoria-backups (ou ELDORIA_BACKUP_DIR). Copie para armazenamento externo privado e configure retenção. Para atualização: bash scripts/beta-update.sh. O script exige branch correta, árvore limpa, backup e fast-forward. Não executa reset. Não há rollback automático. Agende backups no cron da VPS após validar manualmente. Não execute docker compose down -v.
 ## Antes de convidar jogadores
 Teste recuperação de conta, transferência de mercado, integridade e restauração de backup em ambiente isolado, desempenho HTTP e carga real, logs, privacidade e termos. A base local de testes não é automaticamente transferida. Decida se o beta inicia vazio ou importa a base de teste por backup verificado. Não há VPS ou domínio provisionado.
+
+## Verificação de carga isolada
+Na VPS de teste, sem utilizar o banco real, execute `cd server && npm run load:http -- 12 8` (Node 22.13+). Para outro cenário, ajuste clientes (1–40) e rodadas, mantendo até 450 consultas. O script cria e remove seu próprio SQLite e servidor localhost. Avalie p95, erros e vazão; teste com carga realista antes de ampliar a beta. Não é prova de capacidade em produção.
