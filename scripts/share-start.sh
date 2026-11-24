@@ -8,7 +8,7 @@ if [[ -n "$("${compose[@]}" ps --status running -q tunnel)" ]]; then
   echo "Já existe um túnel ativo. Use bash scripts/share-status.sh ou encerre com bash scripts/share-stop.sh."
   exit 1
 fi
-docker compose up -d --build --wait eldoria
+docker compose up -d --wait eldoria
 bash scripts/beta-backup.sh
 success=0
 trap 'if [[ "$success" != 1 ]]; then "${compose[@]}" stop tunnel >/dev/null 2>&1 || true; echo "Compartilhamento não confirmado; túnel encerrado." >&2; fi' EXIT
