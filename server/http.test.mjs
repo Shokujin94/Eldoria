@@ -22,5 +22,12 @@ test('HTTP: private accounts, no state uploads, restart persistence, staging all
  assert.equal((await send('/auth/logout','POST',{},token)).status,200);assert.equal((await send('/state','GET',null,token)).status,401);
  await stop();base=await start();const login=await send('/auth/login','POST',{username:'alfa',password:'Senha de teste 123!'});assert.equal(login.status,200);assert.equal((await send('/state','GET',null,login.body.token)).body.character.name,'Alfa');
  assert.equal((await send('/server/server.mjs','GET',null,login.body.token)).status,404);
+ const old=auth.body.recoveryCode;assert.match(old,/^[a-f0-9]{48}$/);const code=await send('/auth/recovery-code','POST',{password:'Senha de teste 123!'},login.body.token);assert.equal(code.status,200);assert.notEqual(code.body.recoveryCode,old);
+ assert.equal((await send('/auth/recover','POST',{username:'alfa',password:'Nova senha 12345!',code:old})).status,400);
+ const attempts=await Promise.all([1,2].map(()=>send('/auth/recover','POST',{username:'alfa',password:'Nova senha 12345!',code:code.body.recoveryCode})));assert.deepEqual(attempts.map(x=>x.status).sort(),[200,400]);const replacement=attempts.find(x=>x.status===200).body.recoveryCode;assert.match(replacement,/^[a-f0-9]{48}$/);
+ assert.equal((await send('/state','GET',null,login.body.token)).status,401);assert.equal((await send('/auth/login','POST',{username:'alfa',password:'Senha de teste 123!'})).status,401);
+ const next=await send('/auth/login','POST',{username:'alfa',password:'Nova senha 12345!'});assert.equal(next.status,200);assert.equal((await send('/state?compact=1','GET',null,next.body.token)).body.character.name,'Alfa');
+ assert.equal((await send('/auth/change-password','POST',{password:'Nova senha 12345!',newPassword:'Outra senha 12345!'},next.body.token)).status,200);assert.equal((await send('/state','GET',null,next.body.token)).status,401);
+ assert.equal((await send('/auth/recover','POST',{username:'alfa',password:'Senha teste 12345!',code:replacement})).status,400);
  }finally{await stop();await rm(dir,{recursive:true,force:true});}
 });

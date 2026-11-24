@@ -1,0 +1,6 @@
+{$ELDORIA_DOMAIN} {
+  header Strict-Transport-Security "max-age=31536000"
+  reverse_proxy eldoria:8787 {
+    header_up X-Real-IP {remote_host}
+  }
+}

@@ -1,0 +1,24 @@
+# Optional public beta. Requires a real DNS hostname and ports 80/443.
+services:
+  eldoria:
+    environment:
+      ALLOWED_ORIGINS: https://${ELDORIA_DOMAIN:?Defina ELDORIA_DOMAIN}
+      TRUST_PROXY: "1"
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      ELDORIA_DOMAIN: ${ELDORIA_DOMAIN:?Defina ELDORIA_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./server/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      eldoria:
+        condition: service_healthy
+volumes:
+  caddy-data:
+  caddy-config:
