@@ -55,3 +55,105 @@ body #world,body.play14 #world{background:transparent!important;position:relativ
 .loot41-label,.loot41-label b,.loot41-label small{color:#aa9e89;font:10px system-ui}.loot41-rolls>small{color:#afa899;font-size:10px}.loot41-power{margin-top:8px;padding:8px;border:1px solid #9676b4;background:#241d30;border-radius:5px;color:#e1c1f8}.loot41-power p{margin:4px 0;font-size:12px}.loot41-power small{color:#c0b0cc;font-size:10px}
 .loot41-atlas{padding:7px 10px;border-left:2px solid #c7a968;background:#28251e;color:#d8c69f;font-size:12px}
 .loot41-breakdown{margin:12px 0;padding:12px;background:#202522;border:1px solid #66775e;border-radius:6px}.loot41-breakdown h3{color:#c8d9b5;margin:0 0 7px;font:700 15px Georgia,serif}.loot41-breakdown>div{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:12px}.loot41-breakdown b{color:#c7dea9;font-variant-numeric:tabular-nums}.loot41-breakdown p{font-size:11px;color:#bdbfb3;margin:8px 0 0}
+
+
+/* 0.41.1 — individual window refinements, preserving layouts and controls. */
+.crest42 img{width:100%;height:100%;object-fit:contain;display:block}.crest42{background:none!important;border:0!important;box-shadow:none!important}
+body .floating .window-head h2{font-size:17px!important;font-family:Georgia,serif;line-height:1.25}
+body .floating .window-body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.45;scrollbar-color:#6d705e #141719}
+body .floating .window-body h3{line-height:1.25}body .floating .window-body small{line-height:1.35}
+body .floating .window-body .muted{color:#b9bcb3}body .floating .window-body button:disabled{opacity:.46}
+body .floating .window-body input:focus-visible,body .floating .window-body select:focus-visible{outline:2px solid #c8b277;outline-offset:1px}
+/* Inventory: compact browsing, clear rarity, level and equipment state. */
+#win-bag .bag-nav19{gap:5px;flex-wrap:wrap}
+#content-bag .stock19-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+#content-bag .stock19-head h3{font:700 19px Georgia,serif;margin:0 0 3px;color:#ead8b3}
+#content-bag .stock19-head p{font-size:12px;color:#aaaFA7;margin:0}
+#content-bag .stock19-head>b{font:700 13px ui-monospace,monospace;color:#e6cf9a;white-space:nowrap}
+#content-bag .stock19-tools{display:grid!important;grid-template-columns:1.5fr 1fr 1fr;gap:6px!important}
+#content-bag .stock19-tools>*{width:100%;min-width:0!important;font-size:12px!important}
+#content-bag .stock19-group h4{display:flex;justify-content:space-between;align-items:center;color:var(--rar);font:700 12px system-ui;letter-spacing:.025em;margin:12px 0 6px;border-bottom:1px solid color-mix(in srgb,var(--rar) 25%,transparent);padding-bottom:5px}
+#content-bag .stock19-grid{grid-template-columns:repeat(auto-fill,minmax(78px,1fr))!important;gap:6px!important}
+#content-bag .stock19-slot[data-itemid]{height:109px!important;min-height:109px!important;position:relative;background:linear-gradient(160deg,color-mix(in srgb,var(--rar) 10%,#1e2225),#151719)!important;border:1px solid color-mix(in srgb,var(--rar) 48%,#292d30)!important;padding:7px 4px 4px!important;justify-content:flex-start}
+#content-bag .stock19-slot[data-itemid] img{width:43px!important;height:43px!important}
+#content-bag .stock19-name{font-size:11px!important;line-height:1.2!important;margin-top:3px;color:#e0ded3}
+#content-bag .tile42-level{font:700 10px ui-monospace,monospace;color:#ddc58a;margin-top:auto;padding:2px 0}
+#content-bag .stock19-slot .rune-dots{bottom:39px!important}
+#content-bag .stock19-slot.active{outline:2px solid var(--rar);outline-offset:-2px}
+#content-bag .stock19-details{padding:10px;margin-top:12px;border-top:1px solid #4a4b42}
+#art19-actions{border-radius:7px!important;padding:5px!important;gap:5px!important}
+#art19-actions button{font-size:12px!important;height:auto!important;min-height:29px!important;max-height:none!important}
+/* Equipment: retain the paper doll and put the selected piece and totals in distinct groups. */
+#content-equip .gear-top{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;background:#242a25;border:1px solid #536451;border-radius:7px}
+#content-equip .gear-top b{color:#b5d5ad;font-variant-numeric:tabular-nums}
+#content-equip .gear-paper{gap:10px;padding:12px 0}
+#content-equip .gear-cell{border-radius:7px!important;background:linear-gradient(145deg,#252a29,#171b1b)!important;min-width:0;box-shadow:none!important}
+#content-equip .gear-cell.chosen{outline:2px solid var(--slotrar,#b59d70);outline-offset:-2px}
+#content-equip .gear-slotname{font:700 10px system-ui;color:#b9c3bb;letter-spacing:.035em}
+#content-equip .gear-itemname{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+#content-equip .gear-inspect{padding:13px!important;border:1px solid #60715b!important;border-radius:8px!important;background:#1d2420!important}
+#content-equip .gear-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+#content-equip .gear-summary td:last-child{font-weight:700;color:#e4e9d8;font-variant-numeric:tabular-nums}
+#content-equip .gear-summary tr:nth-child(even){background:#ffffff05}
+#content-equip .gear-positive{color:#a6d9a8!important}
+/* Character: natural attributes stay distinct from final combat numbers. */
+#content-hero .identity13{border-radius:9px!important;background:linear-gradient(120deg,#24303b,#1c2429)!important;border-color:#62788a!important}
+#content-hero .summary13 article{background:#202b34!important;border-color:#4c6374!important}
+#content-hero .summary13 strong,#content-hero .stat13 strong{font-variant-numeric:tabular-nums;color:#d1e4f4}
+#content-hero .attrib13{background:#212a29!important;border-color:#4d655d!important;border-radius:7px!important}
+#content-hero .attrib13 b,#content-hero .attrib13 strong{color:#c5dfc1}
+#content-hero .split13>div{background:#17221f!important}
+#content-hero .stat13{background:#202833!important;border-color:#485d73!important}
+#content-hero .attrhead11 strong{color:#bde2b8;font-size:18px}
+#content-hero .loot41-breakdown{border-color:#567969;background:#1b2a26}
+#content-hero .sheet-table td:last-child{color:#cbe2ed;font-weight:700}
+/* Talents: class-colored paths, compact investment controls and readable requirements. */
+#content-talent .t32-banner{border-radius:9px!important;padding:14px!important;box-shadow:none!important}
+#content-talent .t32-banner h2{font-size:23px!important}#content-talent .t32-points strong{font-size:32px!important;font-variant-numeric:tabular-nums}
+#content-talent .t32-route{border-radius:7px!important;min-height:58px}
+#content-talent .t32-filters{gap:6px;flex-wrap:wrap}
+#content-talent .t32-filters button.active{background:color-mix(in srgb,var(--accent) 18%,#1a1c20)!important}
+#content-talent .t32-branch{border-radius:8px;padding:9px!important}
+#content-talent .t32-node{position:relative;border-radius:7px!important;background:#1d2024!important;border-color:color-mix(in srgb,var(--branch) 40%,#34383d)!important;box-shadow:none!important;padding:10px!important}
+#content-talent .t32-node.learned{border-left:3px solid var(--branch)!important}
+#content-talent .t32-node.locked{opacity:.82}
+#content-talent .t32-nodehead b{font:600 13px/1.3 system-ui!important;color:#ebe5d8}
+#content-talent .t32-nodehead strong{color:var(--branch);font-variant-numeric:tabular-nums}
+#content-talent .t32-nodehead small{font-size:10px;color:#b8bcbd}
+#content-talent .t32-requires{font-size:11px;min-height:20px!important}
+#content-talent .t32-node>.detail38{background:transparent!important;color:#c9caca!important;border:0!important;text-decoration:underline;text-underline-offset:2px}
+#content-talent .t32-node>[data-talent]{min-height:32px!important;font-weight:600}
+#content-talent .fx34-preview{font-size:11px!important;min-height:25px!important;opacity:.85}
+/* Other windows retain their original functions and distinctive palettes. */
+#content-sub .asc-card,#content-sub .soul40{border-radius:8px!important;border-color:#746382!important;background:linear-gradient(145deg,#302638,#1d2024)!important}
+#content-sub .asc-active,#content-sub .soul40-choice.selected{border-color:#a9c98e!important}
+#content-sub .soul40-choice{font-size:12px;min-height:55px}
+#content-zones .atlas-select{border-radius:6px!important;min-height:50px}
+#content-zones .atlas-select.sel{outline:1px solid #c4b174;background:#34362a!important}
+#content-zones .atlas-hero{border-radius:8px;overflow:hidden}
+#content-zones .atlas-monsters button{border-radius:7px!important}
+#content-forge .service-card,#content-merchant .service-card{background:#27231e!important;border-color:#786042!important;border-radius:8px!important}
+#content-forge .matrow10,#content-merchant .matrow10{min-height:34px;border-bottom:1px solid #60564544;gap:8px}
+#content-forge .craft-select10 label{font-size:12px;font-weight:600}
+#content-analyzer .sheet-table td:last-child,#content-records .sheet-table td:last-child{font-variant-numeric:tabular-nums;color:#b9d4e0;font-weight:700}
+#content-log .log{font-size:12px;line-height:1.55}
+#content-settings label{line-height:1.5}#content-settings .service-card{background:#22272b!important;border-color:#515d66!important;border-radius:7px!important}
+#content-vault .vault-tile11{border-radius:7px!important}#content-vault .vault-detail11{gap:10px}
+#content-city .service-card{border-radius:8px!important}#content-hunt .activity-card,#content-boss .activity-card,#content-dungeon .activity-card{padding:12px;border-radius:7px}
+/* Compact item tooltip and explicit, scrollable inspection dialog. */
+.it42{min-width:0;font:12px/1.35 system-ui;color:#dedfd7}
+.it42-head{display:grid;gap:3px;margin-bottom:7px}.it42-head>b{font:700 17px/1.25 Georgia,serif;color:var(--item-color);overflow-wrap:anywhere}.it42-head>small{color:#b6b7ae;font-size:11px}
+.it42-level{display:flex;align-items:center;gap:6px 9px;flex-wrap:wrap;padding:6px 0;border-block:1px solid #666b574f;font-size:11px;color:#c7cbc0}
+.it42-level strong{font:700 12px ui-monospace,monospace;color:#eace8f}.it42-denied{color:#f2a19b!important}.it42-equipped{color:#a9dcae}
+.it42-stats{display:grid;gap:4px;margin:8px 0 3px}.it42-row{display:grid;grid-template-columns:minmax(85px,1fr) auto minmax(0,64px);gap:7px;align-items:baseline}
+.it42-row>span{overflow-wrap:anywhere}.it42-row>b{text-align:right;color:#b9e2aa;white-space:nowrap;font-variant-numeric:tabular-nums}.it42-row>small{text-align:right;font:10px ui-monospace,monospace;color:#b9b4a4}
+.it42-affix{font-style:normal;color:#dbb876;font-size:10px}.it42-hint{font-size:10px;color:#a9ada4}
+.it42-power,.it42-set{border-left:2px solid #b698d6;padding:6px 8px;margin:8px 0;background:#282332;border-radius:3px}.it42-power b{color:#e1c2f7}.it42-set{background:#233129;border-color:#93bd9d}.it42-set b{color:#b9dfbc}
+.it42-power p,.it42-set p,.it42-extra{font-size:11px;line-height:1.4;margin:3px 0;color:#d6d6cd}
+.it42-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px;padding-top:7px;margin-top:7px;border-top:1px solid #59625266;color:#c6c3b4;font-size:11px}
+.it42-origin{color:#bfc9c2;margin:8px 0;font-size:12px}.it42-more{margin-top:9px;min-height:30px!important;width:100%;font-size:12px!important}
+.itemtip .it42-more{display:none!important}.itemtip:has(.it42){box-sizing:border-box;width:min(335px,calc(100vw - 12px))!important;max-width:calc(100vw - 12px)!important;max-height:calc(100dvh - 12px);overflow:hidden;background:#191f1e!important;padding:11px!important;border-color:#77806b!important;border-radius:8px!important}
+#inspect42{box-sizing:border-box;width:min(500px,calc(100vw - 24px));max-height:88dvh;overflow:auto;padding:18px;color:#e5e0d2;background:#191f1e;border:1px solid #9e9166;border-radius:10px;box-shadow:0 20px 55px #000b;font:13px system-ui}
+#inspect42::backdrop{background:#050807a8}#inspect42 header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #5c6555;margin-bottom:13px;padding-bottom:9px}#inspect42 h2{font:700 21px Georgia,serif;margin:0;color:#e6d2a4}
+#inspect42 .it42-head>b{font-size:20px}#inspect42 .it42-row{font-size:13px}#inspect42 .it42-row small{font-size:11px}
+@media(max-width:520px){#content-bag .stock19-tools{grid-template-columns:1fr 1fr}#content-bag .stock19-tools input{grid-column:1/-1}#content-equip .gear-paper{gap:4px}#content-talent .t32-banner{gap:10px}#content-talent .t32-branches{grid-template-columns:1fr!important}#content-talent .t32-routes{grid-template-columns:repeat(2,minmax(0,1fr))}}

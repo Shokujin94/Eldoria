@@ -64,73 +64,87 @@ window.eldoria39MoveRanged=function(now,dt){
  }
  dest=null;
 };
-// Cache each servant's attack slot; moving targets are followed continuously.
-// Expensive route selection happens only on a timer or when a slot is invalid.
+// Stable attack slots. Actor collisions are soft while travelling, solid at the destination.
 window.eldoria381StepServants=function(now,dt){
  const list=state.necro30?.servants||[];if(!list.length)return;
  const e=enemyPoint(now),arena=state.mode!=='hunt',eg=window.eldoria38ServantGap(),pg=arena?62:44,sg=arena?60:43;
  const engage=state.enemyHp>0&&!window.eldoria31Interlude?.(),ms=clamp(dt,0,100);
- const points=list.map((a,i)=>window.eldoria36Minions.position(a,i,now));
- const blocks=(q,o,g)=>arena?((q.x-o.x)/g)**2+((q.y-o.y)/Math.min(65,g))**2<.999:Math.abs(q.x-o.x)<g-.05;
- const baseLegal=q=>valid34(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
- const slots=[];
+ const points=list.map((a,i)=>window.eldoria36Minions.position(a,i,now)),reserved=[];
+ const lane=arena?0:lane34(),depth=38;
+ const blocks=(q,o,g)=>((q.x-o.x)/g)**2+((q.y-o.y)/(arena?Math.min(65,g):Math.min(38,g)))**2<.998;
+ const floor=q=>arena?valid34(q):valid34({x:q.x,y:lane})&&Math.abs(q.y-lane)<=depth+.01;
+ const baseLegal=q=>floor(q)&&!blocks(q,pos,pg)&&!blocks(q,e,eg);
+ const walk=(a,b)=>{if(arena)return walk34(a,b);const [lo,hi]=bounds34();return {x:clamp(b.x,lo,hi),y:clamp(b.y,lane-depth,lane+depth)};};
+ // Tight arena corners require a coordinated pair of slots, rather than first-come allocation.
+ let pair=null;
+ if(arena&&engage&&points.length===2){
+  const reach=list.map(a=>window.eldoria40ServantRole?.(a)?.reach||eg+16);
+  const valid=(q,i)=>baseLegal(q)&&dist(q,e)<=reach[i]+.0001;
+  const good=q=>q&&q.length===2&&valid(q[0],0)&&valid(q[1],1)&&!blocks(q[0],q[1],sg);
+  const cache=points[0].pair42;
+  if(good(points)){pair=points.map(p=>({x:p.x,y:p.y}));}
+  else if(cache&&cache.other===points[1]&&cache.offsets){
+   const q=cache.offsets.map(o=>({x:e.x+o.x,y:e.y+o.y}));if(good(q))pair=q;
+  }
+  if(!pair&&(!cache||cache.other!==points[1]||now-cache.t>=300||cache.offsets)){
+   const options=reach.map((r,i)=>{
+    const candidates=[];if(valid(points[i],i))candidates.push({...points[i]});
+    const radii=new Set([Math.min(65,r),r-.01,Math.max(65,r*.8)]);
+    for(let n=66;n<r;n+=6)radii.add(n);
+    for(const rad of radii)for(let j=0;j<72;j++){const t=j*Math.PI/36,q={x:e.x+Math.cos(t)*rad,y:e.y+Math.sin(t)*rad};if(valid(q,i))candidates.push(q);}
+    return candidates;
+   });
+   let best=Infinity;
+   for(const a of options[0])for(const b of options[1])if(!blocks(a,b,sg)){
+    const cost=dist(points[0],a)+dist(points[1],b);if(cost<best){best=cost;pair=[a,b];}
+   }
+   points[0].pair42={other:points[1],t:now,offsets:pair?.map(q=>({x:q.x-e.x,y:q.y-e.y}))||null};
+  }
+ }
  for(let i=0;i<points.length;i++){
   const p=points[i],a=list[i],others=points.filter((_,j)=>i!==j);
-  const legal=q=>baseLegal(q)&&!slots.some(o=>blocks(q,o,sg));
-  const actual=q=>legal(q)&&!others.some(o=>blocks(q,o,sg));
-  const role=window.eldoria40ServantRole?.(a)||{reach:0},reach=role.reach||eg+16,hitDistance=dist(p,e),strikeAge=now-(a.attack31??-10000),locked=strikeAge>=0&&strikeAge<420;
-  p.phaseLeft381=Math.max(0,(p.phaseLeft381||0)-ms);
-  const settled=engage&&actual(p)&&hitDistance<=reach-3&&(!role.reach||hitDistance>=role.reach*.55)&&(!role.guard||dist(p,pos)<150);
-  if(settled){
-   slots.push({x:p.x,y:p.y});p.goal39=null;p.stall39=0;p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);
-   if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;continue;
+  const role=window.eldoria40ServantRole?.(a)||{},reach=role.reach||eg+16,anchor=engage?e:pos;
+  const prior=reserved.slice();const legal=q=>baseLegal(q)&&!prior.some(o=>blocks(q,o,sg));
+  const clear=q=>baseLegal(q)&&!others.some(o=>blocks(q,o,sg));
+  const strikeAge=now-(a.attack31??-1e9),locked=strikeAge>=0&&strikeAge<420;
+  const inReach=q=>dist(q,e)<=reach;
+  const preferred=q=>!role.reach||dist(q,e)>=Math.max(eg,reach*.58);
+  const stop=()=>{p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);p.phaseLeft381=0;if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;};
+  if(engage&&legal(p)&&clear(p)&&inReach(p)&&(preferred(p)||locked)&&(!pair||dist(p,pair[i])<1.5)){
+   reserved.push({x:p.x,y:p.y});p.goal42=null;stop();continue;
   }
-  const old=p.goal39;
-  let goal=old&&engage?{x:e.x+old.dx,y:e.y+old.dy}:old&&{x:pos.x+old.dx,y:pos.y+old.dy};
-  if(!old||old.engage!==engage||!legal(goal)||now-(p.planned39||0)>650&&p.stall39>120){
-   const anchor=engage?e:pos,candidates=[];
-   for(const rad of engage?(role.reach?[Math.max(eg+3,role.reach*.72),Math.max(eg+5,role.reach*.90),eg+3]:[eg+3,eg+10]):[pg+5,pg+sg+7,pg+sg*2+10]){
-    for(let j=0;j<(arena?16:2);j++){
-     const t=j*Math.PI*2/(arena?16:2),q={x:anchor.x+Math.cos(t)*rad,y:arena?anchor.y+Math.sin(t)*rad:anchor.y};
+  const old=p.goal42;
+  let goal=pair?pair[i]:old&&old.engage===engage?{x:anchor.x+old.dx,y:arena?anchor.y+old.dy:lane+old.dy}:null;
+  const usable=q=>q&&legal(q)&&(!engage||inReach(q));
+  if(!pair&&!usable(goal)){
+   const candidates=[],radii=engage?(role.reach?[Math.max(eg+2,reach*.8),Math.max(eg+2,reach*.95),eg+2]:[eg+3,eg+10,eg+15]):[pg+5,pg+sg+5,pg+sg*2+5];
+   for(const r of radii)for(let j=0;j<24;j++){
+    const t=j*Math.PI*2/24,q={x:anchor.x+Math.cos(t)*r,y:arena?anchor.y+Math.sin(t)*r:lane+Math.sin(t)*Math.min(depth,r)};
+    if(usable(q))candidates.push(q);
+   }
+   // If all preferred slots are occupied, choose a legal waiting point near the enemy.
+   if(!candidates.length){
+    for(const r of [eg+sg+6,eg+sg*2+10,eg+sg*3+10])for(let j=0;j<16;j++){
+     const t=j*Math.PI*2/16,q={x:e.x+Math.cos(t)*r,y:arena?e.y+Math.sin(t)*r:lane+Math.sin(t)*depth};
      if(legal(q))candidates.push(q);
     }
    }
-   const score=q=>dist(p,q)+(others.some(o=>blocks(q,o,sg))?80:0)+(role.guard?dist(q,pos)*.65:role.reach?Math.abs(dist(q,e)-role.reach*.8)*.7:0);
-   candidates.sort((u,v)=>score(u)-score(v));
-   goal=candidates[0];p.goal39=goal?{dx:goal.x-anchor.x,dy:goal.y-anchor.y,engage}:null;p.planned39=now;p.route39=null;
+   const score=q=>dist(p,q)+(others.some(o=>blocks(q,o,sg))?sg*1.5:0)+(role.guard?dist(q,pos)*.45:0)+(!arena?Math.abs(q.y-lane)*.45:0)+(engage&&!inReach(q)?200:0);
+   candidates.sort((u,v)=>score(u)-score(v));goal=candidates[0]||null;
+   p.goal42=goal&&inReach(goal)?{dx:goal.x-anchor.x,dy:goal.y-anchor.y,engage}:null;
   }
-  if(!goal){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
-  slots.push(goal);
-  if(actual(p)&&dist(p,goal)<3){p.moving=false;p.stall39=0;p.motion39=(p.motion39||0)*Math.exp(-ms/95);if(!locked)p.dir=Math.sign(e.x-p.x)||p.dir;continue;}
-  // Keep a valid attack pose still while its animation plays.
-  if(locked&&baseLegal(p)&&hitDistance<=reach+6){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);continue;}
-  const clear=(u,v)=>{const n=Math.max(1,Math.ceil(dist(u,v)/12));for(let k=1;k<=n;k++){const q=toward(u,v,dist(u,v)*k/n);if(!actual(q))return false;}return true;};
-  let waypoint=goal;
-  if(arena&&!clear(p,goal)){
-   if(!p.route39||!actual(p.route39)||dist(p,p.route39)<5||now-(p.routeTime39||0)>400){
-    const options=[];
-    for(const [o,g] of [[pos,pg],[e,eg],...others.map(o=>[o,sg])])for(let j=0;j<8;j++){
-     const t=j*Math.PI/4,q={x:o.x+Math.cos(t)*(g+12),y:o.y+Math.sin(t)*(Math.min(65,g)+12)};
-     if(actual(q)&&clear(p,q))options.push(q);
-    }
-    options.sort((u,v)=>dist(p,u)+dist(u,goal)+(clear(u,goal)?0:100)-dist(p,v)-dist(v,goal)-(clear(v,goal)?0:100));
-    p.route39=options[0]||null;p.routeTime39=now;
-   }
-   waypoint=p.route39||goal;
-  }
-  let q=walk34(p,toward(p,waypoint,(engage?.18:.17)*ms));
-  let moved=actual(q)&&dist(p,q)>.01;
-  if(!moved){
-   p.stall39=(p.stall39||0)+ms;
-   // Temporary translucent passage avoids deadlocks in narrow lanes without teleporting.
-   if(!actual(p)||p.stall39>=200||p.phaseLeft381>0){
-    q=walk34(p,toward(p,goal,.24*ms));moved=dist(p,q)>.01;
-    if(moved)p.phaseLeft381=200;
-   }
-  }else p.stall39=0;
-  if(moved){p.x=q.x;p.y=q.y;}
+  if(!goal){p.moving=false;p.motion39=(p.motion39||0)*Math.exp(-ms/95);p.phaseLeft381=clear(p)?0:1;continue;}
+  reserved.push(goal);
+  if(clear(p)&&locked&&inReach(p)){stop();continue;}
+  if(dist(p,goal)<1&&clear(p)){stop();continue;}
+  // Never reset the route simply because the next step crosses an actor.
+  // Phasing is visual and attack eligibility resumes only after clearing the obstruction.
+  const before={x:p.x,y:p.y},q=walk(p,toward(p,goal,(engage?.22:.18)*ms));
+  p.x=q.x;p.y=q.y;
+  const moved=dist(before,p)>.01;
+  p.phaseLeft381=clear(p)?0:1;
   p.moving=moved;p.motion39=(p.motion39||0)+(Number(moved)-(p.motion39||0))*(1-Math.exp(-ms/95));
-  if(!locked)p.dir=Math.sign((engage?e:waypoint).x-p.x)||p.dir;
+  if(!locked)p.dir=(moved?Math.sign(p.x-before.x):Math.sign(e.x-p.x))||p.dir;
  }
 };
 // Projectiles start at hand/bow height and travel toward the existing collision body.
