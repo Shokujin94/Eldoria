@@ -12,13 +12,54 @@ const visualGap=()=>live()&&corpse&&corpse.area===area()&&performance.now()-corp
 window.eldoria31Interlude=()=>!!(gap()||visualGap());window.eldoria31LootOwned=()=>busy&&live();
 function resetVisual(){corpse=null;feedback.forEach(x=>x.el.remove());feedback=[];rareQueue=[];rare.hidden=true;rareUntil=0;visualArea=area();}
 function stockDelta(before,after,fn){for(const [k,n] of Object.entries(after||{})){const d=n-(before[k]||0);if(d>0)fn(k,d);}}
+
+// A bounded transparent snapshot, independent of the terrain and next enemy.
+function fragmentEnemy40(p,id,z,boss,trial){
+ try{
+  const width=192,height=192,scale=2,ox=96,oy=155;
+  const image=document.createElement('canvas');image.width=width*scale;image.height=height*scale;
+  const c=image.getContext('2d',{willReadFrequently:true});if(!c)return null;
+  c.scale(scale,scale);c.translate(ox-p.x,oy-p.y);
+  c.save();c.beginPath();c.rect(p.x-ox,p.y-oy,width,oy+10);c.clip();
+  if(window.eldoria40EnemySnapshot)window.eldoria40EnemySnapshot(c,p,id,z,boss,trial);
+  else if(boss)drawBoss(c,p.x,p.y,z,false);else creature(c,id,p.x,p.y,trial?1.7:1.2,false);
+  c.restore();
+  const pixels=c.getImageData(0,0,image.width,image.height).data,cell=(boss?9:7)*scale,parts=[];
+  for(let sy=0;sy<image.height;sy+=cell)for(let sx=0;sx<image.width;sx+=cell){
+   const sw=Math.min(cell,image.width-sx),sh=Math.min(cell,image.height-sy);let opaque=false;
+   for(let y=sy;y<sy+sh&&!opaque;y++)for(let x=sx;x<sx+sw;x++)if(pixels[(y*image.width+x)*4+3]>70){opaque=true;break;}
+   if(!opaque)continue;
+   const x=(sx+sw/2)/scale-ox,y=(sy+sh/2)/scale-oy;
+   const seed=(sx*31+sy*17+z*73+101),rand=n=>{const v=Math.sin(seed+n*97.31)*43758.5453;return v-Math.floor(v);};
+   const direction=x===0?(rand(1)<.5?-1:1):Math.sign(x);
+   parts.push({sx,sy,sw,sh,x,y,w:sw/scale,h:sh/scale,vx:direction*(12+rand(2)*45)+x*.38,vy:-14-rand(3)*45,spin:(rand(4)-.5)*5.6,fade:.30+rand(5)*.22});
+  }
+  return {image,parts};
+ }catch(e){console.warn('Eldoria: captura de fragmentos indisponível',e);return null;}
+}
+function drawFragments40(corpse,now){
+ const f=corpse.fragments;if(!f||!f.parts.length)return;
+ const t=clamp31((now-corpse.t)/1050,0,1);if(t>=1)return;
+ actor23((c,x,y)=>{
+  c.save();try{c.translate(x,y);c.imageSmoothingEnabled=false;
+   for(const a of f.parts){
+    const alpha=1-clamp31((t-a.fade)/(1-a.fade),0,1);if(alpha<=0)continue;
+    const shrink=1-.45*t,dx=a.x+a.vx*t,dy=a.y+a.vy*t+54*t*t;
+    c.save();c.globalAlpha*=alpha;c.translate(dx,dy);c.rotate(a.spin*t);c.scale(shrink,shrink);
+    c.drawImage(f.image,a.sx,a.sy,a.sw,a.sh,-a.w/2,-a.h/2,a.w,a.h);c.restore();
+   }
+  }finally{c.restore();}
+ },corpse.x,corpse.y);
+}
+
 const oldWin=win;
 win=function(){if(busy||gap())return;const eligible=isCombat()&&state.cls,show=eligible&&live(),loc=area(),z=state.zone,mode=state.mode,p=eligible?{...enemyPoint(gameNow28())}:null,kind=state.enemy,boss=mode==='boss'||mode==='dungeon'&&state.wave===4,oldKills=state.kills;
  const ids=show?new Set(state.inventory.map(i=>i.id)):null,mats=show?{...state.materials}:null,runes=show?{...state.runeStock}:null,pots=show?{...state.consumables}:null,gold=state.gold;
+ const fragments=show?fragmentEnemy40(p,kind,z,boss,mode==='trial'):null;
  busy=true;let ret;try{ret=oldWin();}finally{busy=false;}
  if(!eligible||state.kills===oldKills)return ret;
  if(isCombat()&&area()===loc){state.interlude31={area:loc,left:1};state.pending11=[];dest=null;}
- if(show&&area()===loc){corpse={area:loc,x:p.x,y:p.y,id:kind,z,boss,trial:mode==='trial',t:performance.now(),dir:p.x>=pos.x?1:-1};const drops=[];
+ if(show&&area()===loc){corpse={area:loc,x:p.x,y:p.y,id:kind,z,boss,trial:mode==='trial',t:performance.now(),dir:p.x>=pos.x?1:-1,fragments};const drops=[];
  for(const it of state.inventory)if(!ids.has(it.id))drops.push({name:it.name,rar:it.rarity,src:itemIcon(it),n:1,kind:'Equipamento'});
  stockDelta(mats,state.materials,(k,n)=>{const m=MAT10[k];if(m)drops.push({name:m.name,rar:m.rarity||0,src:materialIcon19(k),n,kind:'Material'});});
  stockDelta(runes,state.runeStock,(k,n)=>{const r=RUNES[k];if(r)drops.push({name:r.name,rar:r.rarity||0,src:runeIcon(k),n,kind:'Runa'});});
@@ -38,7 +79,7 @@ const oldStep=stepProjectiles18;stepProjectiles18=function(now,dt,sim=false){if(
 const oldSpeed=window.eldoria26AttackSpeed;window.eldoria26AttackSpeed=side=>oldSpeed(side)*(side==='hero'?.82:.82);
 const oldSwitch=switchActivity;switchActivity=function(...a){const before=area(),r=oldSwitch(...a);if(before!==area()){state.interlude31=null;resetVisual();}return r;};
 // UI and gameplay use the same timestamp on actual servant damage, not a fabricated periodic hit.
-const actors=renderActors23;renderActors23=function(now,fixed){actors(now,fixed);if(visualGap()){const c=corpse,t=clamp31((now-c.t)/1050,0,1),fall=Math.min(1,t/.65);ctx.save();try{ctx.translate(c.x,c.y+11);ctx.rotate(c.dir*fall*1.25);ctx.scale(1,1-.22*fall);ctx.translate(-c.x,-c.y-11);ctx.globalAlpha=Math.max(0,1-Math.max(0,t-.48)/.52);if(c.boss)actor23((ct,x,y)=>drawBoss(ct,x,y,c.z,false),c.x,c.y);else actor23((ct,x,y)=>creature(ct,c.id,x,y,c.trial?1.7:1.2,false),c.x,c.y);}finally{ctx.restore();}}
+const actors=renderActors23;renderActors23=function(now,fixed){actors(now,fixed);if(visualGap())drawFragments40(corpse,now);
  if(state.cls!=='necro'||!isCombat()||!state.active||!state.necro30?.servants?.length)return;state.necro30.servants.forEach((a,i)=>{const p=window.eldoria36Minions.position(a,i,now),dir=p.dir;const attacking=Number.isFinite(a.attack31)&&now>=a.attack31&&now-a.attack31<420,phase=attacking?(now-a.attack31)/420:0,style=i===1?'guard':'sword',im=images[style+'_'+(attacking?'attack':'idle')];if(!im?.complete||!im.naturalWidth)return;const x=p.x+dir*(attacking?Math.sin(phase*Math.PI)*5:0),y=p.y;actor23((c,ax,ay)=>{c.save();if(p.phaseLeft381>0)c.globalAlpha*=.72;c.translate(ax,ay+11);c.fillStyle='#13271d9e';c.beginPath();c.ellipse(0,-1,15,5,0,0,Math.PI*2);c.fill();c.strokeStyle='#8bd7acaa';c.lineWidth=1;c.stroke();c.scale(dir,1);const h=(state.mode==='hunt'?72:111.6)*window.ELDORIA_CONFIG.visual.servantScale,bob=(Math.sin(now/135+i)*1.2*(p.motion39||0)+Math.sin(now/370+i)*.35)*(attacking?1-Math.sin(phase*Math.PI):1);c.imageSmoothingEnabled=true;c.shadowColor='#78d4a9';c.shadowBlur=3;const blend=attacking?Math.min(1,phase*8,(1-phase)*8):0;const idle=images[style+'_idle'],strike=images[style+'_attack'];const pose=(img,alpha)=>{if(alpha<=0||!img?.complete||!img.naturalWidth)return;const w=h*img.naturalWidth/img.naturalHeight;c.save();c.globalAlpha*=alpha;c.drawImage(img,-w*.5,-h+bob,w,h);c.restore();};if(attacking&&idle?.complete&&idle.naturalWidth){pose(idle,1-blend);pose(strike,blend);}else pose(im,1);c.restore();},x,y);});
 };
 let graphEl=null,graphW=0,graphH=0;function connectTree(){const g=document.querySelector('.path31-grid');if(!g||!g.clientWidth||!g.clientHeight||g.clientWidth<490)return;if(g===graphEl&&g.clientWidth===graphW&&g.clientHeight===graphH)return;graphEl=g;graphW=g.clientWidth;graphH=g.clientHeight;g.querySelector('.path31-links')?.remove();const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('class','path31-links');svg.setAttribute('viewBox',`0 0 ${graphW} ${graphH}`);svg.setAttribute('aria-hidden','true');const box=g.getBoundingClientRect();for(const a of nodes().flat().filter(n=>n.id.includes('31'))){const to=g.querySelector('[data-node="'+a.id+'"]');if(!to)continue;for(const req of [a.pre,a.pre2]){if(!req)continue;const from=g.querySelector('[data-node="'+req+'"]');if(!from)continue;const f=from.getBoundingClientRect(),t=to.getBoundingClientRect(),x1=f.left+f.width/2-box.left,y1=f.bottom-box.top,x2=t.left+t.width/2-box.left,y2=t.top-box.top;const p=document.createElementNS(ns,'path');p.setAttribute('d',`M${x1} ${y1} V${(y1+y2)/2} H${x2} V${y2}`);p.setAttribute('stroke',nodeAvailable(a)?'#bfa273':'#66554a');p.setAttribute('stroke-width','1.5');p.setAttribute('fill','none');svg.append(p);}}g.prepend(svg);}const drawBefore=draw;draw=function(now){drawBefore(now);if(state.cls){document.body.classList.toggle('interlude31',window.eldoria31Interlude());updateLoot(now);connectTree();}};
