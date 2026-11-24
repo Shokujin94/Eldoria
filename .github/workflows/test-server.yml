@@ -1,0 +1,42 @@
+name: Testar servidor Eldoria
+on:
+  pull_request:
+    paths: ['server/**', 'index.html', 'css/online51.css', 'js/51-online.js', 'js/52-scene.js', 'js/52-scene-art.js', 'js/49-modelo.js', 'js/50-oficios-modelo.js', '.github/workflows/test-server.yml']
+  push:
+    branches: [main, eldoria-online-0460]
+    paths: ['server/**', 'index.html', 'css/online51.css', 'js/51-online.js', 'js/52-scene.js', 'js/52-scene-art.js', 'version.json', '.github/workflows/test-server.yml']
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+        working-directory: server
+
+      - run: npm run load:http -- 12 8
+        working-directory: server
+
+      - run: npm run load:http -- 40 10
+        working-directory: server
+      - run: bash -n scripts/beta-backup.sh scripts/beta-update.sh scripts/beta-restore.sh
+
+      - run: bash scripts/test-beta-backup.sh
+
+      - run: bash -n scripts/share-start.sh scripts/share-stop.sh scripts/share-status.sh
+
+      - run: bash -n scripts/share-update.sh
+      - run: node --check js/51-online.js && node --check js/52-scene.js
+
+      - run: node --check js/52-scene-art.js
+
+      - run: npm install --no-save --package-lock=false playwright@1.58.2
+        working-directory: server
+      - run: npx playwright install --with-deps chromium
+        working-directory: server
+      - run: node browser-smoke.mjs
+        working-directory: server

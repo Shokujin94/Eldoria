@@ -1,0 +1,15 @@
+# Optional temporary internet sharing from the host PC. No inbound port forwarding.
+services:
+  eldoria:
+    environment:
+      ALLOWED_ORIGINS: http://localhost:8787,http://127.0.0.1:8787,${ELDORIA_SHARE_ORIGIN:-http://localhost:8000}
+      REGISTRATION_MODE: open
+      TRUST_PROXY: "${ELDORIA_SHARE_TRUST:-0}"
+      TRUST_PROXY_PEER: "${ELDORIA_SHARE_PEER:-}"
+      PROXY_IP_HEADER: cf-connecting-ip
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: ["tunnel", "--no-autoupdate", "--url", "http://eldoria:8787"]
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true

@@ -17,3 +17,10 @@ Edite a pasta original; teste com `JOGAR-LOCAL.bat` (Python 3). No GitHub Deskto
 ## Atenção
 
 Não envie saves, tokens ou senhas para o GitHub. O código do jogo é público. Os saves continuam no navegador: exporte antes de trocar de domínio ou importar outra versão. Esta versão é single-player, sem login ou backend. Não é hospedagem adequada para um MMO comercial. Para detalhes de edição, leia `LEIA-ME.md`.
+
+
+## Desenvolvimento online 0.46.0
+A branch de desenvolvimento online possui uma prévia de servidor autoritativo, sem saves locais. Consulte [server/README.md](server/README.md) antes de publicar; o motor completo ainda requer integração. Não substituir a versão atual até completar testes.
+
+## Main e publicação
+A `main` reúne o cliente e servidor online. O GitHub Pages continua exportando a interface original de `docs/legacy-client.html` (versão de referência em `docs/legacy-version.json`, sem reset de progresso). A publicação estática não é o servidor multiplayer. Para iniciar e atualizar o servidor online, consulte [HOST-PC](docs/HOST-PC.md); os scripts de atualização existentes continuam usando `eldoria-online-0460`.

@@ -1,0 +1,9 @@
+.git
+public
+node_modules
+**/node_modules
+**/*.sqlite*
+**/.env*
+*.zip
+saves
+backups
