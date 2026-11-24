@@ -16,7 +16,6 @@ window.eldoria26.armor=m.armor;
 const stat0=stats;stats=function(eq=state.equipment){const s=stat0(eq);if(!state.cls)return s;return m.finalStats(s,state.level,state.cls,C().main,{damage:gearAttr('damage',eq),hp:gearAttr('hp',eq)});};
 const sd0=skillData;skillData=function(k){return m.skill(sd0(k));};
 const skillDesc0=skillDescription;skillDescription=function(k){return skillDesc0(k)+' · Potência, cura e recarga refletem o balanceamento atual.';};
-const take0=window.eldoria26Damage;window.eldoria26Damage=function(e,s){return take0(e,s);};
 // Preserve individual procs, but stop multiplicative conditional stacks from dominating a hit.
 let context=null;
 window.eldoria49HitBudget=(side,n)=>context?.side===side?m.hitBudget(side,n,context.n):n;

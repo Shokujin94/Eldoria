@@ -64,3 +64,39 @@ body.play14 #combatHUD22 .c22-pause{border-color:#bba474!important;color:#e5cf9e
 /* Preserve vocation colors and semantic rarity/status colors. */
 body.play14 #content-talent .tal47-paths button[aria-pressed=true]{border-color:var(--node)!important;color:var(--node)!important}
 body.play14 #content-talent .tal47-buy .primary{background:color-mix(in srgb,var(--path) 24%,#222a30)!important;border-color:var(--path)!important;color:#fff!important}
+
+/* 0.44.0 — complete the theme on legacy windows and standalone dialogs. */
+body.play14 :is(.floating,.era-modal,dialog){--frame49:#6b6c72;--gold49:#d7b775;--silver49:#c4c8ce;--card49:linear-gradient(145deg,#242427,#141416)}
+body.play14 :is(.floating,.era-modal,dialog) :is(.section-banner11,.v27-banner,.an44-header,.bag46-head,.identity13,.atlas-hero,.dungeon-summary11){background:linear-gradient(125deg,#282725,#151517 75%)!important;border-color:#8d7956!important;border-radius:8px!important;box-shadow:inset 0 1px #f5d99c13!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.an44-section,.an44-metric,.an44-drop,.an44-best,.dungeon-floor11,.atlas-loot,.atlas-item,.merchant-row,.region-card,.achievement11,.cons-settings11,.cons-item11,.v27-stage,.v27-duo>article,.v27-grid>article,.stock19-details,.era-card,.era-row,.it42-row,.it42-set,.it42-power,.it42-extra,.b35-card,.b35-detail,.b35-entry,.b35-panel){background:var(--card49)!important;border-color:var(--frame49)!important;border-radius:6px!important;box-shadow:none!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.an44-drop,.an44-best){border-left-color:var(--rar,#d7b775)!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.an44-header h2,.an44-section h3,.atlas-heading,.section-banner11 h3,.v27-banner h2,.era-head,.dungeon-summary11 h3){color:#ead4a0!important;font-family:system-ui,sans-serif!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.an44-header small,.an44-header span,.an44-row span,.an44-note,.an44-empty,.an44-metric small,.an44-metric span,.an44-drop small,.an44-best small,.an44-drop details summary,.an44-drop-tools,.an44-source>div:first-child,.it42-row small,.it42-hint,.it42-origin,.era-desc){color:#b9bdc4!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.an44-meter,.v27-meter,.b35-meter,.it42-level,.stock19-tools,.bag43-controls){background-color:#101012!important;border-color:#65666b!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select,.atlas-monsters,.craft-select10,.cons-grid11,.era-tabs,.an44-nav,.an44-subnav){min-width:0}
+body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-monsters button,.craft-select10 button,[data-dungeon-zone],.era-tabs button){background:var(--card49)!important;border-color:#65666c!important;color:#d9dbe0!important}
+body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-monsters button,.craft-select10 button,[data-dungeon-zone],.era-tabs button,.an44-nav button,.an44-subnav button):is(.sel,.active,[aria-pressed=true]){background:linear-gradient(135deg,#3c3020,#171619)!important;border-color:#d7b775!important;color:#f2dca6!important;box-shadow:inset 0 -2px #d7b77580!important}
+body.play14 :is(dialog#patch39,dialog#inspect42,dialog#tal47-reset-dialog,.era-modal){background:linear-gradient(145deg,#232326,#101012 75%)!important;color:#e2e3e7!important;border:1px solid #aa946b!important;border-radius:9px!important;box-shadow:0 20px 65px #000c,inset 0 0 0 1px #c4c8ce15!important;font-family:system-ui,sans-serif!important;scrollbar-color:#83858b #111113}
+body.play14 :is(dialog#patch39,dialog#inspect42,dialog#tal47-reset-dialog)::backdrop{background:#050506c4!important}
+body.play14 :is(dialog#patch39,dialog#inspect42,.era-modal)>header{border-bottom:1px solid #aa946b80!important}
+body.play14 :is(dialog#patch39,dialog#inspect42,dialog#tal47-reset-dialog,.era-modal) :is(h2,h3,.era-head){font-family:system-ui,sans-serif!important;color:#ead4a0}
+body.play14 :is(dialog#patch39,dialog#inspect42,dialog#tal47-reset-dialog,.era-modal) button.secondary{background:linear-gradient(140deg,#29292c,#141416)!important;border:1px solid #787980!important;color:#e0e2e6!important;border-radius:5px!important}
+body.play14 :is(dialog#patch39,dialog#inspect42,dialog#tal47-reset-dialog,.era-modal) button.primary{background:linear-gradient(140deg,#61492b,#2a2116)!important;border:1px solid #c4a66c!important;color:#f6e3b9!important}
+body.play14 #patch39 .patch39-version,body.play14 #patch39 details.patch41-entry{background:#141416!important;border-color:#66676d!important}
+body.play14 #patch39 .patch39-version b{color:#e7ce95!important}
+body.play14 #patch39 .patch39-version small,body.play14 #patch39 .patch41-date,body.play14 #patch39 .patch41-kind,body.play14 #patch39 .patch41-intro{color:#b9bdc4!important}
+body.play14 #patch39 .patch41-entry>summary{background:linear-gradient(125deg,#28282b,#151517)!important}
+body.play14 #patch39 .patch41-entry[open]{border-color:#d7b775!important}
+body.play14 #patch39 .patch41-name{color:#ead4a0!important;font-family:system-ui,sans-serif!important}
+body.play14 #patch39 .patch41-topic{background:#1d1d20!important}
+body.play14 #patch39 .patch41-topic h3{color:var(--topic)!important}
+body.play14 #inspect42 .it42-head>b{color:var(--item-color,#ead4a0)!important}
+body.play14 #inspect42 .it42-level strong{color:#d7b775!important}
+body.play14 #inspect42 .it42-foot{color:#c4c8ce!important}
+body.play14 :is(#tracker35,#update38,.era-toast){background:linear-gradient(140deg,#242427,#101012)!important;border-color:#a58b5b!important;color:#e2e3e7!important}
+body.play14 #tracker35>small,body.play14 #update38 strong{color:#e7cf9a!important}
+body.play14 :is(.era-modal,dialog,.floating) :is(button,summary,input,select):focus-visible{outline:2px solid #e3c488!important;outline-offset:-2px}
+body.play14 :is(.an44-header,.v27-banner,.section-banner11) h2{overflow-wrap:anywhere}
+body.play14 :is(.era-modal,dialog,.floating) :is(button,summary) svg{vertical-align:middle}
+body.play14 :is(.era-modal,dialog,.floating) :is(button,summary):not(:disabled):hover svg{animation:ui48-glow 2.8s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){body.play14 :is(.era-modal,dialog,.floating) :is(button,summary) svg{animation:none!important}}
