@@ -8,9 +8,11 @@ stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 name="eldoria-$stamp.sqlite"
 tmp="$dir/$name.partial"
 trap 'rm -f "$tmp"' EXIT
-docker compose exec -T eldoria node server/backup.mjs "/data/$name"
-docker compose cp "eldoria:/data/$name" "$tmp"
+compose=(docker compose)
+if [[ "${ELDORIA_PUBLIC:-0}" == 1 ]]; then compose+=(-f compose.yaml -f compose.public.yaml); fi
+"${compose[@]}" exec -T eldoria node server/backup.mjs "/data/$name"
+"${compose[@]}" cp "eldoria:/data/$name" "$tmp"
 chmod 600 "$tmp"
 mv "$tmp" "$dir/$name"
-docker compose exec -T eldoria rm "/data/$name"
+"${compose[@]}" exec -T eldoria rm "/data/$name"
 echo "Backup verificado copiado: $dir/$name"
