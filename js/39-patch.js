@@ -2,6 +2,11 @@
 (()=>{
 'use strict';
 const history=[
+ {version:'0.40.0',date:'2026-11-24',title:'Fragmentos da alma',groups:[
+ ['Combate e derrota',['A sprite do inimigo se fragmenta em pequenos pedaços e desaparece em cerca de um segundo, sem alterar as recompensas.','Ao morrer em caçada, o personagem retorna a Vespera com vida e mana restauradas, a atividade encerrada e o progresso salvo. Dungeons, chefes e provações mantêm suas regras.','Vocações ranged mudam de lado quando ficam encurraladas; a corrida tem duração limitada e recarga, sem ataques novos nem imunidade.']],
+ ['Necromante',['Grimório de invocações na janela de Subclasse/Ascensão: selecione o servo original ou três novos papéis em Vespera.','Sentinela Óssea: mitigação de 12% de um ataque direto, com recarga de 4 s e alcance de proteção de 150.','Arqueiro Espectral: alcance 165 e Flecha Perfurante (+30% de dano a cada 4 s).','Arauto das Cinzas: alcance 140 e Selo de Cinzas (2 s de lentidão, recarga de 5 s).','IA por função, invocação perto do dono e posicionamento mais estável. Senhor dos Ossos pode combinar dois tipos; limites de invocação e duração foram preservados.']],
+ ['Salvamento',['Botão Salvar no menu principal com confirmação de gravação. Salvamento automático a cada 15 s, ao sair ou recarregar e ao ocultar a página.','A atualização manual grava o progresso antes de recarregar; se a gravação falhar, o jogador permanece na página.']]
+ ]},
  {version:'0.39.0',date:'2026-11-24',title:'Horizontes de combate',groups:[
  ['Combate à distância',['Arqueiro: alcance 225; Mago: 245; Clérigo: 170; Necromante: 200 unidades de mapa.','Reposicionamento com recuo limitado, pausa para conjurar e perseguição inimiga mais rápida. O alcance não concede invulnerabilidade.','Flechas e magias saem da altura das mãos, com trilhas coloridas e efeitos no ponto de impacto.']],
  ['Lacaios',['Posições de ataque persistentes, evitando alternância contínua de objetivos.','Transições suaves entre movimento e ataque; passagem espectral temporária em corredores bloqueados.']],
@@ -32,7 +37,7 @@ let pending=false,remote='',dismissed='';
 function showUpdate(v){
  if(v===dismissed)return;let box=document.getElementById('update38');if(!box){box=document.createElement('aside');box.id='update38';box.setAttribute('role','status');document.body.append(box);}
  box.replaceChildren();const h=document.createElement('strong');h.textContent='Nova versão disponível';const p=document.createElement('p');p.textContent='Eldoria '+v+' está pronto. Atualize quando desejar; seu combate não será interrompido automaticamente.';
- const actions=document.createElement('div');actions.className='update39-actions';const apply=document.createElement('button');apply.className='primary';apply.textContent='Salvar e atualizar';apply.onclick=()=>{if(state.cls&&!save()){p.textContent='Não foi possível salvar seu progresso. Tente novamente antes de atualizar.';return;}const url=new URL(location.href);url.searchParams.set('build',v);location.replace(url.href);};
+ const actions=document.createElement('div');actions.className='update39-actions';const apply=document.createElement('button');apply.className='primary';apply.textContent='Salvar e atualizar';apply.onclick=()=>{if(state.cls&&!(window.eldoria40QuickSave?window.eldoria40QuickSave():save())){p.textContent='Não foi possível salvar seu progresso. Tente novamente antes de atualizar.';return;}const url=new URL(location.href);url.searchParams.set('build',v);location.replace(url.href);};
  const later=document.createElement('button');later.className='secondary';later.textContent='Mais tarde';later.onclick=()=>{dismissed=v;box.remove();};actions.append(apply,later);box.append(h,p,actions);
 }
 async function checkVersion(){if(pending||!/^https?:$/.test(location.protocol))return;pending=true;try{const url=new URL('version.json',location.href);url.searchParams.set('_',String(Date.now()));const res=await fetch(url,{cache:'no-store'});if(!res.ok)return;const v=(await res.json()).version;if(typeof v!=='string'||! /^\d+(?:\.\d+){1,3}(?:-[a-zA-Z0-9-]+)?$/.test(v)||v===current)return;if(v!==remote){remote=v;showUpdate(v);}}catch(_){}finally{pending=false;}}
