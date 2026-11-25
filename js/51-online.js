@@ -155,11 +155,13 @@ const craftQuoteRequests=new WeakMap();
 function refreshCraftQuote(form){
  const output=form.querySelector('[data-craft-quote]');
  if(!output)return;
- const {zone,level,slot}=form.elements;
+ const {zone,level,slot,baseId}=form.elements;
+ const submit=form.querySelector('button');
+ submit.disabled=true;
  const ticket={};
  craftQuoteRequests.set(form,ticket);
  if(!level.validity.valid){output.textContent='Informe um nível válido para a região.';return;}
- const params=new URLSearchParams({zone:zone.value,level:level.value,slot:slot?.value??'accessory',kind:slot?'normal':'rare'});
+ const params=new URLSearchParams({zone:zone.value,level:level.value,slot:slot?.value??'accessory',kind:slot?'normal':'rare',baseId:baseId.value});
  for(const kind of ['mob','mining','wood','herb']){
   const grade=form.elements['grade_'+kind];
   if(grade)params.set(kind,grade.value);
@@ -173,8 +175,10 @@ function refreshCraftQuote(form){
    const [kind,,grade]=key.split(':'),available=data.character.materials[key]||0;
    return '<li>'+esc(names[kind])+(grade===undefined?'':' · '+esc(rar[grade]))+' '+nf(available)+' / '+nf(count)+'</li>';
   });
+  const checks=q.checks.map(({label,ok,value})=>'<li>'+(ok?'✓ ':'✗ ')+esc(label)+(value?' · '+esc(value):'')+'</li>');
+  submit.disabled=!q.checks.every(check=>check.ok);
   output.innerHTML='<p><b>'+nf(q.cost)+' ◈</b> · '+percent(q.success*100)+' de sucesso</p><ul>'+requirements.join('')+
-   '</ul><details><summary>Raridade em caso de sucesso</summary><p>'+q.odds.map((n,i)=>rar[i]+' '+percent(n)).join(' · ')+'</p></details>';
+   '</ul><details><summary>Raridade em caso de sucesso</summary><p>'+q.odds.map((n,i)=>rar[i]+' '+percent(n)).join(' · ')+'</p></details><details open><summary>Requisitos</summary><ul>'+checks.join('')+'</ul></details>';
  }).catch(e=>{if(form.isConnected&&craftQuoteRequests.get(form)===ticket)output.textContent=e.message;});
 }
 function craftBaseOptions(zone,slot){
@@ -277,7 +281,7 @@ $('windowLayer65').addEventListener('change',e=>{
  const field=e.target,form=field.form;
  if(!['forge','rare58'].includes(form?.id))return;
  if(!['zone','slot'].includes(field.name)){
-  if(field.name==='level'||field.name.startsWith('grade_'))refreshCraftQuote(form);
+  if(field.name==='level'||field.name==='baseId'||field.name.startsWith('grade_'))refreshCraftQuote(form);
   return;
  }
  const {level,zone,slot,baseId}=form.elements,z=Number(zone.value),lo=1+10*z;

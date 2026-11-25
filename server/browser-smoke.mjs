@@ -132,6 +132,8 @@ try{
  const forgeForm=page.locator('#forge');
  const forgeQuote=forgeForm.locator('[data-craft-quote]');
  await forgeQuote.getByText('40 ◈',{exact:true}).waitFor();
+ assert.equal(await forgeForm.locator('button').isDisabled(),true);
+ await forgeQuote.getByText('✗ Materiais',{exact:true}).waitFor();
  await forgeForm.locator('[name=grade_mob]').selectOption('1');
  await forgeQuote.getByText('59 ◈',{exact:true}).waitFor();
  await forgeForm.locator('[name=zone]').selectOption('1');

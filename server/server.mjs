@@ -47,7 +47,7 @@ const server=createServer(async(req,res)=>{const origin=req.headers.origin;res.s
  if(path==='/craft-quote'&&method==='GET'){
   const p=url.searchParams;
   const grades=Object.fromEntries(['mob','mining','wood','herb'].map(k=>[k,Number(p.get(k)??0)]));
-  return reply(200,g.craftQuote(a.id,{zone:Number(p.get('zone')??NaN),slot:p.get('slot'),level:Number(p.get('level')??NaN),kind:p.get('kind'),grades}));
+  return reply(200,g.craftQuote(a.id,{zone:Number(p.get('zone')??NaN),slot:p.get('slot'),level:Number(p.get('level')??NaN),kind:p.get('kind'),baseId:p.get('baseId'),grades}));
  }
  if(path==='/state'&&method==='GET')return reply(200,g.state(a.id,url.searchParams.get('compact')==='1'));
  if(path==='/character'&&method==='POST'){const p=await body(req);return reply(201,g.create(a.id,p.name,p.cls));}

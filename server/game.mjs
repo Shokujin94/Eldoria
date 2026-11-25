@@ -282,7 +282,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  let cursor='';function tickBatch(limit=10,budgetMs=Infinity){const rows=db.prepare("SELECT account FROM characters WHERE account>? AND json_extract(data,'$.activity') IS NOT NULL ORDER BY account LIMIT ?").all(cursor,limit),start=performance.now();let processed=0;for(const r of rows){if(processed&&performance.now()-start>=budgetMs)break;tx(db,()=>settle(r.account));cursor=r.account;processed++;}if(processed===rows.length&&rows.length<limit)cursor='';return processed;}
  function craftQuote(id,p){
   if(!row(id))fail('Personagem não encontrado.',404);
-  const {s}=get(id),{zone,slot,level}=p;
+  const {r,s}=get(id),{zone,slot,level}=p;
   if(!integer(zone,0,9)||!Object.hasOwn(slots,slot)||!integer(level,1+10*zone,5+10*zone))fail('Receita inválida.');
   const rare=p.kind==='rare';
   if(rare&&(slot!=='accessory'||!s.recipes[zone]))fail('Receita bloqueada.');
@@ -290,7 +290,18 @@ export function game(db,{clock=Date.now,random=rng}={}){
   try{
    quote=rare?{req:{['boss:'+zone]:1,['mining:'+zone+':2']:4},cost:150*(zone+1),quality:2,odds:[0,0,0,100,0]}:content.recipe(slot,zone,p.grades);
   }catch{fail('Qualidade inválida.');}
-  return {...quote,success:craft.success(s.craft.level,level,quote.quality)};
+  const inventory=items(id),refs=presetRefs(s);
+  const base=zone>0&&inventory.some(i=>i.id===p.baseId&&i.slot===slot&&i.tier===zone-1&&craftBaseAvailable(i,r.cls,refs));
+  const checks=[
+   {label:'Vespera',ok:!s.activity},
+   {label:'Nível do personagem',ok:s.level>=level,value:s.level+' / '+level},
+   {label:'Maestria de fabricação',ok:s.craft.level>=level,value:s.craft.level+' / '+level},
+   {label:'Materiais',ok:Object.entries(quote.req).every(([k,n])=>(s.materials[k]||0)>=n)},
+   {label:'Ouro',ok:r.gold>=quote.cost,value:r.gold+' / '+quote.cost},
+   {label:'Espaço no inventário',ok:inventory.length<120||base,value:inventory.length+' / 120'},
+   {label:'Peça base',ok:zone===0||base,value:zone===0?'Dispensada':'Tier '+zone}
+  ];
+  return {...quote,checks,success:craft.success(s.craft.level,level,quote.quality)};
  }
  return {create,state,action,market,trade,ranking,tickBatch,craftQuote};
 }
