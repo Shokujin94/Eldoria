@@ -76,16 +76,17 @@ function tone(kind){if(!sound||!audio||audio.state!=='running')return;const at=a
 function popup(text,color,now,x=.68,y=.44,actor=false){if(motion.matches)return;fx.push({text,color,at:now,x,y,actor});if(fx.length>12)fx.shift();}
 const impactColors={physical:'#d6d0c4',bleed:'#cf5969',fire:'#ff9b51',ice:'#91d8f4',arcane:'#bb9bea',
  holy:'#e9cc82',poison:'#87bd63',shock:'#aaa4ff',dark:'#b17ba6',heal:'#8ccfa3'};
+const projectileFlightMs=150;
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
- const {positions:p,dealt,received,critical,heroHit,element,skill,support}=event;
+ const {positions:p,dealt,received,critical,heroHit,element,skill,support,enemyShot}=event;
  if(support){
   popup(support.skill,impactColors[support.element]??'#8ccfa3',now,p.hero,p.heroY??.84,true);
   tone('buff');
  }
  if(dealt){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
-  const ranged=heroHit&&cls!=='war',impactTime=now+(ranged?125:0);
+  const ranged=heroHit&&cls!=='war',impactTime=now+(ranged?projectileFlightMs:0);
   const x=p.enemy,y=p.enemyY??.84;
   if(ranged)fx.push({at:now,projectile:{x:p.hero,y:p.heroY??.84,toX:x,toY:y,color}});
   if(heroHit){
@@ -96,7 +97,13 @@ function showCombat(event,cls,now,currentEncounter){
   }
   popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,impactTime,x,y,true);
  }
- if(received)popup('-'+Math.ceil(received),'#f38585',now,p.hero,p.heroY??.84,true);
+ if(enemyShot){
+  const y=p.heroY??.84,color=impactColors[enemyShot.element]??impactColors.physical;
+  fx.push({at:now,projectile:{x:p.enemy,y:p.enemyY??.84,toX:p.hero,toY:y,color}});
+  if(enemyShot.damage)popup('-'+Math.ceil(enemyShot.damage),'#f38585',now+projectileFlightMs,p.hero,y,true);
+ }
+ const otherDamage=Math.max(0,received-(enemyShot?.damage||0));
+ if(otherDamage)popup('-'+Math.ceil(otherDamage),'#f38585',now,p.hero,p.heroY??.84,true);
 }
 function drawImpact(c,hit,w,h,hh,t){
  if(t>.55)return;
@@ -121,7 +128,7 @@ function drawImpact(c,hit,w,h,hh,t){
 }
 function drawProjectile(c,shot,w,h,hh,t){
  if(t<0||t>.2)return;
- const progress=Math.min(1,t/.15);
+ const progress=Math.min(1,t/(projectileFlightMs/1000));
  const x=w*(shot.x+(shot.toX-shot.x)*progress);
  const y=h*(shot.y+(shot.toY-shot.y)*progress)-hh*.43-Math.sin(progress*Math.PI)*12;
  c.fillStyle=shot.color;
@@ -150,7 +157,7 @@ function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=
 if(previous){const event=s.lastCombat;
  if(!motion.matches&&a?.recovery&&s.kills===previous.kills+1&&event?.dealt&&event.encounter===old?.encounter&&event.encounter!==a.encounter&&event.mode===a.mode&&event.zone===a.z){
   const boss=old.mode==='boss'||old.mode==='dungeon'&&old.wave===4;
-  defeated={next:a.encounter,at:now+(event.heroHit&&s.cls!=='war'?125:0),boss,index:old.index,positions:event.positions};
+  defeated={next:a.encounter,at:now+(event.heroHit&&s.cls!=='war'?projectileFlightMs:0),boss,index:old.index,positions:event.positions};
  }
  if(a?.enemy&&event&&event.seq!==previous.lastCombat?.seq&&event.mode===a.mode&&event.zone===a.z)showCombat(event,s.cls,now,a.encounter);
 const g=s.lastGather,pg=previous.lastGather;if(a?.mode==='gather'&&g&&g.kind===a.prof&&g.zone===a.z&&g.total!==(pg?.total??previous.prof[a.prof].total)){const count=Math.max(1,s.prof[a.prof].total-previous.prof[a.prof].total);popup('+'+count+' '+({mining:'Minério',wood:'Madeira',herb:'Erva'}[g.kind]),colors[g.rarity]||colors[0],now);breakPixels(g.kind,g.zone,previous.prof[g.kind].total%18,now);pulse=now;tone(g.kind);}if(s.lastLoot?.seq&&s.lastLoot.seq!==previous.lastLoot?.seq)popup(s.lastLoot.name,colors[s.lastLoot.rarity]||colors[0],now,.65,.25);if(s.lastRelic?.seq&&s.lastRelic.seq!==previous.lastRelic?.seq)popup(s.lastRelic.name,'#f0ca79',now,.62,.22);if(s.lastRune?.seq&&s.lastRune.seq!==previous.lastRune?.seq)popup('Runa encontrada!', '#caa0ef',now,.68,.26);if(s.kills>previous.kills)popup('+'+(s.kills-previous.kills)+' abate(s)','#e8c98c',now,.68,.32);}

@@ -196,3 +196,14 @@ test('legacy relic procs consume existing bleed and count only offensive skill c
  assert.equal(echo.s.relicEchoCharges,0);
  assert.equal(run([8],4,false).s.relicEchoCharges,4);
 });
+
+test('ranged strikes report projectile damage already resolved by the server',()=>{
+ const s=c.normalize({level:1,hp:100});
+ const st={hp:100,def:0,reduction:0,dodge:0};
+ const a={z:0,index:4,enemy:{atk:20},enemyHp:40,positions:{hero:.35,enemy:.62}};
+ const hit=c.enemyStrike('war',s,st,a,()=>.5,false);
+ assert(hit.damage>0);
+ assert.equal(hit.damage,100-s.hp);
+ assert.equal(typeof hit.element,'string');
+ assert.equal(c.enemyStrike('war',s,st,{...a,index:0},()=>.5,false),undefined);
+});
