@@ -451,3 +451,6 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
  .playing61 #buffbar11{left:5px;top:110px;max-width:56vw}
  .buff11{font-size:10px}
 }
+
+#content-craft .forge-result{display:flex;align-items:center;gap:10px;margin:8px 0;padding:8px;border:1px solid #65573d;border-radius:6px;background:#1b1916}
+#content-craft .forge-result small{display:block;margin-top:3px;color:#c8bfae}

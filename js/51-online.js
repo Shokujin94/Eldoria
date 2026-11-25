@@ -188,7 +188,12 @@ function refreshCraftQuote(form){
   });
   const checks=q.checks.map(({label,ok,value})=>'<li>'+(ok?'✓ ':'✗ ')+esc(label)+(value?' · '+esc(value):'')+'</li>');
   submit.disabled=!q.checks.every(check=>check.ok);
-  output.innerHTML='<p><b>'+nf(q.cost)+' ◈</b> · '+percent(q.success*100)+' de sucesso</p><ul>'+requirements.join('')+
+  const item={tier:Number(zone.value),slot:slot?.value??'accessory'};
+  const base=data.items.find(i=>i.id===baseId.value);
+  const preview='<div class="forge-result" data-forge-result>'+itemIcon(item)+'<div><b>'+esc(slots[item.slot])+'</b><small>Nv. '+nf(level.value)+' · '+esc(voc[data.character.cls])+'</small></div></div>';
+  const basePreview=base?'<div class="forge-result">'+itemIcon(base)+'<div><b>'+esc(base.name)+'</b><small>Consumida somente se a fabricação tiver sucesso.</small></div></div>':'';
+  output.innerHTML=preview+basePreview+'<p><b>'+nf(q.cost)+' ◈</b> · '+percent(q.success*100)+' de sucesso</p><p class="muted">'+
+   percent((1-q.success)*100)+' de falha · consome ouro e materiais.</p><ul>'+requirements.join('')+
    '</ul><details><summary>Raridade em caso de sucesso</summary><p>'+q.odds.map((n,i)=>rar[i]+' '+percent(n)).join(' · ')+'</p></details><details open><summary>Requisitos</summary><ul>'+checks.join('')+'</ul></details>';
  }).catch(e=>{if(form.isConnected&&craftQuoteRequests.get(form)===ticket)output.textContent=e.message;});
 }

@@ -132,6 +132,9 @@ try{
  const forgeForm=page.locator('#forge');
  const forgeQuote=forgeForm.locator('[data-craft-quote]');
  await forgeQuote.getByText('40 ◈',{exact:true}).waitFor();
+ const forgeResult=forgeQuote.locator('[data-forge-result]');
+ assert.match(await forgeResult.textContent(),/Nv\. 1/);
+ assert.equal(await forgeResult.locator('img').count(),1);
  assert.equal(await forgeForm.locator('button').isDisabled(),true);
  await forgeQuote.getByText('✗ Materiais',{exact:true}).waitFor();
  assert.equal(await forgeForm.locator('[name=grade_herb]').isHidden(),true);
