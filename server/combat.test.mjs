@@ -337,3 +337,19 @@ test('boss-only rotation skips ordinary dungeon enemies and admits affixed enemi
   assert.equal(s.casts.x||0,casts,mode);
  }
 });
+
+test('low-mana talent discounts a spell only below the 35 percent threshold',()=>{
+ const s=c.normalize({level:40,hp:100,mana:34,talents:{x:1},rotation:['x']});
+ const talent=c.catalog('mage',s).flatMap(path=>path.nodes).find(n=>n.name==='Selo da nevasca');
+ assert(talent);
+ s.talents[talent.id]=3;
+ const normal=c.learnedSkills('mage',s,undefined).find(k=>k.id==='x').mana;
+ const discounted=c.learnedSkills('mage',s,100).find(k=>k.id==='x').mana;
+ assert(discounted<normal);
+ const st={hp:100,mana:100,damage:20,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:100,effects:{}};
+ c.turn('mage',s,st,a,()=>.5,false,true);
+ assert.equal(s.mana,34-discounted);
+ s.mana=35;
+ assert.equal(c.learnedSkills('mage',s,100).find(k=>k.id==='x').mana,normal);
+});
