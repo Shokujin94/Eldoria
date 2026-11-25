@@ -473,6 +473,7 @@ export function enemyStrike(cl,s,st,a,random,boss,deferRanged=false){
  const dealt=incoming(s,st,a,defensiveSynergy(damage,cl,s,a),boss,random,element);
  s.energy=Math.min(100,s.energy+(v.hurtEnergy||0));
  if(ranged)return {...shot,damage:dealt};
+ if(deferRanged)return {element,damage:dealt};
 }
 export function landEnemyShot(s,st,a,random){
  const shot=a.pendingEnemyShot;
