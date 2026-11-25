@@ -426,3 +426,11 @@ test('gathering restores legacy quality odds and tool yield synergy',async()=>{
  assert.deepEqual(gatherRoll({level:40,spec:'yield',talents:{yield:1},tool:3},()=>rolls.shift()),{rarity:0,amount:3,common:2});
  assert.equal(rolls.length,0);
 });
+
+test('equipped corruptions and awakenings multiply per item',async()=>{
+ const {advancedBonuses}=await import('./equipment.mjs');
+ const gear={tier:0,rarity:3,slot:'ring',data:{corrupt:'power',awake:true}};
+ const bonuses=advancedBonuses([gear,{...gear,slot:'weapon'}]);
+ assert.ok(Math.abs(bonuses.damage-(1.035**2-1))<1e-10);
+ assert.ok(Math.abs(bonuses.special-(1.04**2-1))<1e-10);
+});
