@@ -90,7 +90,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const levelPower=Math.min(20,s.level)+Math.log2(1+Math.max(0,s.level-20))*2;
  const baseMana=Math.round(30+levelPower*3+a.int*4+a.wis*2+gear.mana);
  const mana=Math.max(1,Math.round(30+(Math.round(baseMana*(1+(v.mana||0)))-30)*.72));
- const rawRegen=1+a.int*.08+a.wis*.12+gear.regen+gear.r30regen/10+(buff.regen||0);
+ const rawRegen=1+a.int*.08+a.wis*.12+gear.regen+gear.r30regen/10+(buff.regen||0)+(advanced.relics.includes(8)?.25:0);
  const curvedRegen=1+9*(1-Math.exp(-Math.max(0,rawRegen-1)/9));
  const manaRegen=Math.min(6,1+Math.max(0,Math.min(10,curvedRegen+(v.regen||0))-1)*.65);
  const specialScale=r.cls==='mage'?2.15:r.cls==='cleric'?2.55:3.15;

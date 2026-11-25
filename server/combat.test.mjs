@@ -176,3 +176,23 @@ test('tenacity shortens harmful boss effects using the legacy rounding',()=>{
  c.bossMechanic(s,{hp:100,tenacity:.40},a,()=>.5);
  assert.equal(a.heroEffects.poison.left,5);
 });
+
+test('legacy relic procs consume existing bleed and count only offensive skill casts',()=>{
+ const run=(relics,charges=0,learn=true)=>{
+  const s=c.normalize({level:30,hp:100,mana:100,talents:learn?{x:1}:{},relicEchoCharges:charges});
+  const a={z:0,turn:2,enemy:{hp:1000},enemyHp:1000,effects:{bleed:{left:3,power:100}}};
+  const st={damage:40,crit:0,haste:0,special:1.5,heal:0,hp:100,mana:100,advanced:{relics}};
+  const damage=c.turn('mage',s,st,a,()=>.5,false);
+  return {s,a,damage};
+ };
+ const baseline=run([]);
+ const sentence=run([6]);
+ assert.equal(sentence.damage,baseline.damage+25);
+ assert.equal(sentence.a.effects.bleed,undefined);
+ assert.equal(run([6],0,false).a.effects.bleed.left,3);
+ assert.equal(run([8],0).damage,baseline.damage);
+ const echo=run([8],4);
+ assert.equal(echo.damage,baseline.damage+Math.round(baseline.damage*.40));
+ assert.equal(echo.s.relicEchoCharges,0);
+ assert.equal(run([8],4,false).s.relicEchoCharges,4);
+});
