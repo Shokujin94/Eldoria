@@ -162,6 +162,8 @@ try{
  const gatherForm=page.locator('#gatherTravel');
  await gatherForm.locator('[name=prof]').selectOption('wood');
  await gatherForm.locator('[data-gather-resources]').getByText('Madeira ancestral',{exact:true}).waitFor();
+ await gatherForm.locator('[data-gather-resources]').getByText('+5 XP por coleta base',{exact:true}).waitFor();
+ assert.equal(await page.locator('#professionMastery progress').count(),3);
  await gatherForm.locator('[data-gather-resources]').getByText('Comum · 72% · 0 em estoque',{exact:true}).waitFor();
  assert.equal(await gatherForm.locator('[name=zone] option[value="1"]').evaluate(option=>option.disabled),true);
  const drawnNodes=await page.evaluateHandle(()=>{

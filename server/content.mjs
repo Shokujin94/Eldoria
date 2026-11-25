@@ -134,6 +134,7 @@ export const professionResources={
  herb:['Erva lunar','Erva sepulcral','Flor de cinzas','Lótus fúnebre','Flor de geada','Mandrágora pálida','Erva da vigília','Rosa de brasa','Flor do eclipse','Lírio negro']
 };
 export const professionTalents={speed:{max:3,level:1,name:'Eficiência',desc:'−1 s por ponto'},yield:{max:3,level:4,name:'Rendimento',desc:'+15 p.p. chance de recurso extra por ponto'},quality:{max:5,level:7,name:'Perícia',desc:'Melhora a chance de raridades'}};
+export const professionXpNeed=p=>20+p.level*12;
 export const professionInterval=p=>1000*(6-Math.min(3,p.talents?.speed||0));
 export function professionOdds(p){
  const n=Math.max(0,Math.min(5,p.talents?.quality||0));
