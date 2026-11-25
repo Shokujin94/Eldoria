@@ -12,3 +12,19 @@ test('grimoire roles and legacy normalization',()=>{const s=c.normalize({level:3
 test('minions strike independently of hero range and synchronize lifetime',()=>{const s=c.normalize({level:30,subclass:0,hp:100,mana:100,minions:[{role:'archer',x:.4,left:4,cd:0,guard:0},{role:'bone',x:.1,left:4,cd:0,guard:0}]});const a={z:0,mode:'hunt',enemy:{hp:100,atk:10},enemyHp:100,effects:{},positions:{hero:.1,enemy:.7,servant:.4}};const st={damage:100,hp:100,mana:100,manaRegen:1};assert(c.minionStrike(s,st,a)>0);assert.equal(s.minions[0].cd,4);assert.equal(s.minions[1].cd,0);c.tick(s,st,a);assert.equal(s.servant,3);assert.equal(s.minions[0].cd,3);s.hp=0;assert.equal(c.minionStrike(s,st,a),0);});
 
 test('automatic potion uses selected strength',()=>{const s=c.normalize({hp:20,mana:10,level:2});s.potions.hp1=5;s.potions.hp2=1;s.autoPotion.hp=50;s.autoPotion.hpKey='hp2';const st={hp:100,mana:100};c.autoPotion(s,st);assert.equal(s.hp,65);assert.equal(s.potions.hp1,5);assert.equal(s.potions.hp2,0);s.hp=20;s.potionCD.hp=0;c.autoPotion(s,st);assert.equal(s.hp,20);});
+
+test('two legacy servants reach separate lanes and stay in attack range',()=>{
+ const s=c.normalize({level:30,subclass:0,hp:100,minions:[
+  {role:'bone',x:.25,left:8,cd:0,guard:0},
+  {role:'bone',x:.25,left:8,cd:0,guard:0}
+ ]});
+ const a={z:0,mode:'hunt',enemy:{hp:1000,atk:10},enemyHp:1000,effects:{},positions:{hero:.25,enemy:.75,servant:.34}};
+ const st={move:0,damage:100,hp:100};
+ for(let i=0;i<10;i++)c.move('necro',s,st,a,false);
+ const [far,near]=s.minions;
+ assert(far.x>a.positions.enemy&&near.x<a.positions.enemy);
+ assert(far.y>0&&near.y<0);
+ assert(Math.abs(far.y)<=52/1200&&Math.abs(near.y)<=52/1200);
+ assert(c.minionStrike(s,st,a)>0);
+ assert(a.enemyHp<1000);
+});
