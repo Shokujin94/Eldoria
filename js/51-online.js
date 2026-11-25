@@ -470,12 +470,31 @@ function tooltipRows(rows){
 function itemTooltip(i,c){
  const d=i.data,names={...attrNames67,damage:'Dano',def:'Defesa',hp:'Vida máxima',mana:'Mana máxima',crit:'Crítico',haste:'Ataque extra',tenacity:'Tenacidade',skill:'Maestria',regen:'Regeneração de mana'};
  const relic=d.relic!=null?c.relicCatalog[d.relic]:null;
+ const corruption={ward:'Concede +2,5 pontos percentuais de resistência.',power:'Aumenta o dano em 3,5%.',scar:'Cicatriz sem bônus de combate.'};
+ const effects=[
+  [relic?.name||'Relíquia',relic?.effect],
+  ['Encantamento',d.enchant?'Concede resistência a '+elementNames[d.enchant]+'.':null],
+  ['Despertar',d.awake?'Aumenta a potência em 4%.':null],
+  ['Corrupção',corruption[d.corrupt]]
+ ].filter(([,description])=>description);
+ const runes=d.runes||[],socketCount=Math.max(d.sockets||0,runes.length);
+ const sockets=Array.from({length:socketCount},(_,index)=>{
+  const id=runes[index],rune=c.runeCatalog?.[id];
+  const label=id?'Encaixe '+(index+1)+': '+(rune?.name||'Runa'): 'Encaixe '+(index+1)+': vazio';
+  return {label,filled:!!id,rune};
+ });
+ const attributes=Object.entries(d.mods||{}).map(([k,v])=>[names[k]||k,(v>0?'+':'')+nf(v)]);
  return tooltipHeader(itemIcon(i),rar[i.rarity],i.name+(d.upgrade?' +'+d.upgrade:''))+
-  tooltipRows([['Tipo',slots[i.slot]],['Nível necessário',i.level],['Nível do item',i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:null],['Encaixes',(d.runes?.length||0)+' de '+(d.sockets||0)],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
-  '<h4>Atributos</h4>'+tooltipRows(Object.entries(d.mods||{}).map(([k,v])=>[names[k]||k,(v>0?'+':'')+nf(v)]))+
-  (d.runes?.length?'<h4>Runas inseridas</h4>'+tooltipRows(d.runes.map((id,index)=>['Encaixe '+(index+1),c.runeCatalog?.[id]?.name||'Runa'])):'')+
-  (relic?.effect?'<h4>Relíquia</h4><p>'+esc(relic.effect)+'</p>':'')+
-  (d.enchant||d.awake||d.corrupt?'<h4>Oficina</h4><p>'+esc([d.enchant?'Resistência a '+elementNames[d.enchant]:null,d.awake?'Desperto':null,d.corrupt?'Corrupção: '+({ward:'Proteção',power:'Poder',scar:'Cicatriz'}[d.corrupt]):null].filter(Boolean).join(' · '))+'</p>':'');
+  '<div class="item-tooltip-panels">'+
+  tooltipRows([['Tipo',slots[i.slot]],['Nível necessário',i.level],['Nível do item',i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:null],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
+  (attributes.length?'<h4>Atributos</h4>'+tooltipRows(attributes):'')+
+  (effects.length?'<h4>Efeitos especiais</h4><div class="item-tooltip-effects">'+effects.map(([name,description])=>'<div><strong>'+esc(name)+'</strong><p>'+esc(description)+'</p></div>').join('')+'</div>':'')+
+  (socketCount?'<h4>Encaixes <span>'+runes.length+' / '+socketCount+'</span></h4><ol class="item-tooltip-sockets">'+sockets.map(socket=>
+   '<li aria-label="'+esc(socket.label)+'"><span aria-hidden="true" class="item-tooltip-socket'+(socket.filled?' filled rarity61-'+(socket.rune?.rarity??0):'')+'"></span></li>'
+  ).join('')+'</ol>'+sockets.filter(socket=>socket.filled).map(socket=>
+   '<div class="item-tooltip-rune rarity61-'+(socket.rune?.rarity??0)+'"><strong>'+esc(socket.label)+'</strong>'+
+   (socket.rune?.desc?'<p>'+esc(socket.rune.desc)+'</p>':'')+'</div>'
+  ).join(''):'')+'</div>';
 }
 function potionTooltip(id,p,c){
  const instant=p.kind==='hp'||p.kind==='mp',life=p.kind==='hp',target=life?'PV':'PM';

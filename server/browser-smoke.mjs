@@ -84,7 +84,7 @@ try{
   save.rareEvent={z:0,k:0};
   fixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
-  for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0}));
+  for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0,...(slot==='head'?{sockets:2,runes:['r30_head_memory_2'],corrupt:'power'}:{})}));
  }finally{fixture.close();}
  await page.locator('[data-group65="0"]').click();
  await page.locator('[data-tab=cons]').click();
@@ -141,6 +141,15 @@ try{
  const bag=page.locator('#win-bag');
  const rarityColor=tile=>tile.evaluate(el=>getComputedStyle(el).getPropertyValue('--rar').trim());
  assert.equal(await rarityColor(bag.locator('[data-bag64]').first()),'#b9bec6');
+ await bag.locator('[data-filter61=head]').click();
+ const socketedItem=bag.locator('[data-bag64="fixture-head"]');
+ await socketedItem.hover();
+ const socketedTip=page.locator('#tal47-tip');
+ await socketedTip.getByText('Aumenta o dano em 3,5%.',{exact:true}).waitFor();
+ await socketedTip.getByText(/\+11 PM máximo/).waitFor();
+ assert.equal(await socketedTip.locator('.item-tooltip-socket').count(),2);
+ assert.equal(await socketedTip.locator('.item-tooltip-socket.filled').count(),1);
+ await page.keyboard.press('Escape');
  await bag.locator('[data-bagtab66=mat]').click();
  const ore=bag.locator('[data-material-tip="mining:0:2"]');
  assert.equal(await rarityColor(ore),'#7aaff0');

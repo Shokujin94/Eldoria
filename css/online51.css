@@ -502,3 +502,24 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #content-bag .stock19-grid .stock19-slot.active{
  outline:2px solid var(--rar);outline-offset:-3px
 }
+
+#tal47-tip .item-tooltip-panels .detail-tooltip-rows{
+ border:1px solid #c8b5a035;border-radius:5px;overflow:hidden;background:#0c1015b8
+}
+#tal47-tip .item-tooltip-panels .detail-tooltip-rows div{
+ padding:3px 8px;border-top:1px solid #c8b5a025;box-shadow:inset 0 1px #07090d88
+}
+#tal47-tip .item-tooltip-panels .detail-tooltip-rows div:first-child{border-top:0}
+#tal47-tip .item-tooltip-panels .detail-tooltip-rows div:nth-child(even){background:#ffffff06}
+#tal47-tip .item-tooltip-effects{display:grid;gap:4px}
+#tal47-tip :is(.item-tooltip-effects>div,.item-tooltip-rune){
+ border:1px solid color-mix(in srgb,var(--rar61,var(--path)) 36%,#222531);
+ border-radius:5px;padding:5px 8px;background:#10141ce0;box-shadow:inset 0 1px #ffffff0e
+}
+#tal47-tip :is(.item-tooltip-effects,.item-tooltip-rune) strong{color:var(--rar61,var(--path));font-weight:650}
+#tal47-tip :is(.item-tooltip-effects,.item-tooltip-rune) p{margin:2px 0 0;line-height:1.35}
+#tal47-tip .item-tooltip-panels h4 span{float:right;color:#dce2e7;font-variant-numeric:tabular-nums}
+#tal47-tip .item-tooltip-sockets{display:flex;gap:14px;list-style:none;margin:10px 0 8px;padding:0 5px}
+#tal47-tip .item-tooltip-socket{display:block;width:13px;height:13px;transform:rotate(45deg);border:1px solid #a9a7a1;border-radius:2px;background:#0c1015;box-shadow:inset 0 1px 3px #000}
+#tal47-tip .item-tooltip-socket.filled{border-color:var(--rar61);background:var(--rar61);box-shadow:inset 0 0 0 2px #0005,0 0 8px var(--rar61)}
+#tal47-tip .item-tooltip-rune+.item-tooltip-rune{margin-top:4px}
