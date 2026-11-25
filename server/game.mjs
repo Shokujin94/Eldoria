@@ -147,14 +147,37 @@ export function game(db,{clock=Date.now,random=rng}={}){
  function settle(id){const {r,s}=get(id),now=clock();s.attrs??={str:0,dex:0,int:0,vit:0,wis:0};migrateEarlyBalance(id,r,s);const initial=stats(id,r,s);s.hp=Math.min(s.hp,initial.hp);s.mana=Math.min(s.mana,initial.mana);
   if(!s.activity){const st=initial,dt=Math.floor(Math.max(0,now-s.last)/1000);s.hp=Math.min(st.hp,s.hp+dt*2);s.mana=Math.min(st.mana,s.mana+dt*st.manaRegen);for(const k of Object.keys(s.cooldowns))s.cooldowns[k]=Math.max(0,s.cooldowns[k]-dt);for(const k of Object.keys(s.potionCD))s.potionCD[k]=Math.max(0,s.potionCD[k]-dt);if(dt>0){combat.elapseElixirs(s,dt);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);s.last+=dt*1000;persist(id,s);}return s;}
   const {mode,z,prof}=s.activity,interval=mode==='gather'?content.professionInterval(s.prof[prof]):1000;
-  const elapsed=Math.max(0,now-s.last);if(elapsed>7_200_000)s.last=now-7_200_000-(elapsed%interval);const n=Math.min(120,Math.floor(Math.max(0,now-s.last)/interval));if(n<1)return s;
+  const elapsed=Math.max(0,now-s.last);
+  // Foreground clients poll every 1.5 seconds. Allow missed polls and network jitter.
+  if(elapsed>=10_000&&!s.activity.offlineUntil){
+   if(mode==='train'||mode==='trial'){
+    s.activity=null;
+    if(mode==='trial'){
+     delete s.clsForTrial;
+     combat.clear(s);
+     finishAnalysis(s,'Ausência');
+    }
+    s.last=now;
+    s.lastEvent=mode==='trial'?'Provação encerrada durante a ausência.':'Treinamento encerrado durante a ausência.';
+    persist(id,s);
+    return s;
+   }
+   s.activity.offlineUntil=now;
+  }
+  if(elapsed>7_200_000)s.last=now-7_200_000-(elapsed%interval);
+  const n=Math.min(120,Math.floor(Math.max(0,now-s.last)/interval));if(n<1)return s;
   // Retain unprocessed time; do not award or discard it twice.
   for(let j=0;j<n&&s.activity;j++){
    s.last+=interval;
+   const offline=s.last<=s.activity.offlineUntil;
    if(mode==='gather'){const p=s.prof[prof],roll=content.gatherRoll(p,random),rar=roll.rarity;mat(s,prof+':'+z+':'+rar,roll.amount);if(roll.common)mat(s,prof+':'+z+':0',roll.common);p.total+=roll.amount+roll.common;s.lastGather={kind:prof,zone:z,rarity:rar,total:p.total};p.xp+=craft.gatherXP(p.level,z);while(p.level<100&&p.xp>=20+p.level*12){p.xp-=20+p.level*12;p.level++;}if(p.level===100)p.xp=0;s.lastEvent='+'+(roll.amount+roll.common)+' recurso(s) · '+profs[prof];}
    else if(mode==='train'){if(s.skill<100){s.skillXp++;if(s.skillXp>=content.skillXpNeed(s.skill)){s.skillXp-=content.skillXpNeed(s.skill);s.skill++;}}if(s.skill>=100){s.skillXp=0;s.activity=null;s.lastEvent='Maestria de combate dominada.';}else s.lastEvent='Treinamento · maestria '+s.skill;}else combatTick(id,r,s);
    combat.elapseElixirs(s,interval/1000);
-  }if(!s.activity)s.last=Math.max(s.last,now);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);persist(id,s);return s;
+   const analyzer=s.analyzer||(!s.activity&&s.history[0]);
+   if(offline&&analyzer)analyzer.offlineSeconds=(analyzer.offlineSeconds||0)+interval/1000;
+  }
+  if(s.activity?.offlineUntil&&s.last+interval>s.activity.offlineUntil)delete s.activity.offlineUntil;
+  if(!s.activity)s.last=Math.max(s.last,now);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);persist(id,s);return s;
  }
  function pending(s){return !!s.activity&&clock()-s.last>= (s.activity.mode==='gather'?content.professionInterval(s.prof[s.activity.prof]):1000);}
  function view(id,compact=false){const r=row(id);if(!r)return {character:null};const s=combat.normalize(JSON.parse(r.data));return {character:{name:r.name,cls:r.cls,gold:r.gold,power:r.power,...s,catchupSeconds:pending(s)?Math.floor(Math.max(0,clock()-s.last)/1000):0,freeAttrs:freeAttrs(s),freeTalents:combat.freeTalents(s),activeTitle:earnedTitle(s),rareEventName:content.rareEvents[s.rareEvent?.k]??null,...(compact?{}:{titles:titles.map(t=>({...t,progress:titleProgress(s,t),earned:titleProgress(s,t)>=t.goal})),potionsCatalog:combat.consumables,runeCatalog:equipment.runes,relicCatalog:equipment.relics,creatureCatalog:content.creatureCatalog,affixCatalog:combat.affixCatalog,servantRoles:combat.servantRoles,oathCatalog:combat.oathCatalog(r.cls,s),professionTalents:content.professionTalents,professionOdds:Object.fromEntries(Object.entries(s.prof).map(([k,p])=>[k,content.professionOdds(p)])),materialQuotes:Object.fromEntries(Object.keys(s.materials).map(k=>[k,content.materialSale(k)])),talentTree:combat.catalog(r.cls,s),subclasses:combat.subclassNames(r.cls),statsWithoutGear:stats(id,r,s,[])}),trialReady:combat.eligibleTrial(s),xpNeed:content.xpNeed(s.level),skillXpNeed:content.skillXpNeed(s.skill),stats:stats(id,r,s)},...(compact?{}:{vault:vault(id).map(({owner,...i})=>i),items:items(id).map(({owner,...i})=>({...i,data:equipment.itemData(i),npcValue:equipment.npcValue(i),upgradeQuote:equipment.upgradeQuote(i),refineQuote:equipment.refineQuote(i),advancedQuotes:Object.fromEntries(['enchant','corrupt','awaken','addSocket','reroll'].map(k=>[k,equipment.advancedQuote(i,k)]))}))})};}
