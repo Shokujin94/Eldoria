@@ -88,6 +88,9 @@ try{
  await page.locator('[data-tab=cons]').click();
  await page.locator('#auto-hp').waitFor();
  assert.equal(await page.locator('.cons-item11').count(),12);
+ await page.locator('#win-cons [data-potion-tip=might]').focus();
+ await page.locator('#tal47-tip').getByText('Duração',{exact:true}).waitFor();
+ await page.keyboard.press('Escape');
  await page.locator('#win-cons [data-act=usePotion][data-id=might]').click();
  const effect=page.locator('#buffbar11 .buff11').filter({hasText:'Elixir da força'});
  await effect.waitFor({state:'visible'});
@@ -119,10 +122,16 @@ try{
  await page.locator('[data-filter61=weapon]').click();
  await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
  assert.equal(await page.locator('.bag56').count(),1);
+ await page.locator('[data-bag64]').first().focus();
+ await page.locator('#tal47-tip').getByText('Nível / iLvl',{exact:true}).waitFor();
+ await page.keyboard.press('Escape');
  await page.locator('[data-bag64]').first().click();await page.locator('.stock19-details').waitFor();
  await page.locator('[data-tab=talent]').click();
  await page.locator('[data-path61]').first().waitFor();
  await page.locator('[data-tfilter62=passive]').click();await page.locator('[data-tfilter62=passive][aria-pressed=true]').waitFor();
+ await page.locator('[data-node62]').first().focus();
+ await page.locator('#tal47-tip').getByText('Efeito e condições',{exact:true}).waitFor();
+ await page.keyboard.press('Escape');
  await page.locator('[data-node62]').first().click();
  await page.locator('.codex62-detail h3').waitFor();await page.locator('.tal47-grid').waitFor();
  assert.ok(await page.locator('.tal47-tier').count()>0);

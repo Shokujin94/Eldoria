@@ -454,3 +454,17 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 
 #content-craft .forge-result{display:flex;align-items:center;gap:10px;margin:8px 0;padding:8px;border:1px solid #65573d;border-radius:6px;background:#1b1916}
 #content-craft .forge-result small{display:block;margin-top:3px;color:#c8bfae}
+
+#tal47-tip{width:min(350px,calc(100vw - 12px));padding:15px;border-radius:8px;max-height:calc(100dvh - 12px);overflow:hidden;
+ background:
+ linear-gradient(var(--path),var(--path)) 5px 5px/13px 1px,
+ linear-gradient(var(--path),var(--path)) 5px 5px/1px 13px,
+ linear-gradient(var(--path),var(--path)) calc(100% - 5px) calc(100% - 5px)/13px 1px,
+ linear-gradient(var(--path),var(--path)) calc(100% - 5px) calc(100% - 5px)/1px 13px,
+ radial-gradient(ellipse at top left,color-mix(in srgb,var(--path) 20%,#191a22),#101319 76%);
+ background-repeat:no-repeat;box-shadow:0 12px 32px #000d,inset 0 0 17px color-mix(in srgb,var(--path) 17%,transparent)}
+#tal47-tip .gear61-icon,#tal47-tip .tal47-symbol{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--path) 70%,transparent))}
+#tal47-tip .tal47-detailhead h3{line-height:1.25}
+.detail-tooltip-rows{margin:8px 0 2px}
+.detail-tooltip-rows div{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 0;border-top:1px solid #c8b5a023}
+.detail-tooltip-rows dt{color:#b9c2cd}.detail-tooltip-rows dd{margin:0;text-align:right;color:#f4e7ce;font-weight:600}
