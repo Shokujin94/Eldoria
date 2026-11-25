@@ -45,12 +45,12 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const vault=id=>db.prepare("SELECT * FROM items WHERE owner=? AND spent=0 AND json_extract(data,'$.vault')=1 ORDER BY level DESC,id").all(id).map(i=>({...i,data:JSON.parse(i.data)}));
  const credit=(id,n)=>db.prepare('UPDATE characters SET gold=min(?,gold+?) WHERE account=?').run(MAX,n,id);
  const debit=(id,n)=>{if(db.prepare('UPDATE characters SET gold=gold-? WHERE account=? AND gold>=?').run(n,id,n).changes!==1)fail('Ouro insuficiente.',409);};
- function issue(id,slot,z,index,rarity,source,starter=false,equipped=false,chosenLevel=null,chosenQuality=null){
-  const r=row(id),quality=chosenQuality??Math.floor(random()*4),name=starter?'Arma de aprendiz':slots[slot]+' · '+regions[z],uid=randomUUID();
+ function issue(id,slot,z,index,rarity,source,starter=false,equipped=false,chosenLevel=null,materialQuality=null){
+  const r=row(id),quality=Math.floor(random()*4),name=starter?'Arma de aprendiz':slots[slot]+' · '+regions[z],uid=randomUUID();
   const meta=starter?{level:1,baseMods:{damage:3},affixes:[],power:null}:content.generate({tier:z,rarity,quality,vocation:r.cls,slot},source,index,random,chosenLevel);
   const mods=Object.fromEntries(Object.entries(meta.baseMods).map(([k,v])=>[k,balance.itemMod(k,v,starter)]));const sockets=starter?0:equipment.newSockets(rarity,random);
   const power=content.itemPower45({name,slot,baseMods:meta.baseMods});
-  db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,starter,equipped) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(uid,id,name,slot,z,meta.level,rarity,source,power,JSON.stringify({mods,quality,vocation:r.cls,baseMods:meta.baseMods,affixes:meta.affixes,power:meta.power,ranges:meta.ranges,sockets,upgrade:0,refine:0,runes:[]}),+starter,+equipped);return uid;
+  db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,starter,equipped) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run(uid,id,name,slot,z,meta.level,rarity,source,power,JSON.stringify({mods,quality,...(materialQuality===null?{}:{materialQuality,materialGrade:Math.floor(materialQuality)}),vocation:r.cls,baseMods:meta.baseMods,affixes:meta.affixes,power:meta.power,ranges:meta.ranges,sockets,upgrade:0,refine:0,runes:[]}),+starter,+equipped);return uid;
  }
  function issueRelic(id,z,source){const r=row(id),d=equipment.relicData(z,r.cls),rel=equipment.relics[z],uid=randomUUID(),level=7+10*z,power=content.itemPower45({name:rel.name,slot:rel.slot,baseMods:d.baseMods}),data=equipment.rebuild({name:rel.name,slot:rel.slot,tier:z,rarity:4,data:d});db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run(uid,id,rel.name,rel.slot,z,level,4,source,power,JSON.stringify(data));return uid;}
  function cp(id,level){return 10*level+equippedItems(id).reduce((n,i)=>n+Math.round(equipment.effectivePower(i)*rarityMult[i.rarity]),0);}
@@ -138,7 +138,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
    let q;try{q=content.recipe(slot,z,p.grades||{});}catch{fail('Qualidade inválida.');}
    const base=z?items(id).find(i=>i.id===p.baseId&&i.tier===z-1&&i.slot===slot&&!i.escrow&&!i.equipped&&!i.starter&&!i.data.locked&&i.data.relic==null&&!presetRefs(s).has(i.id)&&(!i.data.vocation||i.data.vocation===r.cls)):null;
    if(z&&!base)fail('Selecione peça anterior livre.');if(count(id)>=120&&!base)fail('Inventário cheio.');if(Object.entries(q.req).some(([k,v])=>(s.materials[k]||0)<v))fail('Materiais insuficientes.');
-   debit(id,q.cost);for(const [k,v] of Object.entries(q.req))s.materials[k]-=v;const ok=random()<craft.success(s.craft.level,l,q.quality);if(ok){if(base)db.prepare('UPDATE items SET spent=1 WHERE id=?').run(base.id);const rar=content.rollOdds(q.odds,random),uid=issue(id,slot,z,0,rar,'craft',false,false,l);recordDrop(id,s,uid,rar);s.tradeXP.smith+=10;s.craft.success++;}else s.craft.fail++;craft.advance(s.craft,craft.xp(s.craft.level,l,ok));s.lastEvent=ok?'Fabricação concluída.':'Falha: materiais e ouro consumidos; peça base preservada.';
+   debit(id,q.cost);for(const [k,v] of Object.entries(q.req))s.materials[k]-=v;const ok=random()<craft.success(s.craft.level,l,q.quality);if(ok){if(base)db.prepare('UPDATE items SET spent=1 WHERE id=?').run(base.id);const rar=content.rollOdds(q.odds,random),uid=issue(id,slot,z,0,rar,'craft',false,false,l,q.quality);recordDrop(id,s,uid,rar);s.tradeXP.smith+=10;s.craft.success++;}else s.craft.fail++;craft.advance(s.craft,craft.xp(s.craft.level,l,ok));s.lastEvent=ok?'Fabricação concluída.':'Falha: materiais e ouro consumidos; peça base preservada.';
   }
   else fail('Ação não reconhecida.');persist(id,s);return view(id);
  });}
