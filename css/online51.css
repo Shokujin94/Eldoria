@@ -525,3 +525,11 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #tal47-tip .item-tooltip-rune+.item-tooltip-rune{margin-top:4px}
 
 #quick61 .flask-icon{width:17px;height:17px;margin-right:4px;vertical-align:middle}
+
+#live-enemy .target-affixed{padding:7px 8px;border:1px solid var(--rar61);border-radius:5px;box-shadow:inset 0 0 9px color-mix(in srgb,var(--rar61) 16%,transparent)}
+#live-enemy .target-affixed>:is(b,.affix59){color:var(--rar61)}
+#live-enemy .enemy-affixes{margin:4px 0;padding:0;list-style:none;font-size:11px;line-height:1.4}
+#live-enemy .enemy-affixes li+li{margin-top:3px}
+
+#world52 #target60.target-affixed{border-color:var(--target-rarity);box-shadow:inset 0 0 9px color-mix(in srgb,var(--target-rarity) 20%,transparent)}
+#target60.target-affixed #target60-name{color:var(--target-rarity)}

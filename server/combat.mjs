@@ -500,6 +500,18 @@ const opposites={poison:'fire',dark:'holy',fire:'ice',ice:'fire',holy:'dark',phy
 const af={vamp:['Vampírico','Recupera 20% do dano causado'],rage:['Enfurecido','Dano cresce até +35% conforme perde PV'],armor:['Blindado','25% resistência física'],ghost:['Espectral','35% resistência física'],venom:['Venenoso','Aplica veneno ao atacar'],regen:['Regenerador','Recupera 1% dos PV por segundo'],exec:['Carrasco','+25% dano contra alvo abaixo de 35% PV'],curse:['Amaldiçoado','Reduz cura de habilidades em 30%'],fast:['Voraz','+25% velocidade de ataque'],profane:['Profano','Dano sombrio e exposição']};
 const mechanics=[['Raízes','slow'],['Julgamento sepulcral','expose'],['Sopro de cinzas','burn'],['Maré tóxica','poison'],['Prisão glacial','freeze'],['Selo dos mártires','bleed'],['Golpe do marechal','stun'],['Erupção da fornalha','burn'],['Eclipse','shock'],['Sentença da noite','expose']];
 export const affixCatalog=af;
+export function enemyAppearance(activity){
+ if(!activity?.enemy)return null;
+ const affixes=(activity.affixes||[]).filter(id=>Object.hasOwn(af,id)).map(id=>({id,name:af[id][0],bonus:af[id][1]}));
+ const suffixes={
+  vamp:'do Sangue',rage:'da Fúria',armor:'da Couraça',ghost:'do Véu',venom:'da Peçonha',
+  regen:'da Regeneração',exec:'do Carrasco',curse:'da Maldição',fast:'da Voracidade',profane:'da Profanação'
+ };
+ const names=affixes.map(({id})=>suffixes[id]).join(' · ');
+ const rarity=Math.min(4,(activity.index??0)+affixes.length);
+ return {name:activity.enemy.name+(names?' '+names:''),rarity,affixes};
+}
+
 export function encounterTraits(a,random){a.affixes=[];a.phase=0;a.bossClock=0;a.warning=null;a.heroEffects={};a.lastCombo=null;delete a.lastComboElement;a.comboSeq=0;let n=a.mode==='dungeon'&&a.wave!==4?Math.max(0,(a.difficulty||0)-1):a.mode==='hunt'&&random()<.065?(random()<.16?2:1):0;const keys=Object.keys(af);while(n--&&keys.length)a.affixes.push(keys.splice(Math.floor(random()*keys.length),1)[0]);}
 const trait=(a,k)=>a.affixes?.includes(k);
 export function enemyResistance(a,element,boss){if(!a.mode||a.mode==='trial')return 0;let r=element===affinities[a.z]?(boss?.42:.22):element===opposites[affinities[a.z]]?-.18:0;if(element==='physical')r+=(trait(a,'armor')?.25:0)+(trait(a,'ghost')?.35:0);return clamp(r,-.35,.70);}

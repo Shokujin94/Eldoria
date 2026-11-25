@@ -96,7 +96,11 @@ function routeCity(from,to){
 }
 const colors=['#c4c8ce','#92c88e','#86b7ee','#caa0ef','#ebc778'];
 const image=src=>{if(!src)return null;if(!cache.has(src)){const im=new Image();im.decoding='async';im.src=src;cache.set(src,im);}return cache.get(src);};
-function draw(c,src,x,y,h,flip=false,bright=false,lean=0,stretch=1){const im=image(src);if(!im?.complete||!im.naturalWidth)return;c.save();c.translate(x,y);c.scale(flip?-1:1,projection?projection.scale/projection.scaleY*stretch:stretch);if(lean)c.rotate(lean);if(bright)c.filter='brightness(1.5)';c.imageSmoothingEnabled=false;const w=h*im.naturalWidth/im.naturalHeight;c.drawImage(im,-w/2,-h,w,h);c.restore();}
+function draw(c,src,x,y,h,flip=false,bright=false,lean=0,stretch=1,outline=null){const im=image(src);if(!im?.complete||!im.naturalWidth)return;c.save();c.translate(x,y);c.scale(flip?-1:1,projection?projection.scale/projection.scaleY*stretch:stretch);if(lean)c.rotate(lean);if(bright)c.filter='brightness(1.5)';c.imageSmoothingEnabled=false;const w=h*im.naturalWidth/im.naturalHeight;if(outline){
+ c.shadowColor=outline;c.shadowBlur=8;
+ c.drawImage(im,-w/2,-h,w,h);
+ c.shadowBlur=0;
+}c.drawImage(im,-w/2,-h,w,h);c.restore();}
 function tone(kind,delay=0){if(!sound||!audio||audio.state!=='running')return;const at=audio.currentTime+delay,osc=audio.createOscillator(),g=audio.createGain(),f={mining:[720,130,'triangle'],wood:[140,44,'triangle'],herb:[340,180,'sine'],hit:[120,48,'triangle'],buff:[440,660,'sine'],level1:[392,440,'triangle'],level2:[523,587,'triangle'],level3:[784,880,'sine']}[kind]||[120,48,'triangle'];osc.type=f[2];osc.frequency.setValueAtTime(f[0],at);osc.frequency.exponentialRampToValueAtTime(f[1],at+.13);g.gain.setValueAtTime(.055,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);osc.connect(g);g.connect(audio.destination);osc.start();osc.stop(at+.17);}
 function popup(text,color,now,x=.68,y=.44,actor=false){if(motion.matches)return;fx.push({text,color,at:now,x,y,actor});if(fx.length>12)fx.shift();}
 const impactColors={physical:'#d6d0c4',bleed:'#cf5969',fire:'#ff9b51',ice:'#91d8f4',arcane:'#bb9bea',
@@ -539,11 +543,12 @@ if(a.mode!=='gather'){
   stretch+=effort*(enemyAction.ranged?-.045:.065);
  }
  shadow(enemyX,enemyFeet,eh);
- draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,monsterFlip(z,a.index||0,boss,enemyOnLeft),!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055);
+ draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,monsterFlip(z,a.index||0,boss,enemyOnLeft),!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055,s.enemyAppearance?.affixes?.length?titleColors[s.enemyAppearance.rarity]:null);
  drawConditions(c,a.effects,enemyX,enemyFeet,eh);
  drawCombatHealth(c,enemyX,enemyFeet,a.enemyHp/a.enemy.hp,'#ac4b47');
  const nameY=enemyFeet-eh*scale/scaleY-22/scaleY;
- drawCombatLabel(c,enemyX,nameY,a.enemy.name,'#e4d6bd','600 12px system-ui');
+ const appearance=s.enemyAppearance,color=appearance?.affixes?.length?titleColors[appearance.rarity]:'#e4d6bd';
+ drawCombatLabel(c,enemyX,nameY,appearance?.name||a.enemy.name,color,'600 12px system-ui');
  const rank=a.mode==='trial'?'Provação':boss?'Chefe':a.mode==='dungeon'?'Elite':null;
  if(rank)drawCombatLabel(c,enemyX,nameY-14/scaleY,rank,'#edb477','600 10px system-ui');
 }minionVisual.length=Math.min(minionVisual.length,(s.minions||[]).length);if(s.cls==='necro')for(const [i,m] of (s.minions||[]).entries()){const slot=minionVisual[i]??={x:m.x,y:m.y??0},step=motion.matches?1:1-Math.exp(-dt/172);slot.x+=(m.x-slot.x)*step;slot.y+=((m.y??0)-slot.y)*step;const mx=w*slot.x,my=enemyY+h*slot.y;shadow(mx,my,hh*.55);c.save();if(m.role!=='bone')c.filter=({sentinel:'saturate(.45) brightness(1.12)',archer:'sepia(.35) hue-rotate(65deg)',herald:'sepia(.6) hue-rotate(220deg)'})[m.role]||'none';draw(c,art.monsters[1][0],mx,my,hh*.55,mx>w*visual.enemy);c.restore();c.font='10px system-ui';c.textAlign='center';c.fillStyle='#d4e1d2';c.fillText(({bone:'Servo',sentinel:'Sentinela',archer:'Arqueiro',herald:'Arauto'})[m.role]||'Servo',mx,my-hh*.58);} }}
