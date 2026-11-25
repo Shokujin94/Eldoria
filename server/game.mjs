@@ -160,13 +160,19 @@ export function game(db,{clock=Date.now,random=rng}={}){
   if(a.mode==='hunt'&&!s.rareEvent&&random()<.003)s.rareEvent={z:a.z,k:Math.floor(random()*content.rareEvents.length)};if(boss){mat(s,'boss:'+a.z,1);if(!s.recipes[a.z]&&random()<.08)s.recipes[a.z]=true;}else if(random()<.8)mat(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random),1);if(a.mode==='dungeon'&&a.wave===4&&random()<.11){const key=equipment.runeDrop(a.z,random);s.runeStock[key]=(s.runeStock[key]||0)+1;s.lastRune={key,seq:(s.lastRune?.seq||0)+1};}
   const source=a.mode==='dungeon'?'dungeon':boss?a.mode:'hunt';let found=false;if((boss||random()<content.dropRates[a.index]*(a.mode==='hunt'&&s.elixirs.fortune>0?1.15:1))&&count(id)<120){const rarity=content.rollOdds(source==='boss'?content.bossOdds:source==='dungeon'&&boss?content.dungeonOdds:content.monsterOdds[a.index],random),slot=Object.keys(slots)[Math.floor(random()*9)];const uid=issue(id,slot,a.z,a.index,rarity,source);recordDrop(id,s,uid,rarity);found=true;}
   if(boss&&count(id)<120&&random()<.0025){const uid=issueRelic(id,a.z,source);recordDrop(id,s,uid,4,true);s.lastRelic={id:uid,name:equipment.relics[a.z].name,seq:(s.lastRelic?.seq||0)+1};}
+  let skinFound=false;
+  if(a.mode==='hunt'){
+   s.skinXP=Math.min(MAX,s.skinXP+1);
+   skinFound=random()<(.08+Math.min(.12,s.skinRank*.02));
+   if(skinFound)mat(s,'mob:'+a.z+':0',1);
+  }
   const potionStock=s.potions.hp1||0;
   const potionFound=potionStock<999&&random()<.07;
   if(potionFound){
    s.potions.hp1=potionStock+1;
    if(s.analyzer?.potionsFound!==undefined)s.analyzer.potionsFound++;
   }
-  const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.')+(potionFound?' · Poção de vida menor encontrada.':'');
+  const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.')+(potionFound?' · Poção de vida menor encontrada.':'')+(skinFound?' · Material extra de esfolamento.':'');
   combat.onVictory(r.cls,s,stats(id,r,s));if(a.mode==='boss'){s.bosses=(s.bosses||0)+1;s.zoneBosses[a.z]++;}else if(a.mode==='dungeon'){if(a.wave===4){s.dungeons=(s.dungeons||0)+1;s.zoneDungeons[a.z]++;if(a.tower){s.towerRecord=Math.max(s.towerRecord,a.floor||1);a.floor=(a.floor||1)+1;}a.wave=1;a.floorKills=0;s.lastEvent=(a.tower?'Torre · andar '+(a.floor-1)+' concluído':'Dungeon concluída')+' · '+s.lastEvent;}else if(++a.floorKills===3){a.wave++;a.floorKills=0;}}
   const finalHit=s.lastCombat?.encounter===a.encounter&&dealt>0?s.lastCombat:null;
   s.lastDefeat={encounter:a.encounter,mode:a.mode,zone:a.z,index:a.index,boss,
@@ -239,6 +245,11 @@ export function game(db,{clock=Date.now,random=rng}={}){
   else if(a==='oath'){if(s.activity||!integer(p.index,0,2)||!integer(p.choice,0,1)||!combat.oathGate(s,p.index))fail('Juramento bloqueado.');const old=s.oaths[p.index];if(old===p.choice)fail('Juramento já selecionado.');if(old!==undefined)debit(id,150+[30,60,90][p.index]*10);s.oaths[p.index]=p.choice;}
   else if(a==='energyProfile'){if(!['auto','boss','hurt'].includes(p.key))fail('Perfil inválido.');s.energyProfile=p.key;}
   else if(['professionTalent','professionTool','professionSpec'].includes(a)){if(s.activity||!Object.hasOwn(profs,p.prof))fail('Serviço indisponível.');const t=s.prof[p.prof];if(a==='professionTalent'){const n=Object.hasOwn(content.professionTalents,p.key)?content.professionTalents[p.key]:null,used=Object.values(t.talents).reduce((a,b)=>a+b,0);if(!n||t.level<n.level||used>=t.level-1||(t.talents[p.key]||0)>=n.max)fail('Talento bloqueado.');t.talents[p.key]=(t.talents[p.key]||0)+1;}else if(a==='professionTool'){if(t.tool>=3||(s.materials['mining:0:0']||0)<5)fail('Ferramenta bloqueada ou materiais insuficientes.');debit(id,100);s.materials['mining:0:0']-=5;t.tool++;}else{if(t.level<15||!['yield','quality'].includes(p.key)||t.spec===p.key)fail('Especialização bloqueada.');if(t.spec)debit(id,120+t.level*8);t.spec=p.key;}}
+  else if(a==='trainSkinning'){
+   if(s.activity||s.skinRank>=6||s.skinXP<(s.skinRank+1)*50)fail('Especialização de esfolamento bloqueada.');
+   s.skinRank++;
+   s.lastEvent='Esfolamento · grau '+s.skinRank+'/6.';
+  }
   else if(a==='legacy'){if(s.activity||s.level<100||!['power','survive','fortune','craft'].includes(p.key))fail('Legado bloqueado.');const spent=Object.values(s.legacy).reduce((a,b)=>a+b,0);if(spent>=Math.floor(Math.sqrt(s.legacyXP/100))||(s.legacy[p.key]||0)>=20)fail('Sem pontos de legado.');s.legacy[p.key]=(s.legacy[p.key]||0)+1;}
   else if(a==='resolveEvent'){const ev=s.rareEvent;if(!ev)fail('Nenhum evento pendente.');if(ev.k===1||ev.k===4){credit(id,12*(ev.z+1));s.hp=stats(id,r,s).hp;}else if(ev.k===0)credit(id,5*(ev.z+1));else mat(s,'mob:'+ev.z+':1',2);s.rareEvent=null;s.lastEvent=(content.rareEvents[ev.k]??'Evento raro')+' · evento resolvido.';}
   else if(a==='trackCreature'){if(p.key!==null&&!content.creatureCatalog.some(k=>k.key===p.key))fail('Criatura inválida.');s.trackCreature=p.key;}

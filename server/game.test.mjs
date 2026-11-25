@@ -315,6 +315,8 @@ test('hunt analyzer records potions looted and consumed',()=>{
  const won=g.state('pot').character;
  assert.equal(won.potions.hp1,before+1);
  assert.equal(won.analyzer.potionsFound,1);
+ assert.equal(won.skinXP,1);
+ assert.equal(won.materials['mob:0:0'],2);
  now+=1000;
  const recovered=g.state('pot').character;
  assert.equal(recovered.activity.recovery,0);
@@ -328,6 +330,13 @@ test('hunt analyzer records potions looted and consumed',()=>{
  assert.equal(healed.potions.hp1,before);
  assert.equal(healed.analyzer.consumablesUsed,1);
  assert.equal(healed.analyzer.consumableCost,8);
+ g.action('pot',{action:'stop'});
+ assert.throws(()=>g.action('pot',{action:'trainSkinning'}));
+ const veteran=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('pot').data);
+ veteran.skinXP=50;
+ db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(veteran),'pot');
+ assert.equal(g.action('pot',{action:'trainSkinning'}).character.skinRank,1);
+ assert.throws(()=>g.action('pot',{action:'trainSkinning'}));
  db.close();
 });
 
