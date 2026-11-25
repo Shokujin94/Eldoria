@@ -145,10 +145,15 @@ test('base vocation attributes and secondary stat gains match the legacy coeffic
  const g=game(db,{clock:()=>100000,random:()=>.5});
  const bases={war:[8,3,2,7,0],ranger:[3,9,2,6,0],mage:[2,3,10,5,0],cleric:[3,2,0,7,8],necro:[2,3,9,5,1]};
  const keys=['str','dex','int','vit','wis'];
+ const mana={war:38,ranger:38,mage:61,cleric:44,necro:60};
+ const special={war:1.637805,ranger:1.637805,mage:1.901864,cleric:1.666394,necro:1.755374};
+ const regen={war:1.103081,ranger:1.103081,mage:1.497559,cleric:1.591872,necro:1.521295};
  for(const [cl,base] of Object.entries(bases)){
   db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(cl,cl,'test',0);
   const start=g.create(cl,cl,cl).character;
-  assert.deepEqual(keys.map(k=>start.stats.a[k]),base);
+  assert.deepEqual(keys.map(k=>start.stats.a[k]),base);assert.equal(start.stats.mana,mana[cl]);
+  assert(Math.abs(start.stats.special-special[cl])<1e-6);
+  assert(Math.abs(start.stats.manaRegen-regen[cl])<1e-6);
  }
  const row=db.prepare('SELECT data FROM characters WHERE account=?').get('necro');
  const save=JSON.parse(row.data);save.level=20;

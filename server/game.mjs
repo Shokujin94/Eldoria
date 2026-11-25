@@ -60,7 +60,20 @@ export function game(db,{clock=Date.now,random=rng}={}){
  for(const i of equipped){for(const [k,n] of Object.entries(i.data.mods)){if(k in a)a[k]+=n;if(k in gear)gear[k]+=n;}const p=i.data.power;if(p&&['execute','ward','resonance','harvest','pact'].includes(p.key))powers[p.key]=(powers[p.key]||0)+p.value/100;}
  const early=Math.max(0,1-(s.level-1)/9),hp=balance.hpBase(s.level,a.vit,gear.hp)*(1+(['mage','ranger','necro'].includes(r.cls)?.22:r.cls==='cleric'?.05:0)*early)*(1+(v.hp||0)+sets.hp)*(1+advanced.hp)*(1+Math.min(.12,.006*(s.legacy?.survive||0))),coef={war:.88,ranger:.94,mage:.80,cleric:.99,necro:.80}[r.cls],buff={};for(const b of Object.values(s.buffs||{}))if(b.left>0)buff[b.stat]=(buff[b.stat]||0)+b.value;
  const d=Object.values(balance.damageParts(s.level,a,mains[r.cls],gear.damage)).reduce((x,y)=>x+y,0)*coef*balance.mastery(Math.max(0,(s.skill||1)-1+gear.skill))*(1+(buff.dmg||0)+sets.damage)*(1+advanced.damage)*(1+Math.min(.12,.006*(s.legacy?.power||0)));
- return {a,powers,sets,advanced,runeProcs:equipment.runeProcs(equipped),move:Math.min(.18,gear.r30move/100),damage:d<=40?d:40+(d-40)*.82,hp:Math.round(hp),def:balance.defenseBase(s.level,a.vit,gear.def)+(['mage','ranger','necro'].includes(r.cls)?2*early:0)+(v.def||0)+sets.def,crit:Math.min(.42,.04+a.dex*.0065+gear.crit/100+(v.crit||0)+(buff.crit||0)),critMult:Math.min(2.5,1.6+a.str*.003+gear.r30critmult/100+(v.critDamage||0)),tenacity:Math.min(.40,a.vit*.003+gear.tenacity/100),haste:Math.min(.25,a.dex*.002+gear.haste/100+(v.haste||0)),dodge:Math.min(r.cls==='ranger'?.24:.18,a.dex*.0035+gear.r30dodge/100+(r.cls==='ranger'?.04:0)+(v.dodge||0)),special:Math.min(2.55,(1.35+.015*(r.cls==='cleric'?a.wis:a.int))*(1+(v.spell||0)+gear.r30special/100)*(1+advanced.special)),mana:Math.round((30+a.int*3+a.wis*2+gear.mana)*(1+(v.mana||0))),manaRegen:Math.min(6,1+a.wis*.08+gear.regen*.1+gear.r30regen*.1+(v.regen||0)+(buff.regen||0)),heal:Math.min(.55,a.wis*.002+(v.heal||0)+gear.r30heal/100),recovery:Math.min(.06,gear.r30recovery/100),reduction:Math.min(.42,(r.cls==='war'?.035:0)+(buff.reduction||0)+gear.r30reduction/100+advanced.reduction)};
+ const levelPower=Math.min(20,s.level)+Math.log2(1+Math.max(0,s.level-20))*2;
+ const baseMana=Math.round(30+levelPower*3+a.int*4+a.wis*2+gear.mana);
+ const mana=Math.max(1,Math.round(30+(Math.round(baseMana*(1+(v.mana||0)))-30)*.72));
+ const rawRegen=1+a.int*.08+a.wis*.12+gear.regen+gear.r30regen/10+(buff.regen||0);
+ const curvedRegen=1+9*(1-Math.exp(-Math.max(0,rawRegen-1)/9));
+ const manaRegen=Math.min(6,1+Math.max(0,Math.min(10,curvedRegen+(v.regen||0))-1)*.65);
+ const specialScale=r.cls==='mage'?2.15:r.cls==='cleric'?2.55:3.15;
+ const subclassSpecial=r.cls==='mage'&&s.subclass===0?1.30:r.cls==='cleric'&&s.subclass===0?1.20:r.cls==='necro'&&s.subclass===1?1.035:1;
+ const rawSpecial=(1.65+a.int*.02+a.wis*.01)*(r.cls==='mage'?1.12:1)*
+  subclassSpecial*(1+Math.min(.18,gear.r30special/100))*(1+advanced.special);
+ const curvedSpecial=1.4+specialScale*(1-Math.exp(-Math.max(0,rawSpecial-1.4)/specialScale));
+ const talentSpecial=(1.35+(curvedSpecial-1.35)*.88)*(1+(v.spell||0));
+ const special=Math.min(2.55,1.25+balance.soft(talentSpecial-1.25,.70,.38));
+ return {a,powers,sets,advanced,runeProcs:equipment.runeProcs(equipped),move:Math.min(.18,gear.r30move/100),damage:d<=40?d:40+(d-40)*.82,hp:Math.round(hp),def:balance.defenseBase(s.level,a.vit,gear.def)+(['mage','ranger','necro'].includes(r.cls)?2*early:0)+(v.def||0)+sets.def,crit:Math.min(.42,.04+a.dex*.0065+gear.crit/100+(v.crit||0)+(buff.crit||0)),critMult:Math.min(2.5,1.6+a.str*.003+gear.r30critmult/100+(v.critDamage||0)),tenacity:Math.min(.40,a.vit*.003+gear.tenacity/100),haste:Math.min(.25,a.dex*.002+gear.haste/100+(v.haste||0)),dodge:Math.min(r.cls==='ranger'?.24:.18,a.dex*.0035+gear.r30dodge/100+(r.cls==='ranger'?.04:0)+(v.dodge||0)),special,mana,manaRegen,heal:Math.min(.55,a.wis*.002+(v.heal||0)+gear.r30heal/100),recovery:Math.min(.06,gear.r30recovery/100),reduction:Math.min(.42,(r.cls==='war'?.035:0)+(buff.reduction||0)+gear.r30reduction/100+advanced.reduction)};
  }
  const freeAttrs=s=>Math.max(0,3*Math.min(30,s.level-1)+Math.max(0,s.level-31)-Object.values(s.attrs||{}).reduce((a,b)=>a+b,0));
  function mat(s,k,n){s.materials[k]=Math.min(MAX,(s.materials[k]||0)+n);}

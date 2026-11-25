@@ -27,6 +27,7 @@ try{
  await page.locator('[data-cls61=necro]').click();
  await page.locator('#character button').last().click();
  await page.locator('#scene52').waitFor({state:'visible'});
+ assert.equal(await page.locator('#mp52').getAttribute('max'),'60');
  assert.equal(await page.locator('.floating65:not([hidden])').count(),0);
  const layout=await page.evaluate(()=>({map:document.getElementById('scene52').getBoundingClientRect().toJSON(),nav:document.getElementById('tabs').getBoundingClientRect().toJSON(),hud:document.getElementById('combatHUD22').getBoundingClientRect().toJSON(),w:innerWidth,h:innerHeight}));
  assert.ok(Math.abs(layout.map.width-layout.w)<2&&Math.abs(layout.map.height-layout.h)<2,'full-screen original map');assert.ok(layout.nav.top<60&&layout.hud.bottom>layout.h-30,'edge mounted HUD');
