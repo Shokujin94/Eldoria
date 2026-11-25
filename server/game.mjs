@@ -219,6 +219,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  }
  function settle(id){const {r,s}=get(id),now=clock();s.attrs??={str:0,dex:0,int:0,vit:0,wis:0};migrateEarlyBalance(id,r,s);const initial=stats(id,r,s);s.hp=Math.min(s.hp,initial.hp);s.mana=Math.min(s.mana,initial.mana);
   if(!s.activity){const st=initial,dt=Math.floor(Math.max(0,now-s.last)/1000);s.hp=Math.min(st.hp,s.hp+dt*2);s.mana=Math.min(st.mana,s.mana+dt*st.manaRegen);for(const k of Object.keys(s.cooldowns))s.cooldowns[k]=Math.max(0,s.cooldowns[k]-dt);combat.elapsePotionCooldowns(s,dt);if(dt>0){combat.elapseElixirs(s,dt);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);s.last+=dt*1000;persist(id,s);}return s;}
+  if(s.activity.paused)return s;
   const {mode,z,prof}=s.activity,interval=mode==='gather'?content.professionInterval(s.prof[prof]):1000;
   const elapsed=Math.max(0,now-s.last);
   // Foreground clients poll every 1.5 seconds. Allow missed polls and network jitter.
@@ -274,10 +275,18 @@ export function game(db,{clock=Date.now,random=rng}={}){
   if(s.activity?.offlineUntil&&s.last+interval>s.activity.offlineUntil)delete s.activity.offlineUntil;
   if(!s.activity)s.last=Math.max(s.last,now);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);persist(id,s);return s;
  }
- function pending(s){return !!s.activity&&clock()-s.last>= (s.activity.mode==='gather'?content.professionInterval(s.prof[s.activity.prof]):1000);}
+ function pending(s){return !!s.activity&&!s.activity.paused&&clock()-s.last>= (s.activity.mode==='gather'?content.professionInterval(s.prof[s.activity.prof]):1000);}
  function view(id,compact=false){const r=row(id);if(!r)return {character:null};const s=combat.normalize(JSON.parse(r.data)),refs=compact?null:presetRefs(s);return {character:{name:r.name,cls:r.cls,gold:r.gold,power:r.power,...s,catchupSeconds:pending(s)?Math.floor(Math.max(0,clock()-s.last)/1000):0,freeAttrs:freeAttrs(s),freeTalents:combat.freeTalents(s),activeTitle:earnedTitle(s),rareEventName:content.rareEvents[s.rareEvent?.k]??null,...(compact?{}:{titles:titles.map(t=>({...t,progress:titleProgress(s,t),earned:titleProgress(s,t)>=t.goal})),potionsCatalog:combat.consumables,runeCatalog:equipment.runes,relicCatalog:equipment.relics,creatureCatalog:content.creatureCatalog,affixCatalog:combat.affixCatalog,servantRoles:combat.servantRoles,oathCatalog:combat.oathCatalog(r.cls,s),professionTalents:content.professionTalents,professionOdds:Object.fromEntries(Object.entries(s.prof).map(([k,p])=>[k,content.professionOdds(p)])),materialQuotes:Object.fromEntries(Object.keys(s.materials).map(k=>[k,content.materialSale(k)])),talentTree:combat.catalog(r.cls,s),subclasses:combat.subclassNames(r.cls),statsWithoutGear:stats(id,r,s,[])}),trialReady:combat.eligibleTrial(s),craftXpNeed:craft.need(s.craft.level),xpNeed:content.xpNeed(s.level),skillXpNeed:content.skillXpNeed(s.skill),stats:stats(id,r,s)},...(compact?{}:{vault:vault(id).map(({owner,...i})=>i),items:items(id).map(({owner,...i})=>({...i,craftBaseAvailable:craftBaseAvailable(i,r.cls,refs),data:equipment.itemData(i),npcValue:equipment.npcValue(i),upgradeQuote:equipment.upgradeQuote(i),refineQuote:equipment.refineQuote(i),advancedQuotes:Object.fromEntries(['enchant','corrupt','awaken','addSocket','reroll'].map(k=>[k,equipment.advancedQuote(i,k)]))}))})};}
  function state(id,compact=false){return tx(db,()=>{if(row(id))settle(id);return view(id,compact);});}
  function action(id,p){tx(db,()=>settle(id));return tx(db,()=>{const {r,s}=get(id),a=p.action;if(pending(s))fail('Processando progresso offline. Tente novamente após a sincronização.',409);if(a==='stop'){const active=!!s.activity;s.activity=null;combat.clear(s);finishAnalysis(s,'Retorno à cidade');if(active)autoSell(id,s);s.last=Math.max(s.last,clock());}
+  else if(a==='pauseActivity'||a==='resumeActivity'){
+   const paused=a==='pauseActivity';
+   if(!s.activity||!!s.activity.paused===paused)fail('Atividade indisponível para essa ação.');
+   if(paused)s.activity.paused=true;
+   else delete s.activity.paused;
+   s.last=Math.max(s.last,clock());
+   s.lastEvent=paused?'Atividade pausada.':'Atividade retomada.';
+  }
   else if(a==='resetAnalyzer'){
    if(!['hunt','boss','dungeon','trial'].includes(s.activity?.mode))fail('Inicie uma atividade de combate.');
    finishAnalysis(s,'Nova medição');
@@ -339,7 +348,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   if(p.action!=='buy'||l.seller===id||l.price!==p.price)fail('Compra inválida.',409);if(count(id)>=120)fail('Inventário cheio.');if(row(l.seller).gold+l.net>MAX)fail('Carteira do vendedor cheia.');debit(id,l.price);credit(l.seller,l.net);db.prepare('UPDATE items SET owner=?,escrow=0 WHERE id=?').run(id,i.id);db.prepare("UPDATE listings SET status='sold',buyer=?,closed=? WHERE id=?").run(id,clock(),l.id);db.prepare('INSERT INTO ledger VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(),l.id,id,l.seller,l.price,l.burn,l.net,clock());return {ok:true,burn:l.burn,net:l.net};
  });}
  function ranking(category='level',page=0){if(!Object.hasOwn(rankingColumns,category)||!integer(page,0,1000))fail('Ranking inválido.');const col=rankingColumns[category];return {category,page,rows:db.prepare('SELECT name,cls,level,'+col+' AS score FROM characters ORDER BY score DESC, '+(category==='level'?'xp DESC, ':'')+'namekey ASC LIMIT 50 OFFSET ?').all(page*50).map((r,i)=>({rank:page*50+i+1,...r}))};}
- let cursor='';function tickBatch(limit=10,budgetMs=Infinity){const rows=db.prepare("SELECT account FROM characters WHERE account>? AND json_extract(data,'$.activity') IS NOT NULL ORDER BY account LIMIT ?").all(cursor,limit),start=performance.now();let processed=0;for(const r of rows){if(processed&&performance.now()-start>=budgetMs)break;tx(db,()=>settle(r.account));cursor=r.account;processed++;}if(processed===rows.length&&rows.length<limit)cursor='';return processed;}
+ let cursor='';function tickBatch(limit=10,budgetMs=Infinity){const rows=db.prepare("SELECT account FROM characters WHERE account>? AND json_extract(data,'$.activity') IS NOT NULL AND json_extract(data,'$.activity.paused') IS NULL ORDER BY account LIMIT ?").all(cursor,limit),start=performance.now();let processed=0;for(const r of rows){if(processed&&performance.now()-start>=budgetMs)break;tx(db,()=>settle(r.account));cursor=r.account;processed++;}if(processed===rows.length&&rows.length<limit)cursor='';return processed;}
  function craftQuote(id,p){
   if(!row(id))fail('Personagem não encontrado.',404);
   const {r,s}=get(id),{zone,slot,level}=p;

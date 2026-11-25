@@ -353,7 +353,7 @@ if(a.mode==='gather'){
  const dx=targetNode.x-gatherHero.x,dy=targetNode.y-gatherHero.y;
  const distance=Math.hypot(dx*800,dy*600);
  const moving=distance>2;
- const step=!moving||motion.matches?1:Math.min(1,dt*.19/distance);
+ const step=a.paused?0:!moving||motion.matches?1:Math.min(1,dt*.19/distance);
  gatherHero.x+=dx*step;
  gatherHero.y+=dy*step;
  const actors=[...field,gatherHero].sort((a,b)=>a.y-b.y);
@@ -361,7 +361,7 @@ if(a.mode==='gather'){
   const px=node.x*w,py=node.y*h;
   if(node===gatherHero){
    shadow(px,py,hh*.7);
-   draw(c,art.hero[s.cls][moving&&!motion.matches?1+Math.floor(now/180)%3:0],px,py,hh*.7,dx<0);
+   draw(c,art.hero[s.cls][moving&&!a.paused&&!motion.matches?1+Math.floor(now/180)%3:0],px,py,hh*.7,dx<0);
    continue;
   }
   const opacity=burst?.index===node.index?clamp((now-burst.at-750)/400,0,1):1;

@@ -483,3 +483,27 @@ test('warrior dungeon rooms and bosses use separate legacy damage multipliers',(
  assert.ok(Math.abs(boss/city-1.10)<1e-10);
  db.close();
 });
+
+test('pausing preserves the active encounter and excludes paused time from catchup',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ let now=100000;
+ const g=game(db,{clock:()=>now,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('pause','pause','test',0);
+ g.create('pause','Pausa','war');
+ g.action('pause',{action:'start',mode:'hunt',zone:0});
+ now+=1000;
+ const paused=g.action('pause',{action:'pauseActivity'}).character;
+ assert.equal(paused.activity.paused,true);
+ now+=3600000;
+ const idle=g.state('pause').character;
+ assert.deepEqual(idle.activity,paused.activity);
+ assert.equal(idle.analyzer.seconds,paused.analyzer.seconds);
+ assert.equal(idle.catchupSeconds,0);
+ const resumed=g.action('pause',{action:'resumeActivity'}).character;
+ assert.equal(resumed.activity.encounter,paused.activity.encounter);
+ now+=1000;
+ const next=g.state('pause').character;
+ assert.equal(next.analyzer.seconds,paused.analyzer.seconds+1);
+ assert.equal(next.lastOffline,undefined);
+ db.close();
+});

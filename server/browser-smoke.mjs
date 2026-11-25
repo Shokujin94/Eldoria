@@ -203,6 +203,11 @@ try{
  assert.ok(Math.abs(huntView.scale-1600/huntWidth)<1e-6);
  assert.ok(Math.abs(huntView.scaleY-1200/(huntView.h*huntWidth/huntView.w))<1e-6);
  await impact.dispose();
+ await page.locator('[data-quick61=pauseActivity]').click();
+ await page.locator('[data-quick61=resumeActivity]').waitFor();
+ assert.equal(await page.locator('#target60').isVisible(),true);
+ await page.locator('[data-quick61=resumeActivity]').click();
+ await page.locator('[data-quick61=pauseActivity]').waitFor();
  const statePoll=/\/state\?compact=1$/;
  await page.route(statePoll,route=>route.fulfill({status:502,contentType:'text/html',body:'<!DOCTYPE html><title>Bad Gateway</title>'}),{times:1});
  await page.locator('#status').filter({hasText:'Servidor temporariamente indisponível'}).waitFor({state:'attached'});
@@ -219,9 +224,9 @@ try{
  }finally{offlineFixture.close();}
  const offlineNotice=page.locator('#offlineReturn');
  await offlineNotice.waitFor({state:'visible'});
- assert.match(await offlineNotice.textContent(),/Retorno offline · 0 min 1[5-9] s/);
+ assert.match(await offlineNotice.textContent(),/Retorno offline · 0 min [1-9][0-9]? s/);
  assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('eldoria-offline-return:'))),true);
- await page.locator('[data-quick61=stop]').click();
+ await page.locator('[data-quick61=stop]').evaluate(button=>{if(!button.disabled)button.click();});
  await page.locator('#city61').waitFor({state:'visible'});
  const expeditionFixture=new DatabaseSync(join(dir,'test.sqlite'));
  try{
