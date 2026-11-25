@@ -365,7 +365,13 @@ function breakPixels(kind,z,index,now){
  fx=fx.filter(f=>!f.parts);
  fx.push({parts,index,at:now});
 }
-function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){levelEffect=null;gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
+function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];heroAction=null;enemyAction=null;enemyStride=0;heroHitAt=-Infinity;
+ const keepHero=!areaChanged&&!motion.matches&&a?.enemy&&old?.enemy;
+ if(!keepHero)heroStride=0;
+ visual={
+  hero:keepHero?visual.hero:a?.positions?.hero??.32,heroY:keepHero?visual.heroY:a?.positions?.heroY??.84,
+  enemy:a?.positions?.enemy??.68,enemyY:a?.positions?.enemyY??.84,servant:a?.positions?.servant??.46
+ };if(areaChanged){levelEffect=null;gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
 if(previous){const event=s.lastCombat;
  const offline=(s.analyzer||s.history?.[0])?.offlineSeconds||0;
  const priorOffline=(previous.analyzer||previous.history?.[0])?.offlineSeconds||0;
@@ -460,7 +466,7 @@ let ox=clamp(w*.5-focus.x*w*scale,w*(1-scale),0);
 let backgroundY=clamp(h*(.62-focus.y*scaleY-.33*scale),h*(1-scale),0),oy=backgroundY+h*.33*scale;
 if(hunt){
  const width=clamp(w/(2.45*zoom61),440,1600),span=1600-width;
- const hero=(a.positions?.hero??focus.x)*1600;
+ const hero=focus.x*1600;
  const desired=clamp(hero-width*.45,0,span);
  const same=huntCamera?.zone===a.z&&huntCamera.w===w&&huntCamera.h===h&&huntCamera.width===width;
  const pan=same&&Math.abs(huntCamera.pan-desired)<=width*.8
@@ -483,7 +489,7 @@ if(!hunt&&im?.complete&&im.naturalWidth){
  c.imageSmoothingEnabled=true;
  c.drawImage(im,ox,backgroundY,w*scale,h*scale);
 }
-c.save();c.translate(ox,oy);c.scale(scale,scaleY);drawAtmosphere(c,w,h,d,now,a?.mode??'city',z);const hh=hunt?125*w/1600:Math.min(h*.43,w*.19,150),y=h*.84,target=a?.positions||{hero:.32,enemy:.68,servant:.46};const blend=motion.matches?1:1-Math.exp(-dt/235);
+c.save();c.translate(ox,oy);c.scale(scale,scaleY);drawAtmosphere(c,w,h,d,now,a?.mode??'city',z);const hh=hunt?125*w/1600:Math.min(h*.43,w*.19,150),y=h*.84,target=a?.positions||{hero:.32,enemy:.68,servant:.46};const blend=motion.matches?1:1-Math.exp(-dt/290);
 const heroBeforeX=visual.hero,heroBeforeY=visual.heroY??.84;
 const enemyBeforeX=visual.enemy,enemyBeforeY=visual.enemyY??.84;
 for(const k of ['hero','enemy','servant'])visual[k]+=(target[k]-visual[k])*blend;for(const axis of ['heroY','enemyY']){visual[axis]??=.84;visual[axis]+=((target[axis]??.84)-visual[axis])*blend;}const x=w*visual.hero,heroY=h*visual.heroY,enemyY=h*visual.enemyY;
@@ -507,12 +513,14 @@ if(a.mode!=='gather'){
  const facing=!!a.enemy&&enemyOnLeft;
  const dx=striking?action.side*hh*effort*(melee ? .17:action.kind==='ranged'?-.055:0):0;
  const dy=striking&&melee?Math.max(-hh*.09,Math.min(hh*.09,action.vertical*h))*effort:0;
- const walk=moving&&!striking?Math.sin(heroStride*Math.PI):0;
+ const heroGait=Math.min(1,heroTravel/Math.max(.001,dt*hh*.0018));
+ const walk=moving&&!striking?Math.sin(heroStride*Math.PI)*heroGait:0;
+ const breathing=!motion.matches&&a.enemy?Math.sin(now/245):0;
  const lean=effort*(melee ? .14:-.08)+walk*.035;
  const lift=hh*.035*Math.abs(walk);
  const sprite=striking?3:moving?1+Math.floor(heroStride)%2:0;
  shadow(x+dx,heroY+dy,hh);
- draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now-heroHitAt<130,lean,1+effort*.045);
+ draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now-heroHitAt<130,lean,1+effort*.045+breathing*.009*(1-heroGait));
  drawConditions(c,a.heroEffects,x+dx,heroY+dy,hh);
  if(a.enemy){
   drawCombatHealth(c,x+dx,heroY+dy,s.hp/s.stats.hp,'#83ac75');
@@ -530,7 +538,9 @@ if(a.mode!=='gather'){
  c.restore();
 }else{
  let enemyX=ex,enemyFeet=enemyY,lean=0,stretch=1;
- const gait=enemyMoving?Math.sin(enemyStride*Math.PI):0;
+ const enemyGait=Math.min(1,enemyTravel/Math.max(.001,dt*hh*.0018));
+ const gait=enemyMoving?Math.sin(enemyStride*Math.PI)*enemyGait:0;
+ const enemyBreathing=!motion.matches?Math.sin(now/280+1.8)*(1-enemyGait):0;
  const enemyLift=Math.abs(gait)*eh*.045;
  if(!motion.matches&&enemyAction){
   const phase=clamp((now-enemyAction.at)/310,0,1);
@@ -543,7 +553,7 @@ if(a.mode!=='gather'){
   stretch+=effort*(enemyAction.ranged?-.045:.065);
  }
  shadow(enemyX,enemyFeet,eh);
- draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,monsterFlip(z,a.index||0,boss,enemyOnLeft),!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055,s.enemyAppearance?.affixes?.length?titleColors[s.enemyAppearance.rarity]:null);
+ draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,monsterFlip(z,a.index||0,boss,enemyOnLeft),!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055+enemyBreathing*.014,s.enemyAppearance?.affixes?.length?titleColors[s.enemyAppearance.rarity]:null);
  drawConditions(c,a.effects,enemyX,enemyFeet,eh);
  drawCombatHealth(c,enemyX,enemyFeet,a.enemyHp/a.enemy.hp,'#ac4b47');
  const nameY=enemyFeet-eh*scale/scaleY-22/scaleY;
