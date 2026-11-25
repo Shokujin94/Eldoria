@@ -158,7 +158,7 @@ try{
   const ctx=document.getElementById('scene52').getContext('2d');
   const ellipse=ctx.ellipse.bind(ctx),strokeText=ctx.strokeText.bind(ctx);
   ctx.ellipse=(...args)=>{
-   if(ctx.fillStyle==='#b17ba6'&&args[2]===7&&args[3]===3)seen.projectile=true;
+   if(ctx.fillStyle==='#b17ba6'&&args[2]===6&&args[3]===4)seen.projectile=true;
    if(ctx.strokeStyle==='#b17ba6'&&args[2]>=8)seen.impact=true;
    ellipse(...args);
   };

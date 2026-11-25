@@ -181,9 +181,11 @@ function breakPixels(kind,z,index,now){
 function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;gatherHero=null;seen='';cityPos={x:.50,y:.72};zoom61=1;state=previous=null;fx=[];defeated=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){gatherHero=null;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={x:.5,y:.66};}}if(defeated?.next!==a?.encounter)defeated=null;
 if(previous){const event=s.lastCombat;
  if(defeated&&event?.encounter===defeated.next&&event.seq!==previous.lastCombat?.seq)defeated=null;
- if(!motion.matches&&a?.recovery&&s.kills===previous.kills+1&&event?.dealt&&event.encounter===old?.encounter&&event.encounter!==a.encounter&&event.mode===a.mode&&event.zone===a.z){
-  const boss=old.mode==='boss'||old.mode==='dungeon'&&old.wave===4;
-  defeated={next:a.encounter,at:now+(event.heroHit&&s.cls!=='war'?combatProjectile(event,s.cls,false).flight:0),boss,index:old.index,positions:event.positions};
+ const fallen=s.lastDefeat;
+ if(!motion.matches&&a?.enemy&&fallen&&s.kills===previous.kills+1&&fallen.encounter===old?.encounter
+    &&fallen.encounter!==a.encounter&&fallen.mode===a.mode&&fallen.zone===a.z&&event?.encounter!==a.encounter){
+  const delay=fallen.finalHit?.heroHit&&s.cls!=='war'?combatProjectile(fallen.finalHit,s.cls,false).flight:0;
+  defeated={next:a.encounter,at:now+delay,boss:fallen.boss,index:fallen.index,positions:fallen.positions};
  }
  if(a?.enemy&&event&&event.seq!==previous.lastCombat?.seq&&event.mode===a.mode&&event.zone===a.z)showCombat(event,s.cls,now,a.encounter);
 const g=s.lastGather,pg=previous.lastGather;if(a?.mode==='gather'&&g&&g.kind===a.prof&&g.zone===a.z&&g.total!==(pg?.total??previous.prof[a.prof].total)){const count=Math.max(1,s.prof[a.prof].total-previous.prof[a.prof].total);popup('+'+count+' '+({mining:'Minério',wood:'Madeira',herb:'Erva'}[g.kind]),colors[g.rarity]||colors[0],now);breakPixels(g.kind,g.zone,previous.prof[g.kind].total%18,now);pulse=now;tone(g.kind);}if(s.lastLoot?.seq&&s.lastLoot.seq!==previous.lastLoot?.seq)popup(s.lastLoot.name,colors[s.lastLoot.rarity]||colors[0],now,.65,.25);if(s.lastRelic?.seq&&s.lastRelic.seq!==previous.lastRelic?.seq)popup(s.lastRelic.name,'#f0ca79',now,.62,.22);if(s.lastRune?.seq&&s.lastRune.seq!==previous.lastRune?.seq)popup('Runa encontrada!', '#caa0ef',now,.68,.26);if(s.kills>previous.kills)popup('+'+(s.kills-previous.kills)+' abate(s)','#e8c98c',now,.68,.32);}

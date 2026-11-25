@@ -141,6 +141,9 @@ export function game(db,{clock=Date.now,random=rng}={}){
   }
   const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.')+(potionFound?' · Poção de vida menor encontrada.':'');
   combat.onVictory(r.cls,s,stats(id,r,s));if(a.mode==='boss'){s.bosses=(s.bosses||0)+1;s.zoneBosses[a.z]++;}else if(a.mode==='dungeon'){if(a.wave===4){s.dungeons=(s.dungeons||0)+1;s.zoneDungeons[a.z]++;if(a.tower){s.towerRecord=Math.max(s.towerRecord,a.floor||1);a.floor=(a.floor||1)+1;}a.wave=1;a.floorKills=0;s.lastEvent=(a.tower?'Torre · andar '+(a.floor-1)+' concluído':'Dungeon concluída')+' · '+s.lastEvent;}else if(++a.floorKills===3){a.wave++;a.floorKills=0;}}
+  const finalHit=s.lastCombat?.encounter===a.encounter&&dealt>0?s.lastCombat:null;
+  s.lastDefeat={encounter:a.encounter,mode:a.mode,zone:a.z,index:a.index,boss,
+   positions:{...a.positions},finalHit};
   newEncounter(s);a.recovery=1;
  }
  function migrateEarlyBalance(id,r,s){

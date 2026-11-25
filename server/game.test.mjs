@@ -315,6 +315,12 @@ test('hunt analyzer records potions looted and consumed',()=>{
  const won=g.state('pot').character;
  assert.equal(won.potions.hp1,before+1);
  assert.equal(won.analyzer.potionsFound,1);
+ now+=1000;
+ const recovered=g.state('pot').character;
+ assert.equal(recovered.activity.recovery,0);
+ assert.equal(recovered.lastDefeat.encounter,s.activity.encounter);
+ assert.equal(recovered.lastDefeat.index,s.activity.index);
+ assert.equal(recovered.lastDefeat.finalHit,null);
  const injured=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('pot').data);
  injured.hp=1;
  db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(injured),'pot');
