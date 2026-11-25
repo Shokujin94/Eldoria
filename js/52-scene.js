@@ -119,27 +119,48 @@ function combatProjectile(event,cls,incoming){
  const color=kind==='arrow'&&element!=='poison'?'#d6d8d1':impactColors[kind]??impactColors[element]??'#bb9bea';
  return {x,y,toX,toY,flight,color,kind,element,incoming,encounter:event.encounter};
 }
+// Attack transforms interpolate continuously between preparation, release and recovery.
+const heroAttackMotion={
+ melee:{duration:460,peak:.34,from:[-.07,0,-.10,.97],hit:[.22,.035,.18,1.06]},
+ ranged:{duration:500,peak:.33,from:[.025,0,.06,1.02],hit:[-.095,.018,-.14,.97]},
+ cast:{duration:540,peak:.32,from:[-.025,.018,-.04,.98],hit:[.035,.075,.09,1.09]}
+};
+const neutralAttackPose=[0,0,0,1];
+function blendAttackPose(from,to,t){
+ const ease=t*t*(3-2*t);
+ return from.map((value,i)=>value+(to[i]-value)*ease);
+}
+function heroAttackPose(kind,progress){
+ const {peak,from,hit}=heroAttackMotion[kind],prepare=peak*.55,hold=peak+.18;
+ if(progress<prepare)return blendAttackPose(neutralAttackPose,from,progress/prepare);
+ if(progress<peak)return blendAttackPose(from,hit,(progress-prepare)/(peak-prepare));
+ if(progress<=hold)return hit;
+ return blendAttackPose(hit,neutralAttackPose,(progress-hold)/(1-hold));
+}
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
  const {positions:p,dealt,received,critical,heroHit,heroLanded,heroImpact,heroShot,element,skill,support,enemyShot,enemyImpact,enemyMelee}=event;
+ let release=now;
  if(heroShot||support||(heroHit&&!heroLanded)){
   const kind=support?'cast':cls==='war'?'melee':cls==='ranger'?'ranged':'cast';
-  heroAction={at:now,kind,side:Math.sign(p.enemy-p.hero)||1,vertical:(p.enemyY??.84)-(p.heroY??.84)};
+  const {duration,peak}=heroAttackMotion[kind];
+  release=now+duration*peak;
+  heroAction={at:now,kind,vertical:(p.enemyY??.84)-(p.heroY??.84)};
  }
  if(support){
-  popup(support.skill,impactColors[support.element]??'#8ccfa3',now,p.hero,p.heroY??.84,true);
-  fx.push({at:now,impact:{x:p.hero,y:p.heroY??.84,color:impactColors[support.element]??'#8ccfa3',element:support.element,support:true}});
-  tone('buff');
+  popup(support.skill,impactColors[support.element]??'#8ccfa3',release,p.hero,p.heroY??.84,true);
+  fx.push({at:release,impact:{x:p.hero,y:p.heroY??.84,color:impactColors[support.element]??'#8ccfa3',element:support.element,support:true}});
+  tone('buff',(release-now)/1000);
  }
  if(heroShot){
   const shot=combatProjectile({...event,element:heroShot.element},cls,false);
-  if(shot.flight)fx.push({at:now,projectile:shot});
+  if(shot.flight)fx.push({at:release,projectile:shot});
  }
  if(dealt){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
-  const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=now+(shot?.flight||0);
+  const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=(heroHit&&!heroLanded?release:now)+(shot?.flight||0);
   const x=heroImpact?.x??p.enemy,y=heroImpact?.y??p.enemyY??.84;
-  if(shot?.flight)fx.push({at:now,projectile:shot});
+  if(shot?.flight)fx.push({at:release,projectile:shot});
   if(heroHit){
    if(event.encounter===currentEncounter)flash=impactTime;
    fx.push({at:impactTime,impact:{x,y,color,element,skill,melee:cls==='war',side:Math.sign(p.enemy-p.hero)||1}});
@@ -367,7 +388,7 @@ function breakPixels(kind,z,index,now){
  fx=fx.filter(f=>!f.parts);
  fx.push({parts,index,at:now});
 }
-function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];combatQueue=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];combatQueue=[];heroAction=null;enemyAction=null;enemyStride=0;heroHitAt=-Infinity;
+function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];combatQueue=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}if(!state||state.cls!==s.cls)for(const src of art.hero[s.cls]||[])image(src);const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];combatQueue=[];heroAction=null;enemyAction=null;enemyStride=0;heroHitAt=-Infinity;
  const keepHero=!areaChanged&&!motion.matches&&a?.enemy&&old?.enemy;
  if(!keepHero)heroStride=0;
  visual={
@@ -515,24 +536,21 @@ if(a.mode!=='gather'){
  if(moving)heroStride+=heroTravel/(hh*.22);
  if(enemyMoving)enemyStride+=enemyTravel/(hh*.21);
  const action=motion.matches?null:heroAction;
- const duration=action?.kind==='melee'?360:420;
- const progress=action?(now-action.at)/duration:1;
+ const progress=action?(now-action.at)/heroAttackMotion[action.kind].duration:1;
  const striking=progress>=0&&progress<1;
- const phase=striking?(progress<.25?progress/.25:(1-progress)/.75):0;
- const effort=phase*phase*(3-2*phase);
- const melee=action?.kind==='melee';
+ const [advance,rise,angle,stretch]=striking?heroAttackPose(action.kind,progress):neutralAttackPose;
  const enemyOnLeft=visual.enemy===visual.hero?target.enemy<target.hero:visual.enemy<visual.hero;
  const facing=!!a.enemy&&enemyOnLeft;
- const dx=striking?action.side*hh*effort*(melee ? .17:action.kind==='ranged'?-.055:0):0;
- const dy=striking&&melee?Math.max(-hh*.09,Math.min(hh*.09,action.vertical*h))*effort:0;
+ const dx=(facing?-1:1)*hh*advance;
+ const dy=striking&&action.kind==='melee'?clamp(action.vertical*h,-hh*.35,hh*.35)*advance:0;
  const heroGait=Math.min(1,heroTravel/Math.max(.001,dt*hh*.0018));
  const walk=moving&&!striking?Math.sin(heroStride*Math.PI)*heroGait:0;
  const breathing=!motion.matches&&a.enemy?Math.sin(now/245):0;
- const lean=effort*(melee ? .14:-.08)+walk*.035;
- const lift=hh*.035*Math.abs(walk);
- const sprite=striking?3:moving?1+Math.floor(heroStride)%2:0;
+ const lift=hh*(rise+.035*Math.abs(walk));
+ const peak=action?heroAttackMotion[action.kind].peak:0;
+ const sprite=striking?(progress<peak*.65?0:progress<.79?3:0):moving?1+Math.floor(heroStride)%2:0;
  shadow(x+dx,heroY+dy,hh);
- draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now-heroHitAt<130,lean,1+effort*.045+breathing*.009*(1-heroGait));
+ draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now-heroHitAt<130,angle+walk*.035,stretch+breathing*.009*(1-heroGait));
  drawConditions(c,a.heroEffects,x+dx,heroY+dy,hh);
  if(a.enemy){
   drawCombatHealth(c,x+dx,heroY+dy,s.hp/s.stats.hp,'#83ac75');

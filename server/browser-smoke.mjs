@@ -244,11 +244,12 @@ try{
  await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=hunt]').click();
  const impact=await page.evaluateHandle(()=>{
-  const seen={projectile:false,damage:false,impact:false,panorama:false};
+  const seen={projectile:false,damage:false,impact:false,panorama:false,attackPose:false};
   const ctx=document.getElementById('scene52').getContext('2d');
   const ellipse=ctx.ellipse.bind(ctx),strokeText=ctx.strokeText.bind(ctx),drawImage=ctx.drawImage.bind(ctx);
   ctx.drawImage=(...args)=>{
    const [im,x,y,w,h]=args;
+   if(im.src?.endsWith('/'+window.eldoria52Art.hero.necro[3]))seen.attackPose=true;
    if(args.length===9&&/\/zone0(?:-mini)?\.webp$/.test(im.src||'')
       &&Math.abs(w-im.naturalWidth*.74)<.01&&x>=0&&x+w<=im.naturalWidth+.01&&y===0&&h===im.naturalHeight)seen.panorama=true;
    drawImage(...args);
@@ -263,7 +264,7 @@ try{
  });
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
- await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama,impact,{timeout:15000});
+ await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama&&seen.attackPose,impact,{timeout:15000});
  const huntView=await page.evaluate(()=>window.eldoria52Scene.view());
  const huntWidth=Math.min(1600,Math.max(440,huntView.w/(2.45*.55)));
  assert.ok(Math.abs(huntView.scale-1600/huntWidth)<1e-6);
