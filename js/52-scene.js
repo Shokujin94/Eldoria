@@ -1,6 +1,14 @@
 /* Presentation only. Server snapshots are the only source of progress. */
 (()=>{'use strict';
-const art=window.eldoria52Art,canvas=()=>document.getElementById('scene52'),motion=matchMedia('(prefers-reduced-motion: reduce)'),cache=new Map();
+const art=window.eldoria52Art,canvas=()=>document.getElementById('scene52'),systemMotion=matchMedia('(prefers-reduced-motion: reduce)'),cache=new Map();
+let motionMode='system';
+try{const saved=localStorage.getItem('eldoria-scene-motion');if(saved==='full'||saved==='reduced')motionMode=saved;}catch{}
+const motion={get matches(){return motionMode==='reduced'||motionMode==='system'&&systemMotion.matches;}};
+function setMotionMode(mode){
+ if(!['system','full','reduced'].includes(mode))return;
+ motionMode=mode;
+ try{localStorage.setItem('eldoria-scene-motion',mode);}catch{}
+}
 const citySpawn={x:400/800,y:300/600};
 let cityPos={...citySpawn},cityDest=null,cityNear=null,cityClickNPC=null,cityRoute=[],cityKeys=new Set(),lastCityFrame=0,projection=null,huntCamera=null;
 const cityNPC=[
@@ -96,7 +104,7 @@ function routeCity(from,to){
 }
 const colors=['#c4c8ce','#92c88e','#86b7ee','#caa0ef','#ebc778'];
 const image=src=>{if(!src)return null;if(!cache.has(src)){const im=new Image();im.decoding='async';im.src=src;cache.set(src,im);}return cache.get(src);};
-function draw(c,src,x,y,h,flip=false,bright=false,lean=0,stretch=1,outline=null){const im=image(src);if(!im?.complete||!im.naturalWidth)return;c.save();c.translate(x,y);c.scale(flip?-1:1,projection?projection.scale/projection.scaleY*stretch:stretch);if(lean)c.rotate(lean);if(bright)c.filter='brightness(1.5)';c.imageSmoothingEnabled=false;const w=h*im.naturalWidth/im.naturalHeight;if(outline){
+function draw(c,src,x,y,h,flip=false,bright=false,lean=0,stretch=1,outline=null){const im=image(src);if(!im?.complete||!im.naturalWidth)return;c.save();c.translate(x,y);c.scale(flip?-1:1,projection?projection.scale/projection.scaleY*stretch:stretch);if(lean)c.rotate(lean);if(bright){if('filter' in c)c.filter='brightness(1.5)';else{c.shadowColor='#fff';c.shadowBlur=6;}}c.imageSmoothingEnabled=false;const w=h*im.naturalWidth/im.naturalHeight;if(outline){
  c.shadowColor=outline;c.shadowBlur=8;
  c.drawImage(im,-w/2,-h,w,h);
  c.shadowBlur=0;
@@ -143,7 +151,11 @@ function attackPose({peak,from,hit},progress){
 }
 function settleVisualProjectile(impact,encounter,incoming,now){
  if(!Number.isFinite(impact?.contactX)||!Number.isFinite(impact.contactY))return now;
- const flight=fx.findLast(f=>f.at<now&&f.projectile?.encounter===encounter&&!f.projectile.confirmed&&f.projectile.incoming===incoming);
+ let flight;
+ for(let index=fx.length-1;index>=0;index--){
+  const entry=fx[index],shot=entry.projectile;
+  if(entry.at<now&&shot?.encounter===encounter&&!shot.confirmed&&shot.incoming===incoming){flight=entry;break;}
+ }
  const shot=flight?.projectile,point=shot?.drawn;
  if(!point||now>=flight.at+shot.flight)return now;
  const distance=Math.hypot((impact.contactX-point.x)*800,(impact.contactY-point.y)*600);
@@ -670,5 +682,5 @@ function mini(c,key,w,h,hero,others){const r=Math.min(48,w*.105,h*.16),cx=w-r-9,
 function toggle(){sound=!sound;if(sound){try{audio??=new AudioContext();audio.resume().catch(()=>{});}catch{sound=false;}}const b=document.getElementById('sound52');if(b){b.textContent=sound?'Som ligado':'Som desligado';b.setAttribute('aria-pressed',String(sound));}}
 function interact(){if(!state||state.activity||!cityNear)return;window.eldoria61CityService?.(cityNear.mode);}
 const blocked=()=>!state||state.activity||document.querySelector('dialog[open]')||document.querySelector('#window53.floating53:not([hidden])');document.addEventListener('keydown',e=>{if(blocked()||e.target.closest?.('input,select,textarea,button,[contenteditable]'))return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();cityKeys.add(k);}else if(k==='e'){e.preventDefault();interact();}});document.addEventListener('keyup',e=>cityKeys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>cityKeys.clear());document.addEventListener('visibilitychange',()=>{cityKeys.clear();if(document.hidden)levelEffect=null;});canvas()?.addEventListener('click',e=>{if(blocked()||!projection)return;const r=canvas().getBoundingClientRect(),p=projection,x=((e.clientX-r.left)/r.width*p.w-p.ox)/(p.w*p.scale),y=((e.clientY-r.top)/r.height*p.h-p.oy)/(p.h*p.scaleY),actorH=cityActorHeight(p.w,p.h);cityClickNPC=cityNPC.filter(n=>Math.abs((x-n.x)*p.w)<actorH*.32&&(y-n.y)*p.h*p.scaleY>=-actorH*p.scale&&(y-n.y)*p.h*p.scaleY<actorH*p.scale*.20).sort((a,b)=>Math.abs(x-a.x)-Math.abs(x-b.x)||b.y-a.y)[0]||null;const clicked=cityClickNPC?{x:cityClickNPC.x,y:cityClickNPC.y+.04}:{x,y};cityDest=cityWalkable(clicked.x,clicked.y)?clicked:nearestCityNode(clicked);cityRoute=cityDest?routeCity(cityPos,cityDest):[];canvas().focus({preventScroll:true});});
-window.eldoria52Scene={apply,toggle,interact,zoom:delta=>{zoom61=clamp(zoom61+delta,baseZoom,1);},view:()=>projection?{...projection}:null};
+window.eldoria52Scene={apply,toggle,interact,setMotionMode,motionMode:()=>motionMode,zoom:delta=>{zoom61=clamp(zoom61+delta,baseZoom,1);},view:()=>projection?{...projection}:null};
 })();

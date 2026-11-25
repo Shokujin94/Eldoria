@@ -1,5 +1,9 @@
 // Runs in CI against a temporary DB. No production accounts or deployment.
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
+const engines={chromium,firefox,webkit};
+const engine=process.env.ELDORIA_BROWSER_ENGINE||'chromium';
+const executablePath=process.env.ELDORIA_BROWSER_EXECUTABLE||undefined;
+const combatOnly=process.env.ELDORIA_COMBAT_ONLY==='1';
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -13,11 +17,12 @@ const probe=createServer();probe.listen(0,'127.0.0.1');await once(probe,'listeni
 const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,DB_PATH:join(dir,'test.sqlite'),PORT:String(chosenPort),HOST:'127.0.0.1',ALLOWED_ORIGINS:'http://127.0.0.1:'+chosenPort,SERVE_PREVIEW:'1',REGISTRATION_MODE:'open'},stdio:['ignore','pipe','pipe']});
 let browser;
 try{
- const port=await new Promise((resolve,reject)=>{let log='';const timer=setTimeout(()=>reject(Error('startup timeout')),10000);child.stdout.on('data',d=>{log+=d;const m=log.match(/Eldoria online API (\d+)/);if(m){clearTimeout(timer);resolve(+m[1]);}});child.once('exit',c=>{clearTimeout(timer);reject(Error('server exit '+c));});});
- browser=await chromium.launch({headless:true});
+ const port=await new Promise((resolve,reject)=>{let log='';const timer=setTimeout(()=>reject(Error('startup timeout')),25000);child.stdout.on('data',d=>{log+=d;const m=log.match(/Eldoria online API (\d+)/);if(m){clearTimeout(timer);resolve(+m[1]);}});child.once('exit',c=>{clearTimeout(timer);reject(Error('server exit '+c));});});
+ browser=await engines[engine].launch({headless:true,executablePath});
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('http://127.0.0.1:'+port);
+ await page.bringToFront();
  await page.locator('#auth input[name=username]').fill('browser_test');
  await page.locator('#auth input[name=password]').fill('Senha teste browser 123!');
  await page.locator('#auth button[value=register]').click();
@@ -29,6 +34,7 @@ try{
  await page.locator('#scene52').waitFor({state:'visible'});
  assert.equal(await page.locator('#mp52').getAttribute('max'),'60');
  assert.equal(await page.locator('.floating65:not([hidden])').count(),0);
+ if(!combatOnly){
  const layout=await page.evaluate(()=>({map:document.getElementById('scene52').getBoundingClientRect().toJSON(),nav:document.getElementById('tabs').getBoundingClientRect().toJSON(),hud:document.getElementById('combatHUD22').getBoundingClientRect().toJSON(),w:innerWidth,h:innerHeight}));
  assert.ok(Math.abs(layout.map.width-layout.w)<2&&Math.abs(layout.map.height-layout.h)<2,'full-screen original map');assert.ok(layout.nav.top<60&&layout.hud.bottom>layout.h-30,'edge mounted HUD');
  await page.locator('#editHud').click();
@@ -241,6 +247,15 @@ try{
  await page.waitForFunction(()=>document.getElementById('event61').textContent.includes('recurso(s)'));
  await page.locator('[data-quick61=stop]').click();
  await page.waitForFunction(()=>document.getElementById('world52-location').textContent.includes('Vespera'));
+ }
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.locator('[data-group65="3"]').click();
+ await page.locator('[data-tab=settings]').click();
+ const motionMode=page.locator('[data-scene-motion]');
+ assert.equal(await motionMode.inputValue(),'system');
+ await motionMode.selectOption('full');
+ assert.equal(await page.evaluate(()=>window.eldoria52Scene.motionMode()),'full');
+ await page.locator('#win-settings [data-close65]').click();
  await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=hunt]').click();
  const impact=await page.evaluateHandle(()=>{
@@ -264,7 +279,15 @@ try{
  });
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
- await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama&&seen.attackPose,impact,{timeout:15000});
+ try{await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama&&seen.attackPose,impact,{timeout:15000});}
+ catch(error){
+  const scene=await page.evaluate(()=>({hidden:document.hidden,focus:document.hasFocus(),motion:window.eldoria52Scene?.motionMode(),hp:document.querySelector('#target60-hp')?.value}));
+  throw new Error('Combat render check: '+JSON.stringify({seen:await impact.jsonValue(),scene,errors}),{cause:error});
+ }
+ if(combatOnly){
+  assert.deepEqual(errors,[]);
+  console.log('Combat smoke ('+engine+(executablePath?' · '+executablePath:'')+'): pose, projectile, impact and damage passed');
+ }else{
  const huntView=await page.evaluate(()=>window.eldoria52Scene.view());
  const huntWidth=Math.min(1600,Math.max(440,huntView.w/(2.45*.55)));
  assert.ok(Math.abs(huntView.scale-1600/huntWidth)<1e-6);
@@ -318,5 +341,6 @@ try{
  assert.ok(narrowCamera.ox>=narrowCamera.w*(1-narrowCamera.scale)-.01);
  assert.ok(narrowCamera.backgroundY>=narrowCamera.h*(1-narrowCamera.scale)-.01);
  assert.deepEqual(errors,[]);
- console.log('Browser smoke: registration, vocation, character, bag, talents, market, ranking, gathering, hunt, return, mobile passed');
+ console.log('Browser smoke ('+engine+(executablePath?' · '+executablePath:'')+'): registration, vocation, character, bag, talents, market, ranking, gathering, hunt, return, mobile passed');
+ }
 }finally{await browser?.close();if(child.exitCode===null){child.kill('SIGTERM');await once(child,'exit');}await rm(dir,{recursive:true,force:true});}
