@@ -332,6 +332,12 @@ test('hunt analyzer records potions looted and consumed',()=>{
  assert.equal(healed.potions.hp1,before);
  assert.equal(healed.analyzer.consumablesUsed,1);
  assert.equal(healed.analyzer.consumableCost,8);
+ const reset=g.action('pot',{action:'resetAnalyzer'}).character;
+ assert.deepEqual(reset.activity,healed.activity);
+ assert.equal(reset.analyzer.seconds,0);
+ assert.equal(reset.analyzer.consumableCost,0);
+ assert.equal(reset.history[0].reason,'Nova medição');
+ assert.equal(reset.history[0].consumableCost,8);
  g.action('pot',{action:'stop'});
  assert.throws(()=>g.action('pot',{action:'trainSkinning'}));
  const veteran=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('pot').data);
