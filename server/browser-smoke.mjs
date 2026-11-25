@@ -70,7 +70,7 @@ try{
  await page.waitForFunction(()=>{
   const npcs=Object.values(window.eldoria52Art.npcs);
   const loaded=new Set(performance.getEntriesByType('resource').map(entry=>new URL(entry.name).pathname));
-  return npcs.length===7&&npcs.every(src=>loaded.has('/'+src));
+  return npcs.length===6&&npcs.every(src=>loaded.has('/'+src));
  });
  const cityCanvas=await page.locator('#scene52').boundingBox();
  await page.mouse.click(cityCanvas.x+cityCanvas.width*302/800,cityCanvas.y+cityCanvas.height*(.33+.62*408/600)-6);

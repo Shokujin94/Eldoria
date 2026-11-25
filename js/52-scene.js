@@ -9,8 +9,7 @@ const cityNPC=[
  {x:400,y:166,name:'Cartógrafo',role:'Viagens e regiões',mode:'zones'},
  {x:540,y:190,name:'Mestre de Provas',role:'Ascensão',mode:'sub'},
  {x:638,y:195,name:'Mestre de Ofícios',role:'Profissões',mode:'prof'},
- {x:302,y:408,name:'Orven',role:'Depósito',mode:'vault'},
- {x:495,y:420,name:'Instrutor',role:'Treinamento',mode:'train'}
+ {x:302,y:408,name:'Orven',role:'Depósito',mode:'vault'}
 ].map(n=>({...n,x:n.x/800,y:n.y/600}));
 const baseZoom=.55;
 let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],heroAction=null,enemyAction=null,heroStride=0,enemyStride=0,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
@@ -40,7 +39,7 @@ const cityObstacles=[
  [[667,238],[692,232],[711,252],[705,278],[680,282],[664,265]],
  [[702,182],[749,181],[754,237],[733,245],[713,221]]
 ];
-const cityActorHeight=(w,h)=>Math.min(h*.29,w*.145,126);
+const cityActorHeight=(w,h)=>Math.min(h*.35,w*.175,150);
 function insideCityPolygon(px,py,polygon){
  let inside=false;
  for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
@@ -231,6 +230,12 @@ function combatGlyph(c,shape,r,t){
  }
 }
 const titleColors=['#b9bec6','#88c88f','#7aaff0','#c29ae5','#efc36e'];
+// The atlas mixes original left-facing, right-facing and frontal artwork.
+const rightFacingMonsters=[[],[],[1,2],[0],[],[1],[0,1,2],[1,4],[1],[1]];
+function monsterFlip(zone,index,boss,faceRight){
+ const nativeRight=!boss&&rightFacingMonsters[zone]?.includes(index);
+ return faceRight!==nativeRight;
+}
 function drawCombatLabel(c,x,y,text,color,font){
  if(!text)return;
  c.save();
@@ -478,7 +483,8 @@ if(a.mode!=='gather'){
  const phase=striking?(progress<.25?progress/.25:(1-progress)/.75):0;
  const effort=phase*phase*(3-2*phase);
  const melee=action?.kind==='melee';
- const facing=striking?action.side<0:!!a.enemy&&visual.hero>visual.enemy;
+ const enemyOnLeft=visual.enemy===visual.hero?target.enemy<target.hero:visual.enemy<visual.hero;
+ const facing=!!a.enemy&&enemyOnLeft;
  const dx=striking?action.side*hh*effort*(melee ? .17:action.kind==='ranged'?-.055:0):0;
  const dy=striking&&melee?Math.max(-hh*.09,Math.min(hh*.09,action.vertical*h))*effort:0;
  const walk=moving&&!striking?Math.sin(heroStride*Math.PI):0;
@@ -500,7 +506,7 @@ if(a.mode!=='gather'){
  c.save();
  c.globalAlpha=1-clamp((now-defeated.at)/1050,0,1);
  shadow(px,py,height);
- draw(c,defeated.boss?art.boss[z]:art.monsters[z]?.[defeated.index||0],px,py,height,p.enemy>=p.hero);
+ draw(c,defeated.boss?art.boss[z]:art.monsters[z]?.[defeated.index||0],px,py,height,monsterFlip(z,defeated.index,defeated.boss,p.hero>p.enemy));
  c.restore();
 }else{
  let enemyX=ex,enemyFeet=enemyY,lean=0,stretch=1;
@@ -517,14 +523,14 @@ if(a.mode!=='gather'){
   stretch+=effort*(enemyAction.ranged?-.045:.065);
  }
  shadow(enemyX,enemyFeet,eh);
- draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,visual.enemy>=visual.hero,!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055);
+ draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,monsterFlip(z,a.index||0,boss,enemyOnLeft),!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055);
  drawConditions(c,a.effects,enemyX,enemyFeet,eh);
  drawCombatHealth(c,enemyX,enemyFeet,a.enemyHp/a.enemy.hp,'#ac4b47');
  const nameY=enemyFeet-eh*scale/scaleY-22/scaleY;
  drawCombatLabel(c,enemyX,nameY,a.enemy.name,'#e4d6bd','600 12px system-ui');
  const rank=a.mode==='trial'?'Provação':boss?'Chefe':a.mode==='dungeon'?'Elite':null;
  if(rank)drawCombatLabel(c,enemyX,nameY-14/scaleY,rank,'#edb477','600 10px system-ui');
-}minionVisual.length=Math.min(minionVisual.length,(s.minions||[]).length);if(s.cls==='necro')for(const [i,m] of (s.minions||[]).entries()){const slot=minionVisual[i]??={x:m.x,y:m.y??0},step=motion.matches?1:1-Math.exp(-dt/172);slot.x+=(m.x-slot.x)*step;slot.y+=((m.y??0)-slot.y)*step;const mx=w*slot.x,my=enemyY+h*slot.y;shadow(mx,my,hh*.55);c.save();if(m.role!=='bone')c.filter=({sentinel:'saturate(.45) brightness(1.12)',archer:'sepia(.35) hue-rotate(65deg)',herald:'sepia(.6) hue-rotate(220deg)'})[m.role]||'none';draw(c,art.monsters[1][0],mx,my,hh*.55);c.restore();c.font='10px system-ui';c.textAlign='center';c.fillStyle='#d4e1d2';c.fillText(({bone:'Servo',sentinel:'Sentinela',archer:'Arqueiro',herald:'Arauto'})[m.role]||'Servo',mx,my-hh*.58);} }}
+}minionVisual.length=Math.min(minionVisual.length,(s.minions||[]).length);if(s.cls==='necro')for(const [i,m] of (s.minions||[]).entries()){const slot=minionVisual[i]??={x:m.x,y:m.y??0},step=motion.matches?1:1-Math.exp(-dt/172);slot.x+=(m.x-slot.x)*step;slot.y+=((m.y??0)-slot.y)*step;const mx=w*slot.x,my=enemyY+h*slot.y;shadow(mx,my,hh*.55);c.save();if(m.role!=='bone')c.filter=({sentinel:'saturate(.45) brightness(1.12)',archer:'sepia(.35) hue-rotate(65deg)',herald:'sepia(.6) hue-rotate(220deg)'})[m.role]||'none';draw(c,art.monsters[1][0],mx,my,hh*.55,mx>w*visual.enemy);c.restore();c.font='10px system-ui';c.textAlign='center';c.fillStyle='#d4e1d2';c.fillText(({bone:'Servo',sentinel:'Sentinela',archer:'Arqueiro',herald:'Arauto'})[m.role]||'Servo',mx,my-hh*.58);} }}
 if(a.mode==='gather'){
  const field=gatherFields[z],active=s.prof[a.prof].total%18,targetNode=field.find(node=>node.index===active);
  const scale=hh/125,burst=fx.find(f=>f.parts);
@@ -566,6 +572,6 @@ fx=fx.filter(f=>now-f.at<(f.projectile?.flight??1250));for(const f of fx){const 
 function mini(c,key,w,h,hero,others){const r=Math.min(48,w*.105,h*.16),cx=w-r-9,cy=h-r-9,im=image('assets/maps/'+key+'-mini.webp');c.save();c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.clip();c.fillStyle='#151719';c.fillRect(cx-r,cy-r,2*r,2*r);if(im?.complete&&im.naturalWidth){const sc=Math.max(2*r/im.naturalWidth,2*r/im.naturalHeight),iw=im.naturalWidth*sc,ih=im.naturalHeight*sc;c.drawImage(im,cx-iw/2,cy-ih/2,iw,ih);}c.fillStyle='#09090b44';c.fillRect(cx-r,cy-r,2*r,2*r);const dot=(p,color)=>{c.beginPath();c.arc(cx-r+2*r*p.x,cy-r+2*r*p.y,3,0,Math.PI*2);c.fillStyle=color;c.fill();};for(const n of others)dot(n,n.enemy?'#f08080':'#e0bb73');dot(hero,'#fff7df');c.restore();c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.strokeStyle='#bd9b68';c.lineWidth=2;c.stroke();}
 function toggle(){sound=!sound;if(sound){try{audio??=new AudioContext();audio.resume().catch(()=>{});}catch{sound=false;}}const b=document.getElementById('sound52');if(b){b.textContent=sound?'Som ligado':'Som desligado';b.setAttribute('aria-pressed',String(sound));}}
 function interact(){if(!state||state.activity||!cityNear)return;window.eldoria61CityService?.(cityNear.mode);}
-const blocked=()=>!state||state.activity||document.querySelector('dialog[open]')||document.querySelector('#window53.floating53:not([hidden])');document.addEventListener('keydown',e=>{if(blocked()||e.target.closest?.('input,select,textarea,button,[contenteditable]'))return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();cityKeys.add(k);}else if(k==='e'){e.preventDefault();interact();}});document.addEventListener('keyup',e=>cityKeys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>cityKeys.clear());document.addEventListener('visibilitychange',()=>{cityKeys.clear();if(document.hidden)levelEffect=null;});canvas()?.addEventListener('click',e=>{if(blocked()||!projection)return;const r=canvas().getBoundingClientRect(),p=projection,x=((e.clientX-r.left)/r.width*p.w-p.ox)/(p.w*p.scale),y=((e.clientY-r.top)/r.height*p.h-p.oy)/(p.h*p.scaleY),actorH=cityActorHeight(p.w,p.h);cityClickNPC=cityNPC.find(n=>Math.abs((x-n.x)*p.w)<actorH*.32&&(y-n.y)*p.h*p.scaleY>=-actorH*p.scale&&(y-n.y)*p.h*p.scaleY<actorH*p.scale*.20)||null;const clicked=cityClickNPC?{x:cityClickNPC.x,y:cityClickNPC.y+.04}:{x,y};cityDest=cityWalkable(clicked.x,clicked.y)?clicked:nearestCityNode(clicked);cityRoute=cityDest?routeCity(cityPos,cityDest):[];canvas().focus({preventScroll:true});});
+const blocked=()=>!state||state.activity||document.querySelector('dialog[open]')||document.querySelector('#window53.floating53:not([hidden])');document.addEventListener('keydown',e=>{if(blocked()||e.target.closest?.('input,select,textarea,button,[contenteditable]'))return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();cityKeys.add(k);}else if(k==='e'){e.preventDefault();interact();}});document.addEventListener('keyup',e=>cityKeys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>cityKeys.clear());document.addEventListener('visibilitychange',()=>{cityKeys.clear();if(document.hidden)levelEffect=null;});canvas()?.addEventListener('click',e=>{if(blocked()||!projection)return;const r=canvas().getBoundingClientRect(),p=projection,x=((e.clientX-r.left)/r.width*p.w-p.ox)/(p.w*p.scale),y=((e.clientY-r.top)/r.height*p.h-p.oy)/(p.h*p.scaleY),actorH=cityActorHeight(p.w,p.h);cityClickNPC=cityNPC.filter(n=>Math.abs((x-n.x)*p.w)<actorH*.32&&(y-n.y)*p.h*p.scaleY>=-actorH*p.scale&&(y-n.y)*p.h*p.scaleY<actorH*p.scale*.20).sort((a,b)=>Math.abs(x-a.x)-Math.abs(x-b.x)||b.y-a.y)[0]||null;const clicked=cityClickNPC?{x:cityClickNPC.x,y:cityClickNPC.y+.04}:{x,y};cityDest=cityWalkable(clicked.x,clicked.y)?clicked:nearestCityNode(clicked);cityRoute=cityDest?routeCity(cityPos,cityDest):[];canvas().focus({preventScroll:true});});
 window.eldoria52Scene={apply,toggle,interact,zoom:delta=>{zoom61=clamp(zoom61+delta,baseZoom,1);},view:()=>projection?{...projection}:null};
 })();
