@@ -69,7 +69,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  function issueRelic(id,z,source){const r=row(id),d=equipment.relicData(z,r.cls),rel=equipment.relics[z],uid=randomUUID(),level=7+10*z,power=content.itemPower45({name:rel.name,slot:rel.slot,baseMods:d.baseMods}),data=equipment.rebuild({name:rel.name,slot:rel.slot,tier:z,rarity:4,data:d});db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run(uid,id,rel.name,rel.slot,z,level,4,source,power,JSON.stringify(data));return uid;}
  function cp(id,level){return 10*level+equippedItems(id).reduce((n,i)=>n+Math.round(equipment.effectivePower(i)*rarityMult[i.rarity]),0);}
  function persist(id,s){const p=s.prof;db.prepare('UPDATE characters SET data=?,level=?,xp=?,power=?,mining=?,wood=?,herb=?,craft=?,collected=?,mined=?,logged=?,herbs=?,updated=? WHERE account=?').run(JSON.stringify(s),s.level,s.xp,cp(id,s.level),p.mining.level,p.wood.level,p.herb.level,s.craft.level,p.mining.total+p.wood.total+p.herb.total,p.mining.total,p.wood.total,p.herb.total,clock(),id);}
- function create(id,name,cls){return tx(db,()=>{if(row(id))fail('A conta já tem personagem.',409);name=typeof name==='string'?name.trim().normalize('NFC'):'';if(!/^[\p{L}\p{N} _-]{3,24}$/u.test(name)||!Object.hasOwn(vocations,cls))fail('Nome ou vocação inválidos.');const key=name.toLocaleLowerCase('pt-BR');if(db.prepare('SELECT account FROM characters WHERE namekey=?').get(key))fail('Nome indisponível.',409);const s={level:1,xp:0,hp:100,earlyBalanceApplied:true,kills:0,deaths:0,dungeons:0,bosses:0,skill:1,skillXp:0,attrs:{str:0,dex:0,int:0,vit:0,wis:0},activity:null,last:clock(),materials:{},prof:Object.fromEntries(Object.keys(profs).map(k=>[k,{level:1,xp:0,total:0}])),craft:{level:1,xp:0,success:0,fail:0},lastEvent:'Bem-vindo a Vespera.'};db.prepare('INSERT INTO characters(account,name,namekey,cls,data,updated) VALUES(?,?,?,?,?,?)').run(id,name,key,cls,JSON.stringify(s),clock());issue(id,'weapon',0,0,0,'hunt',true,true);combat.normalize(s);s.hp=stats(id,row(id),s).hp;s.mana=stats(id,row(id),s).mana;persist(id,s);return view(id);});}
+ function create(id,name,cls){return tx(db,()=>{if(row(id))fail('A conta já tem personagem.',409);name=typeof name==='string'?name.trim().normalize('NFC'):'';if(!/^[\p{L}\p{N} _-]{3,24}$/u.test(name)||!Object.hasOwn(vocations,cls))fail('Nome ou vocação inválidos.');const key=name.toLocaleLowerCase('pt-BR');if(db.prepare('SELECT account FROM characters WHERE namekey=?').get(key))fail('Nome indisponível.',409);const s={level:1,xp:0,hp:100,earlyBalanceApplied:true,earlyVocationLifeApplied:true,kills:0,deaths:0,dungeons:0,bosses:0,skill:1,skillXp:0,attrs:{str:0,dex:0,int:0,vit:0,wis:0},activity:null,last:clock(),materials:{},prof:Object.fromEntries(Object.keys(profs).map(k=>[k,{level:1,xp:0,total:0}])),craft:{level:1,xp:0,success:0,fail:0},lastEvent:'Bem-vindo a Vespera.'};db.prepare('INSERT INTO characters(account,name,namekey,cls,data,updated) VALUES(?,?,?,?,?,?)').run(id,name,key,cls,JSON.stringify(s),clock());issue(id,'weapon',0,0,0,'hunt',true,true);combat.normalize(s);s.hp=stats(id,row(id),s).hp;s.mana=stats(id,row(id),s).mana;persist(id,s);return view(id);});}
  function activityDamage(cls,level,activity,boss){
   if(boss){
    return ({war:1.10,ranger:level>=13?1.20*1.08:1.20,mage:1.03,cleric:level>=45&&level<80?1.13:.94,necro:1.06})[cls];
@@ -80,11 +80,13 @@ export function game(db,{clock=Date.now,random=rng}={}){
   if(hunt&&level>=45)factor=({war:1.06,ranger:1.10,mage:.95,cleric:1.06,necro:.97})[cls];
   return factor*(cls==='mage'&&level>=13&&(hunt||dungeon)?.94:1);
  }
- function stats(id,r,s,equipmentOverride=null,scale=content.earlyCombatScale(s.level)){const sub=subclassBonuses[r.cls][s.subclass]??{},voc=vocationModifiers[r.cls],a={...bases[r.cls]},v=combat.values(r.cls,s),gear={damage:0,hp:0,def:0,skill:0,crit:0,haste:0,tenacity:0,mana:0,regen:0,r30reduction:0,r30regen:0,r30recovery:0,r30dodge:0,r30critmult:0,r30special:0,r30heal:0,r30move:0},powers={},equipped=equipmentOverride??equippedItems(id),sets=equipment.setBonuses(equipped),advanced=equipment.advancedBonuses(equipped,s.legacy?.survive);for(const k of Object.keys(a))a[k]+=(s.attrs?.[k]||0)+(v[k]||0);const title=earnedTitle(s);if(title)a[title.attribute]+=title.bonus;for(const [key,left] of Object.entries(s.elixirs||{})){const e=Object.hasOwn(combat.elixirs,key)?combat.elixirs[key]:null;if(left>0&&e?.kind==='attr')a[e.attribute]+=3;}
+ function stats(id,r,s,equipmentOverride=null,scale=content.earlyCombatScale(s.level),earlyVocationLife=true){const sub=subclassBonuses[r.cls][s.subclass]??{},voc=vocationModifiers[r.cls],a={...bases[r.cls]},v=combat.values(r.cls,s),gear={damage:0,hp:0,def:0,skill:0,crit:0,haste:0,tenacity:0,mana:0,regen:0,r30reduction:0,r30regen:0,r30recovery:0,r30dodge:0,r30critmult:0,r30special:0,r30heal:0,r30move:0},powers={},equipped=equipmentOverride??equippedItems(id),sets=equipment.setBonuses(equipped),advanced=equipment.advancedBonuses(equipped,s.legacy?.survive);for(const k of Object.keys(a))a[k]+=(s.attrs?.[k]||0)+(v[k]||0);const title=earnedTitle(s);if(title)a[title.attribute]+=title.bonus;for(const [key,left] of Object.entries(s.elixirs||{})){const e=Object.hasOwn(combat.elixirs,key)?combat.elixirs[key]:null;if(left>0&&e?.kind==='attr')a[e.attribute]+=3;}
  for(const i of equipped){for(const [k,n] of Object.entries(i.data.mods)){if(k in a)a[k]+=n;if(k in gear)gear[k]+=n;}const p=i.data.power;if(p&&['execute','ward','resonance','harvest','pact'].includes(p.key))powers[p.key]=(powers[p.key]||0)+p.value/100;}
  const early=Math.max(0,1-(s.level-1)/9),earlyNecro=Math.max(0,1-(s.level-1)/11);
  const earlyHp=r.cls==='necro'?.20*earlyNecro:r.cls==='cleric'?.05*early:r.cls==='mage'||r.cls==='ranger'?.22*early:0;
  const hpBase=balance.hpBase(s.level,a.vit,gear.hp);
+ const vocationLife=earlyVocationLife&&(r.cls==='war'||r.cls==='mage')
+  ?1+.10*Math.max(0,1-(s.level-1)/15):1;
  const hp=hpBase*(voc.hp??1)*(1+earlyHp)*(1+(v.hp||0))*(1+sets.hp)*(sub.hp??1)*
   (1+advanced.hp)*(1+Math.min(.12,.006*(s.legacy?.survive||0)));
  const earlyDefense=r.cls==='necro'?2.5*earlyNecro:r.cls==='mage'||r.cls==='ranger'?2*early:0;
@@ -110,7 +112,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const curvedSpecial=1.4+specialScale*(1-Math.exp(-Math.max(0,rawSpecial-1.4)/specialScale));
  const talentSpecial=(1.35+(curvedSpecial-1.35)*.88)*(1+(v.spell||0));
  const special=Math.min(2.55,1.25+balance.soft(talentSpecial-1.25,.70,.38));
- return {a,powers,sets,advanced,runeProcs:equipment.runeProcs(equipped),move:Math.min(.18,gear.r30move/100),damage,hp:Math.max(1,Math.round(Math.round(balance.soft(hp,hpBase*1.30,.45))*scale)),def,crit:Math.min(.42,.04+a.dex*.0065+gear.crit/100+(voc.crit||0)+(sub.crit||0)+(v.crit||0)+(buff.crit||0)),critMult:Math.min(2.5,1.6+a.str*.003+gear.r30critmult/100+(voc.critMult||0)+(sub.critMult||0)+(v.critDamage||0)),tenacity:Math.min(.40,a.vit*.003+gear.tenacity/100),haste:Math.min(.25,a.dex*.002+gear.haste/100+(v.haste||0)),dodge:Math.min(r.cls==='ranger'?.24:.18,a.dex*.0035+gear.r30dodge/100+(sub.dodge||0)+(r.cls==='ranger'?.04:0)+(v.dodge||0)),special,mana,manaRegen,heal:Math.min(.55,(r.cls==='cleric'?.08+.002*s.skill:0)*(voc.heal??1)*(sub.healMultiplier??1)+(sub.heal||0)+a.wis*.002+(v.heal||0)+gear.r30heal/100),recovery:Math.min(.06,gear.r30recovery/100),reduction:Math.min(.52,Math.min(.42,(voc.reduction||0)+(sub.reduction||0)+(buff.reduction||0)+gear.r30reduction/100+advanced.reduction+sets.reduction)+(boss&&r.cls==='ranger'?(s.level>=13?.15:.075):0))};
+ return {a,powers,sets,advanced,runeProcs:equipment.runeProcs(equipped),move:Math.min(.18,gear.r30move/100),damage,hp:Math.max(1,Math.round(Math.round(Math.round(balance.soft(hp,hpBase*1.30,.45))*vocationLife)*scale)),def,crit:Math.min(.42,.04+a.dex*.0065+gear.crit/100+(voc.crit||0)+(sub.crit||0)+(v.crit||0)+(buff.crit||0)),critMult:Math.min(2.5,1.6+a.str*.003+gear.r30critmult/100+(voc.critMult||0)+(sub.critMult||0)+(v.critDamage||0)),tenacity:Math.min(.40,a.vit*.003+gear.tenacity/100),haste:Math.min(.25,a.dex*.002+gear.haste/100+(v.haste||0)),dodge:Math.min(r.cls==='ranger'?.24:.18,a.dex*.0035+gear.r30dodge/100+(sub.dodge||0)+(r.cls==='ranger'?.04:0)+(v.dodge||0)),special,mana,manaRegen,heal:Math.min(.55,(r.cls==='cleric'?.08+.002*s.skill:0)*(voc.heal??1)*(sub.healMultiplier??1)+(sub.heal||0)+a.wis*.002+(v.heal||0)+gear.r30heal/100),recovery:Math.min(.06,gear.r30recovery/100),reduction:Math.min(.52,Math.min(.42,(voc.reduction||0)+(sub.reduction||0)+(buff.reduction||0)+gear.r30reduction/100+advanced.reduction+sets.reduction)+(boss&&r.cls==='ranger'?(s.level>=13?.15:.075):0))};
  }
  const freeAttrs=s=>Math.max(0,3*Math.min(30,s.level-1)+Math.max(0,s.level-31)-Object.values(s.attrs||{}).reduce((a,b)=>a+b,0));
  function mat(s,k,n){s.materials[k]=Math.min(MAX,(s.materials[k]||0)+n);}
@@ -199,11 +201,12 @@ export function game(db,{clock=Date.now,random=rng}={}){
   newEncounter(s);a.recovery=1;
  }
  function migrateEarlyBalance(id,r,s){
-  if(s.earlyBalanceApplied)return;
-  const oldHp=stats(id,r,s,null,1).hp,newHp=stats(id,r,s).hp;
+  if(s.earlyBalanceApplied&&s.earlyVocationLifeApplied)return;
+  const oldScale=s.earlyBalanceApplied?content.earlyCombatScale(s.level):1;
+  const oldHp=stats(id,r,s,null,oldScale,!!s.earlyVocationLifeApplied).hp,newHp=stats(id,r,s).hp;
   s.hp=Math.max(s.hp>0?1:0,Math.min(newHp,Math.round(s.hp/oldHp*newHp)));
   const a=s.activity;
-  if(a?.enemy&&Number.isFinite(a.enemyHp)&&a.mode!=='trial'){
+  if(!s.earlyBalanceApplied&&a?.enemy&&Number.isFinite(a.enemyHp)&&a.mode!=='trial'){
    const scale=content.encounterScale(a.z,a.index??0,a.mode==='boss'||a.mode==='dungeon'&&a.wave===4);
    const oldEnemyHp=a.enemy.hp;
    a.enemy.hp=Math.max(1,Math.round(oldEnemyHp*scale));
@@ -211,6 +214,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
    a.enemyHp=Math.max(a.enemyHp>0?1:0,Math.min(a.enemy.hp,Math.round(a.enemyHp/oldEnemyHp*a.enemy.hp)));
   }
   s.earlyBalanceApplied=true;
+  s.earlyVocationLifeApplied=true;
   persist(id,s);
  }
  function settle(id){const {r,s}=get(id),now=clock();s.attrs??={str:0,dex:0,int:0,vit:0,wis:0};migrateEarlyBalance(id,r,s);const initial=stats(id,r,s);s.hp=Math.min(s.hp,initial.hp);s.mana=Math.min(s.mana,initial.mana);

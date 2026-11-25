@@ -147,7 +147,7 @@ test('base vocation attributes and secondary stat gains match the legacy coeffic
  const keys=['str','dex','int','vit','wis'];
  const mana={war:38,ranger:38,mage:61,cleric:44,necro:60};
  const special={war:1.637805,ranger:1.637805,mage:1.951598,cleric:1.666394,necro:1.755374};
- const hp={war:60,ranger:54,mage:53,cleric:58,necro:54};
+ const hp={war:67,ranger:54,mage:59,cleric:58,necro:54};
  const def={war:5.7,ranger:5.38,mage:5.06,cleric:3.7,necro:5.56};
  const regen={war:1.103081,ranger:1.103081,mage:1.497559,cleric:1.591872,necro:1.521295};
  for(const [cl,base] of Object.entries(bases)){
@@ -287,17 +287,25 @@ test('existing encounters migrate early life proportions once without altering r
  g.create('a','Alda','war');
  g.action('a',{action:'start',mode:'hunt',zone:0});
  const save=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);
- delete save.earlyBalanceApplied;save.hp=54;save.activity.index=0;
+ delete save.earlyBalanceApplied;delete save.earlyVocationLifeApplied;save.hp=54;save.activity.index=0;
  save.activity.enemy={name:'Teste',hp:100,atk:20,xp:12,gold:4};save.activity.enemyHp=40;
  db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),'a');
  const after=g.state('a').character;
- assert.equal(after.hp,30);
+ assert.equal(after.hp,34);
  assert.equal(after.activity.enemy.hp,56);
  assert.equal(after.activity.enemyHp,22);
  assert.equal(after.activity.enemy.atk,11);
  assert.equal(after.activity.enemy.xp,12);
  assert.equal(after.activity.enemy.gold,4);
  assert.deepEqual(g.state('a').character.activity,after.activity);
+ const scaled=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);
+ delete scaled.earlyVocationLifeApplied;
+ scaled.hp=30;
+ db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(scaled),'a');
+ const upgraded=g.state('a').character;
+ assert.equal(upgraded.hp,34);
+ assert.deepEqual(upgraded.activity,after.activity);
+ assert.equal(g.state('a').character.hp,34);
  db.close();
 });
 test('hunt analyzer records potions looted and consumed',()=>{
