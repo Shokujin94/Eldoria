@@ -93,3 +93,25 @@ test('defeating a boss clears its phase, clock and pending attack before the nex
  assert.equal(result.activity.lastMechanic,undefined);
  db.close();
 });
+
+test('support casts produce a scene event even when nobody takes damage',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ let now=100000;
+ const g=game(db,{clock:()=>now,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('hero','hero','test',0);
+ g.create('hero','Alda','war');
+ const read=()=>JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('hero').data);
+ const write=s=>db.prepare('UPDATE characters SET data=?,level=? WHERE account=?').run(JSON.stringify(s),s.level,'hero');
+ const save=read();save.level=12;save.talents.s13c=1;save.mana=100;write(save);
+ g.action('hero',{action:'start',mode:'hunt',zone:0});
+ const s=read();
+ Object.assign(s.activity,{attackClock:{hero:.9,enemy:0},positions:{hero:.25,enemy:.37,servant:.34},effects:{stun:{left:4}}});
+ write(s);
+ now+=1000;
+ const result=g.state('hero').character;
+ assert.equal(result.lastCombat.dealt,0);
+ assert.equal(result.lastCombat.received,0);
+ assert.deepEqual(result.lastCombat.support,{skill:'Brado de guerra',element:'physical'});
+ assert(result.buffs.s13c.left>0);
+ db.close();
+});

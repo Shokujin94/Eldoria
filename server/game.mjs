@@ -73,10 +73,10 @@ export function game(db,{clock=Date.now,random=rng}={}){
  function finishAnalysis(s,reason){if(s.analyzer?.seconds){s.history.unshift({...s.analyzer,reason});s.history=s.history.slice(0,20);}s.analyzer=null;}
  function combatTick(id,r,s){const a=s.activity;if(!a.enemy||!Number.isFinite(a.enemyHp))newEncounter(s);const e=a.enemy,st=stats(id,r,s),boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4;
  if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;combat.tick(s,st,a);combat.autoPotion(s,st);if(a.recovery&&s.hp>0){a.recovery--;if(s.analyzer)s.analyzer.seconds++;return;}a.turn++;if(boss)combat.bossMechanic(s,st,a,random);if(s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);if(s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'hero',r.cls,boss))combat.turn(r.cls,s,st,a,random,boss);if(s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'enemy',r.cls,boss))combat.enemyStrike(r.cls,s,st,a,random,boss);if(r.cls==='necro'&&a.enemyHp>0&&s.hp>0)combat.minionStrike(s,st,a,boss);const dealt=Math.max(0,enemy0-a.enemyHp),received=Math.max(0,h0-s.hp);
- const heroHit=a.hitSeq!==hit0&&a.lastHit>0;
- if(dealt||received){
+ const acted=a.hitSeq!==hit0,heroHit=acted&&a.lastHit>0,support=acted?a.lastSupportCast:null;
+ if(dealt||received||support){
   s.lastCombat={seq:(s.lastCombat?.seq||0)+1,encounter:a.encounter,mode:a.mode,zone:a.z,
-   dealt,received,heroHit,critical:heroHit&&a.lastCritical,element:heroHit?a.lastAttackElement:null,skill:heroHit?a.lastAttackSkill:null,positions:{...a.positions}};
+   dealt,received,heroHit,support,critical:heroHit&&a.lastCritical,element:heroHit?a.lastAttackElement:null,skill:heroHit?a.lastAttackSkill:null,positions:{...a.positions}};
  }
  if(s.analyzer){s.analyzer.seconds++;s.analyzer.damage+=dealt;s.analyzer.received+=received;s.analyzer.procs+=s.energyProcs-proc0;}
  if(s.hp<=0){s.deaths=(s.deaths||0)+1;s.hp=st.hp;s.mana=st.mana;s.activity=null;combat.clear(s);finishAnalysis(s,'Derrota');autoSell(id,s);s.lastEvent='Derrota · retorno a Vespera.';return;}

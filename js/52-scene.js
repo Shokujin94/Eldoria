@@ -72,13 +72,17 @@ function routeCity(from,to){
 const colors=['#c4c8ce','#92c88e','#86b7ee','#caa0ef','#ebc778'];
 const image=src=>{if(!src)return null;if(!cache.has(src)){const im=new Image();im.decoding='async';im.src=src;cache.set(src,im);}return cache.get(src);};
 function draw(c,src,x,y,h,flip=false,bright=false){const im=image(src);if(!im?.complete||!im.naturalWidth)return;c.save();c.translate(x,y);if(flip)c.scale(-1,1);if(bright)c.filter='brightness(1.5)';c.imageSmoothingEnabled=false;const w=h*im.naturalWidth/im.naturalHeight;c.drawImage(im,-w/2,-h,w,h);c.restore();}
-function tone(kind){if(!sound||!audio||audio.state!=='running')return;const at=audio.currentTime,osc=audio.createOscillator(),g=audio.createGain(),f={mining:[720,130,'triangle'],wood:[140,44,'triangle'],herb:[340,180,'sine'],hit:[120,48,'triangle']}[kind]||[120,48,'triangle'];osc.type=f[2];osc.frequency.setValueAtTime(f[0],at);osc.frequency.exponentialRampToValueAtTime(f[1],at+.13);g.gain.setValueAtTime(.055,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);osc.connect(g);g.connect(audio.destination);osc.start();osc.stop(at+.17);}
+function tone(kind){if(!sound||!audio||audio.state!=='running')return;const at=audio.currentTime,osc=audio.createOscillator(),g=audio.createGain(),f={mining:[720,130,'triangle'],wood:[140,44,'triangle'],herb:[340,180,'sine'],hit:[120,48,'triangle'],buff:[440,660,'sine']}[kind]||[120,48,'triangle'];osc.type=f[2];osc.frequency.setValueAtTime(f[0],at);osc.frequency.exponentialRampToValueAtTime(f[1],at+.13);g.gain.setValueAtTime(.055,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);osc.connect(g);g.connect(audio.destination);osc.start();osc.stop(at+.17);}
 function popup(text,color,now,x=.68,y=.44,actor=false){if(motion.matches)return;fx.push({text,color,at:now,x,y,actor});if(fx.length>12)fx.shift();}
 const impactColors={physical:'#d6d0c4',bleed:'#cf5969',fire:'#ff9b51',ice:'#91d8f4',arcane:'#bb9bea',
  holy:'#e9cc82',poison:'#87bd63',shock:'#aaa4ff',dark:'#b17ba6',heal:'#8ccfa3'};
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
- const {positions:p,dealt,received,critical,heroHit,element,skill}=event;
+ const {positions:p,dealt,received,critical,heroHit,element,skill,support}=event;
+ if(support){
+  popup(support.skill,impactColors[support.element]??'#8ccfa3',now,p.hero,p.heroY??.84,true);
+  tone('buff');
+ }
  if(dealt){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
   const ranged=heroHit&&cls!=='war',impactTime=now+(ranged?125:0);

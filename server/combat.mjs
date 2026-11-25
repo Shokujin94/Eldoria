@@ -241,7 +241,7 @@ if(rider){const [kind,raw]=rider,n=typeof raw==='number'?raw*(1+.1*Math.max(0,(s
 s.energy=Math.min(100,s.energy+(cast?12:8)+(cast?v.castEnergy||0:0)+(critical?v.critEnergy||0:0)+(far?v.farEnergy||0:0)+(cl==='necro'&&!s.servant?v.noServantEnergy||0:0)+(cast&&oath(s,0,0)?8:0));
 if(dmg>0&&s.energy>=100&&(s.energyProfile==='auto'||s.energyProfile==='boss'&&boss||s.energyProfile==='hurt'&&s.hp/st.hp<.65)){s.energy=0;s.energyProcs++;const p=paths[cl]?.[s.subclass],bonus=(p?p[3]:({war:.22,ranger:.25,mage:.24,cleric:.12,necro:.08}[cl]))+(oath(s,1,0)?.10:0)+(oath(s,2,0)?.18:0)+(affinity(cl,s,a,critical,cast,st,far,boss)?.10:0);const extra=Math.round(dmg*bonus),applied=boss?Math.min(extra,Math.max(0,Math.round(a.enemy.hp*.29)-dmg)):extra;a.enemyHp=Math.max(0,a.enemyHp-applied);dmg+=applied;if(cl==='necro')summon(s,st,a,v);if(p?.[2]==='guard')s.guard=Math.max(s.guard,3);else if(p?.[2]&&a.enemyHp>0)effect(a,p[2],dmg*(oath(s,2,0)?1.15:.75),v,boss);heal(st.hp*((p?p[4]:cl==='cleric'?.05:0)+(oath(s,2,1)?.04:0)+(v.procHeal||0)));mana(st.mana*((p?p[5]:cl==='mage'?.05:0)+(oath(s,2,1)?.05:0)+(v.procMana||0)));}
 
-a.lastHit=dmg;a.lastCritical=critical;a.hitSeq=(a.hitSeq||0)+1;return dmg;}
+a.lastHit=dmg;a.lastSupportCast=cast?.buff13?{skill:cast.name,element:cast.element}:null;a.lastCritical=critical;a.hitSeq=(a.hitSeq||0)+1;return dmg;}
 export function enemyStrike(cl,s,st,a,random,boss){
  if(a.enemyHp<=0||s.hp<=0||random()<st.dodge)return;
  const v=values(cl,s),effects=a.effects||{},pow=st.powers||{};
