@@ -15,7 +15,7 @@ try{
  const port=await new Promise((resolve,reject)=>{let log='';const timer=setTimeout(()=>reject(Error('startup timeout')),10000);child.stdout.on('data',d=>{log+=d;const m=log.match(/Eldoria online API (\d+)/);if(m){clearTimeout(timer);resolve(+m[1]);}});child.once('exit',c=>{clearTimeout(timer);reject(Error('server exit '+c));});});
  browser=await chromium.launch({headless:true});
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
- page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')console.log('browser:',m.text());});
+ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('http://127.0.0.1:'+port);
  await page.locator('#auth input[name=username]').fill('browser_test');
  await page.locator('#auth input[name=password]').fill('Senha teste browser 123!');
@@ -69,8 +69,19 @@ try{
  await page.locator('[data-tab=dungeon]').click();await page.locator('#content-dungeon .dungeon11').waitFor();await page.locator('#win-dungeon [data-close65]').click();
  await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=gather]').click();
+ const drawnNodes=await page.evaluateHandle(()=>{
+  const indices=new Set(),art=window.eldoria52Art,draw=art.drawGatherNode;
+  art.drawGatherNode=(ctx,x,y,kind,zone,index,scale)=>{
+   if(ctx.canvas.id==='scene52')indices.add(index);
+   return draw(ctx,x,y,kind,zone,index,scale);
+  };
+  return indices;
+ });
  await page.locator('#start61').click();
  await page.waitForFunction(()=>document.getElementById('world52-location').textContent.includes('Bosque'));
+ await page.waitForFunction(indices=>indices.size===18,drawnNodes);
+ await drawnNodes.dispose();
+ await page.waitForFunction(()=>document.getElementById('event61').textContent.includes('recurso(s)'));
  await page.locator('[data-quick61=stop]').click();
  await page.waitForFunction(()=>document.getElementById('world52-location').textContent.includes('Vespera'));
  await page.locator('[data-tab=play]').click();
