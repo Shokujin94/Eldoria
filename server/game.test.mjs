@@ -300,3 +300,27 @@ test('existing encounters migrate early life proportions once without altering r
  assert.deepEqual(g.state('a').character.activity,after.activity);
  db.close();
 });
+test('hunt analyzer records potions looted and consumed',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ let now=100000;
+ const g=game(db,{clock:()=>now,random:()=>.01});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('pot','pot','test',0);
+ g.create('pot','Pocoes','war');
+ g.action('pot',{action:'start',mode:'hunt',zone:0});
+ const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('pot').data);
+ s.activity.enemyHp=0;
+ const before=s.potions.hp1||0;
+ db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(s),'pot');
+ now+=1000;
+ const won=g.state('pot').character;
+ assert.equal(won.potions.hp1,before+1);
+ assert.equal(won.analyzer.potionsFound,1);
+ const injured=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('pot').data);
+ injured.hp=1;
+ db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(injured),'pot');
+ const healed=g.action('pot',{action:'usePotion',key:'hp1'}).character;
+ assert.equal(healed.potions.hp1,before);
+ assert.equal(healed.analyzer.consumablesUsed,1);
+ assert.equal(healed.analyzer.consumableCost,8);
+ db.close();
+});

@@ -116,7 +116,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
    if(!a.bestDrop||rarity>=a.bestDrop.rarity)a.bestDrop=drop;
   }}}
  function autoSell(id,s){if(s.loot.sell<0)return;const refs=presetRefs(s);let n=0,total=0;for(const i of items(id)){if(i.starter||i.equipped||i.escrow||i.data.locked||i.data.relic!=null||refs.has(i.id)||i.rarity>s.loot.sell)continue;const price=equipment.npcValue(i);if(row(id).gold+total+price>MAX)continue;db.prepare('UPDATE items SET spent=1 WHERE id=? AND owner=? AND spent=0').run(i.id,id);n++;total+=price;}if(n){credit(id,total);s.lastAutoSale={items:n,gold:total,seq:(s.lastAutoSale?.seq||0)+1};}}
- function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],damage:0,received:0,procs:0}:null;}
+ function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],damage:0,received:0,procs:0}:null;}
  function finishAnalysis(s,reason){if(s.analyzer?.seconds){s.history.unshift({...s.analyzer,reason});s.history=s.history.slice(0,20);}s.analyzer=null;}
  function combatTick(id,r,s){const a=s.activity;if(!a.enemy||!Number.isFinite(a.enemyHp))newEncounter(s);const e=a.enemy,st=stats(id,r,s),boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4;
  if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;combat.tick(s,st,a);combat.autoPotion(s,st);if(a.recovery&&s.hp>0){a.recovery--;if(s.analyzer)s.analyzer.seconds++;return;}a.turn++;if(boss)combat.bossMechanic(s,st,a,random);if(s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);if(s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'hero',r.cls,boss))combat.turn(r.cls,s,st,a,random,boss);if(s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'enemy',r.cls,boss))combat.enemyStrike(r.cls,s,st,a,random,boss);if(r.cls==='necro'&&a.enemyHp>0&&s.hp>0)combat.minionStrike(s,st,a,boss);const dealt=Math.max(0,enemy0-a.enemyHp),received=Math.max(0,h0-s.hp);
@@ -133,7 +133,13 @@ export function game(db,{clock=Date.now,random=rng}={}){
   if(a.mode==='hunt'&&!s.rareEvent&&random()<.003)s.rareEvent={z:a.z,k:Math.floor(random()*content.rareEvents.length)};if(boss){mat(s,'boss:'+a.z,1);if(!s.recipes[a.z]&&random()<.08)s.recipes[a.z]=true;}else if(random()<.8)mat(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random),1);if(a.mode==='dungeon'&&a.wave===4&&random()<.11){const key=equipment.runeDrop(a.z,random);s.runeStock[key]=(s.runeStock[key]||0)+1;s.lastRune={key,seq:(s.lastRune?.seq||0)+1};}
   const source=a.mode==='dungeon'?'dungeon':boss?a.mode:'hunt';let found=false;if((boss||random()<content.dropRates[a.index]*(a.mode==='hunt'&&s.elixirs.fortune>0?1.15:1))&&count(id)<120){const rarity=content.rollOdds(source==='boss'?content.bossOdds:source==='dungeon'&&boss?content.dungeonOdds:content.monsterOdds[a.index],random),slot=Object.keys(slots)[Math.floor(random()*9)];const uid=issue(id,slot,a.z,a.index,rarity,source);recordDrop(id,s,uid,rarity);found=true;}
   if(boss&&count(id)<120&&random()<.0025){const uid=issueRelic(id,a.z,source);recordDrop(id,s,uid,4,true);s.lastRelic={id:uid,name:equipment.relics[a.z].name,seq:(s.lastRelic?.seq||0)+1};}
-  const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.');
+  const potionStock=s.potions.hp1||0;
+  const potionFound=potionStock<999&&random()<.07;
+  if(potionFound){
+   s.potions.hp1=potionStock+1;
+   if(s.analyzer?.potionsFound!==undefined)s.analyzer.potionsFound++;
+  }
+  const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.')+(potionFound?' · Poção de vida menor encontrada.':'');
   combat.onVictory(r.cls,s,stats(id,r,s));if(a.mode==='boss'){s.bosses=(s.bosses||0)+1;s.zoneBosses[a.z]++;}else if(a.mode==='dungeon'){if(a.wave===4){s.dungeons=(s.dungeons||0)+1;s.zoneDungeons[a.z]++;if(a.tower){s.towerRecord=Math.max(s.towerRecord,a.floor||1);a.floor=(a.floor||1)+1;}a.wave=1;a.floorKills=0;s.lastEvent=(a.tower?'Torre · andar '+(a.floor-1)+' concluído':'Dungeon concluída')+' · '+s.lastEvent;}else if(++a.floorKills===3){a.wave++;a.floorKills=0;}}
   newEncounter(s);a.recovery=1;
  }

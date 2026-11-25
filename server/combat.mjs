@@ -58,6 +58,7 @@ function spendConsumable(s,key){
  s.potions[key]--;
  if(s.analyzer?.consumableCost!==undefined){
   s.analyzer.consumableCost+=consumables[key].price;
+  if(s.analyzer.consumablesUsed!==undefined)s.analyzer.consumablesUsed++;
  }
 }
 export function elapseElixirs(s,seconds){for(const k of Object.keys(s.elixirs||{})){s.elixirs[k]=Math.max(0,s.elixirs[k]-seconds);if(!s.elixirs[k])delete s.elixirs[k];}}
