@@ -57,6 +57,10 @@ try{
  await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale>1);
  const camera=await page.evaluate(()=>window.eldoria52Scene.view());
  assert.ok(camera.ox<=0&&camera.oy<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.oy>=camera.h*(1-camera.scale)-.01);
+ await page.locator('#scene52').focus();
+ await page.keyboard.down('ArrowUp');
+ try{await page.waitForFunction(oy=>window.eldoria52Scene.view()?.oy>oy+20,camera.oy,{timeout:3000});}
+ finally{await page.keyboard.up('ArrowUp');}
  await page.locator('#zoomOut61').click();
  await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
  const cityCanvas=await page.locator('#scene52').boundingBox();
