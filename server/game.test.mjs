@@ -324,3 +324,56 @@ test('hunt analyzer records potions looted and consumed',()=>{
  assert.equal(healed.analyzer.consumableCost,8);
  db.close();
 });
+
+test('combat cadence and rewards agree across foreground polls and offline batches',()=>{
+ for(const [cls,mode] of [['war','hunt'],['mage','hunt'],['necro','dungeon'],['ranger','boss']]){
+  function simulate(offline){
+   const db=new DatabaseSync(':memory:');schema(db);
+   let now=100000,seed=47;
+   const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
+   const g=game(db,{clock:()=>now,random});
+   db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('cadence','cadence','test',0);
+   g.create('cadence','Cadencia',cls);
+   const entry=db.prepare('SELECT data FROM characters WHERE account=?').get('cadence');
+   const s=JSON.parse(entry.data);
+   s.level=9;
+   s.potions.hp1=4;
+   s.autoPotion.hp=55;
+   db.prepare('UPDATE characters SET level=?,data=? WHERE account=?').run(s.level,JSON.stringify(s),'cadence');
+   let result=g.action('cadence',{action:'start',mode,zone:0});
+   if(offline){
+    now+=300000;
+    do{result=g.state('cadence');}while(result.character.catchupSeconds);
+   }else{
+    for(let i=0;i<200&&result.character.activity;i++){now+=1500;result=g.state('cadence');}
+   }
+   const c=result.character;
+   const summary=c.analyzer||c.history[0];
+   const {offlineSeconds,...session}=summary;
+   db.close();
+   return {offlineSeconds,session,activity:c.activity,kills:c.kills,deaths:c.deaths,xp:c.xp,gold:c.gold,potions:c.potions,bestiary:c.bestiary};
+  }
+  const {offlineSeconds,...offline}=simulate(true);
+  const {offlineSeconds:foregroundOffline,...foreground}=simulate(false);
+  assert.equal(foregroundOffline,undefined,cls+' '+mode);
+  assert.equal(offlineSeconds,offline.session.seconds,cls+' '+mode);
+  assert.deepEqual(offline,foreground,cls+' '+mode);
+ }
+});
+
+test('gathering elapses potion cooldown by the length of a collection cycle',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ let now=100000;
+ const g=game(db,{clock:()=>now,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('gather','gather','test',0);
+ g.create('gather','Coletor','war');
+ const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('gather').data);
+ s.potionCD.hp=12;
+ db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(s),'gather');
+ g.action('gather',{action:'start',mode:'gather',prof:'mining',zone:0});
+ now+=6000;
+ assert.equal(g.state('gather').character.potionCD.hp,6);
+ now+=6000;
+ assert.equal(g.state('gather').character.potionCD.hp,0);
+ db.close();
+});

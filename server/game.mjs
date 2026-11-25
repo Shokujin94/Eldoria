@@ -159,7 +159,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   persist(id,s);
  }
  function settle(id){const {r,s}=get(id),now=clock();s.attrs??={str:0,dex:0,int:0,vit:0,wis:0};migrateEarlyBalance(id,r,s);const initial=stats(id,r,s);s.hp=Math.min(s.hp,initial.hp);s.mana=Math.min(s.mana,initial.mana);
-  if(!s.activity){const st=initial,dt=Math.floor(Math.max(0,now-s.last)/1000);s.hp=Math.min(st.hp,s.hp+dt*2);s.mana=Math.min(st.mana,s.mana+dt*st.manaRegen);for(const k of Object.keys(s.cooldowns))s.cooldowns[k]=Math.max(0,s.cooldowns[k]-dt);for(const k of Object.keys(s.potionCD))s.potionCD[k]=Math.max(0,s.potionCD[k]-dt);if(dt>0){combat.elapseElixirs(s,dt);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);s.last+=dt*1000;persist(id,s);}return s;}
+  if(!s.activity){const st=initial,dt=Math.floor(Math.max(0,now-s.last)/1000);s.hp=Math.min(st.hp,s.hp+dt*2);s.mana=Math.min(st.mana,s.mana+dt*st.manaRegen);for(const k of Object.keys(s.cooldowns))s.cooldowns[k]=Math.max(0,s.cooldowns[k]-dt);combat.elapsePotionCooldowns(s,dt);if(dt>0){combat.elapseElixirs(s,dt);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);s.last+=dt*1000;persist(id,s);}return s;}
   const {mode,z,prof}=s.activity,interval=mode==='gather'?content.professionInterval(s.prof[prof]):1000;
   const elapsed=Math.max(0,now-s.last);
   // Foreground clients poll every 1.5 seconds. Allow missed polls and network jitter.
@@ -186,6 +186,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
    const offline=s.last<=s.activity.offlineUntil;
    if(mode==='gather'){const p=s.prof[prof],roll=content.gatherRoll(p,random),rar=roll.rarity;mat(s,prof+':'+z+':'+rar,roll.amount);if(roll.common)mat(s,prof+':'+z+':0',roll.common);p.total+=roll.amount+roll.common;s.lastGather={kind:prof,zone:z,rarity:rar,total:p.total};p.xp+=craft.gatherXP(p.level,z);while(p.level<100&&p.xp>=20+p.level*12){p.xp-=20+p.level*12;p.level++;}if(p.level===100)p.xp=0;s.lastEvent='+'+(roll.amount+roll.common)+' recurso(s) · '+profs[prof];}
    else if(mode==='train'){if(s.skill<100){s.skillXp++;if(s.skillXp>=content.skillXpNeed(s.skill)){s.skillXp-=content.skillXpNeed(s.skill);s.skill++;}}if(s.skill>=100){s.skillXp=0;s.activity=null;s.lastEvent='Maestria de combate dominada.';}else s.lastEvent='Treinamento · maestria '+s.skill;}else combatTick(id,r,s);
+   if(mode==='gather'||mode==='train')combat.elapsePotionCooldowns(s,interval/1000);
    combat.elapseElixirs(s,interval/1000);
    const analyzer=s.analyzer||(!s.activity&&s.history[0]);
    if(offline&&analyzer)analyzer.offlineSeconds=(analyzer.offlineSeconds||0)+interval/1000;
