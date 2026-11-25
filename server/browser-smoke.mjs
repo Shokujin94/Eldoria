@@ -59,6 +59,10 @@ try{
  assert.ok(camera.ox<=0&&camera.oy<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.oy>=camera.h*(1-camera.scale)-.01);
  await page.locator('#zoomOut61').click();
  await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
+ const cityCanvas=await page.locator('#scene52').boundingBox();
+ await page.mouse.click(cityCanvas.x+cityCanvas.width*.5,cityCanvas.y+cityCanvas.height*.83-6);
+ await page.locator('#win-vault').waitFor({state:'visible'});
+ await page.locator('#win-vault [data-close65]').click();
  await page.locator('#scene52').focus();await page.keyboard.press('ArrowUp');
  await page.locator('[data-group65="0"]').click();await page.locator('[data-tab=achieve]').click();await page.locator('.achievement11').first().waitFor();assert.equal(await page.locator('.achievement11').count(),6);await page.locator('#win-achieve [data-close65]').click();
  await page.locator('[data-group65="0"]').click();await page.locator('[data-tab=cons]').click();await page.locator('#auto-hp').waitFor();assert.equal(await page.locator('.cons-item11').count(),12);await page.locator('#win-cons [data-close65]').click();
