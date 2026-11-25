@@ -88,7 +88,7 @@ function combatProjectile(event,cls,incoming){
  const speed=clamp(distance/nominal,.105,.39);
  const flight=Math.max(0,distance-(kind==='arrow'?15:19))/speed;
  const color=kind==='arrow'&&element!=='poison'?'#d6d8d1':impactColors[kind]??impactColors[element]??'#bb9bea';
- return {x,y,toX,toY,flight,color,kind};
+ return {x,y,toX,toY,flight,color,kind,incoming,encounter:event.encounter};
 }
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
@@ -106,7 +106,7 @@ function showCombat(event,cls,now,currentEncounter){
    pulse=now;
    if(event.encounter===currentEncounter)flash=impactTime;
    fx.push({at:impactTime,impact:{x,y,color,element,skill,melee:!shot,side:Math.sign(p.enemy-p.hero)||1}});
-   tone('hit');
+
   }
   popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,impactTime,x,y,true);
  }
@@ -142,10 +142,15 @@ function drawImpact(c,hit,w,h,hh,t){
 function drawProjectile(c,shot,w,h,hh,t){
  if(t<0||t*1000>shot.flight)return;
  const progress=t*1000/shot.flight;
- const x=w*(shot.x+(shot.toX-shot.x)*progress);
- const y=h*(shot.y+(shot.toY-shot.y)*progress)-hh*.43-Math.sin(progress*Math.PI)*12;
- c.translate(x,y);
- c.rotate(Math.atan2(h*(shot.toY-shot.y),w*(shot.toX-shot.x)));
+ // Blend toward the displayed target in flight and land at the server's impact position.
+ const follows=shot.encounter===state.activity?.encounter;
+ const side=shot.incoming?'hero':'enemy';
+ const tracking=follows?1-progress:0;
+ const targetX=shot.toX+((visual[side]??shot.toX)-shot.toX)*tracking;
+ const targetY=shot.toY+((visual[side+'Y']??shot.toY)-shot.toY)*tracking;
+ const dx=w*(targetX-shot.x),dy=h*(targetY-shot.y);
+ c.translate(w*shot.x+dx*progress,h*shot.y+dy*progress-hh*.43-Math.sin(progress*Math.PI)*12);
+ c.rotate(Math.atan2(dy,dx));
  c.fillStyle=shot.color;
  if(shot.kind==='arrow'){
   c.fillRect(-30,-1,26,2);
@@ -263,7 +268,7 @@ if(a.mode==='gather'){
   c.restore();
  }
 }
-fx=fx.filter(f=>now-f.at<(f.projectile?.flight??1250));for(const f of fx){const t=(now-f.at)/1000;if(t<0)continue;c.save();c.globalAlpha=Math.max(0,1-t/1.25);if(f.parts){const node=gatherFields[z].find(n=>n.index===f.index),scale=hh/125;for(const p of f.parts){c.fillStyle=p.color;c.fillRect(node.x*w+p.x*scale+p.vx*t,node.y*h+p.y*scale+p.vy*t+100*t*t,4*scale,4*scale);}}else if(f.projectile){drawProjectile(c,f.projectile,w,h,hh,t);}else if(f.impact){drawImpact(c,f.impact,w,h,hh,t);}else{const labelY=h*f.y-(f.actor?hh*.82:0)-t*30;c.font='bold 17px system-ui';c.textAlign='center';c.lineWidth=4;c.strokeStyle='#08080b';c.strokeText(f.text,w*f.x,labelY);c.fillStyle=f.color;c.fillText(f.text,w*f.x,labelY);}c.restore();}c.restore();mini(c,key,w,h,gatherHero??{x:visual.hero,y:visual.heroY},a?.enemy?[{x:visual.enemy,y:visual.enemyY,enemy:true}]:[]);}
+fx=fx.filter(f=>now-f.at<(f.projectile?.flight??1250));for(const f of fx){const t=(now-f.at)/1000;if(t<0)continue;c.save();c.globalAlpha=Math.max(0,1-t/1.25);if(f.parts){const node=gatherFields[z].find(n=>n.index===f.index),scale=hh/125;for(const p of f.parts){c.fillStyle=p.color;c.fillRect(node.x*w+p.x*scale+p.vx*t,node.y*h+p.y*scale+p.vy*t+100*t*t,4*scale,4*scale);}}else if(f.projectile){drawProjectile(c,f.projectile,w,h,hh,t);}else if(f.impact){if(!f.played){f.played=true;tone('hit');}drawImpact(c,f.impact,w,h,hh,t);}else{const labelY=h*f.y-(f.actor?hh*.82:0)-t*30;c.font='bold 17px system-ui';c.textAlign='center';c.lineWidth=4;c.strokeStyle='#08080b';c.strokeText(f.text,w*f.x,labelY);c.fillStyle=f.color;c.fillText(f.text,w*f.x,labelY);}c.restore();}c.restore();mini(c,key,w,h,gatherHero??{x:visual.hero,y:visual.heroY},a?.enemy?[{x:visual.enemy,y:visual.enemyY,enemy:true}]:[]);}
 function mini(c,key,w,h,hero,others){const r=Math.min(48,w*.105,h*.16),cx=w-r-9,cy=h-r-9,im=image('assets/maps/'+key+'-mini.webp');c.save();c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.clip();c.fillStyle='#151719';c.fillRect(cx-r,cy-r,2*r,2*r);if(im?.complete&&im.naturalWidth){const sc=Math.max(2*r/im.naturalWidth,2*r/im.naturalHeight),iw=im.naturalWidth*sc,ih=im.naturalHeight*sc;c.drawImage(im,cx-iw/2,cy-ih/2,iw,ih);}c.fillStyle='#09090b44';c.fillRect(cx-r,cy-r,2*r,2*r);const dot=(p,color)=>{c.beginPath();c.arc(cx-r+2*r*p.x,cy-r+2*r*p.y,3,0,Math.PI*2);c.fillStyle=color;c.fill();};for(const n of others)dot(n,n.enemy?'#f08080':'#e0bb73');dot(hero,'#fff7df');c.restore();c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.strokeStyle='#bd9b68';c.lineWidth=2;c.stroke();}
 function toggle(){sound=!sound;if(sound){try{audio??=new AudioContext();audio.resume().catch(()=>{});}catch{sound=false;}}const b=document.getElementById('sound52');if(b){b.textContent=sound?'Som ligado':'Som desligado';b.setAttribute('aria-pressed',String(sound));}}
 function interact(){if(!state||state.activity||!cityNear)return;window.eldoria61CityService?.(cityNear.mode);}
