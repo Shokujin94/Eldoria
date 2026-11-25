@@ -47,15 +47,36 @@ export const freeTalents=s=>Math.max(0,s.level-1-sum(s.talents||{}));
 export function canLearn(cl,s,id){const all=tree(cl,s).flatMap(p=>p.nodes),n=all.find(x=>x.id===id);return !!(n&&freeTalents(s)>0&&s.level>=n.level&&(s.talents[id]||0)<n.max&&n.req.every(k=>(s.talents[k]||0)>=Math.min(2,all.find(x=>x.id===k)?.max||2)));}
 export function values(cl,s){const v={};for(const [id,n] of Object.entries(s.talents||{})){const p=passive33[id];if(p&&p.cl===cl&&(p.sub===undefined||p.sub===s.subclass))v[p.type]=(v[p.type]||0)+p.value*clamp(n,0,3);}return v;}
 export function skill(cl,s,id,maxMana=0){let k=skills[cl][id];if(id==='asc2'&&s.subclass!=null){const a=ASC12[cl][s.subclass];k={id,name:a[11],element:a[1],mana:a[12],cd:a[13],power:a[14],heal:a[15],guard:a[16],effects:a[17]};}if(!k)return null;const r=Math.max(0,(s.talents?.[id]||1)-1),v=values(cl,s);const x={...k,mana:Math.ceil(k.mana*(cl==='war'?.94:1)*(1-Math.min(.35,(v.manaCost||0)+(s.mana<maxMana*.35?v.lowManaCost||0:0)))),power:Math.min(2.15,k.power*(1+.11*r)*.94),heal:Math.min(.24,(k.heal||0)*(1+.15*r)*.77),buff13:k.buff?{stat:k.buff[0],value:k.buff[1]*(1+.12*r),duration:k.buff[2]}:null};const form=(s.casts?.[id]||0)>=30?s.forms?.[id]:null,master=(s.casts?.[id]||0)>=120;if(form==='power'){const f=master?1.12:1.07;x.power*=f;x.heal*=f;x.mana=Math.ceil(x.mana*1.1);if(x.buff13)x.buff13.value*=f;}else if(form==='flow'){x.mana=Math.max(1,Math.floor(x.mana*(master?.79:.88)));if(master)x.cd=Math.max(3,x.cd-1);}if(oath(s,0,1))x.mana=Math.max(1,Math.ceil(x.mana*.88));return balance.skill(x);}
+const pathSynergies={
+ war:[['Ferida de execução','alvo sangrando','dano da habilidade',.05,.02],['Contra-guarda','guarda ativa','redução de dano recebido',.03,.015],['Ritmo de ferro','alvo exposto','mana máxima recuperada',.012,.008]],
+ ranger:[['Disparo de precisão','distância de pelo menos 75% do alcance','dano da habilidade',.06,.02],['Recuo tático','alvo a menos de 55% do alcance','redução de dano recebido',.025,.015],['Toxina recuperadora','alvo envenenado','mana máxima recuperada',.015,.008]],
+ mage:[['Combustão','alvo queimando','dano da habilidade',.06,.02],['Prisma glacial','alvo lento ou congelado','redução de dano recebido',.025,.015],['Convergência elemental','elemento diferente do último acerto de habilidade','mana máxima recuperada',.025,.01]],
+ cleric:[['Veredito sagrado','alvo exposto','dano da habilidade',.05,.02],['Misericórdia','habilidade de cura com PV abaixo de 60%','cura adicional dos PV máximos',.01,.006],['Voto inabalável','guarda ativa','redução de dano recebido',.03,.015]],
+ necro:[['Comando funerário','lacaio ativo','+1 s para o lacaio com menos tempo restante',0,0],['Pacto de sangue','PV abaixo de 60%','dano efetivo recuperado como PV',.015,.008],['Decomposição','alvo envenenado ou exposto','dano da habilidade',.05,.02]]
+};
+function synergyValue(cl,path,rank){
+ const [,,,base,perRank]=pathSynergies[cl][path];
+ return base+perRank*rank;
+}
+function synergyTooltip(cl,path,rank){
+ const [name,condition,effect]=pathSynergies[cl][path];
+ const value=synergyValue(cl,path,Math.max(1,rank));
+ const percent=Number((value*100).toFixed(2)).toLocaleString('pt-BR');
+ return {name,condition,effect:value?percent+'% de '+effect:effect+' (limite de '+(12+Math.max(1,rank))+' s)',
+  requirement:effect==='redução de dano recebido'?'Passiva raiz e técnica do caminho aprendidas':'Passiva raiz do caminho aprendida',
+  rank};
+}
 export function catalog(cl,s){
  const hasDiscount=(values(cl,s).lowManaCost||0)>0;
- return tree(cl,s).map(p=>({name:p.name,nodes:p.nodes.map(n=>{
+ return tree(cl,s).map((p,path)=>({name:p.name,nodes:p.nodes.map(n=>{
+  const root="t33_"+cl+"_"+path+"_0";
+  const synergy=path<3&&(n.id===root||n.active)?synergyTooltip(cl,path,s.talents[root]||0):null;
   const configured=n.active?skill(cl,s,n.id):null;
   if(configured&&hasDiscount){
    const low=skill(cl,s,n.id,Infinity).mana;
    if(low<configured.mana)configured.lowManaCost=low;
   }
-  return {...n,rank:s.talents[n.id]||0,available:canLearn(cl,s,n.id),skill:configured};
+  return {...n,rank:s.talents[n.id]||0,available:canLearn(cl,s,n.id),skill:configured,synergy:configured?.buff13?null:synergy};
  })}));
 }
 export const subclassNames=cl=>ASC12[cl].map(x=>x[0]);
@@ -364,7 +385,7 @@ const heal=n=>{s.hp=Math.min(st.hp,s.hp+n*(trait(a,'curse')?.7:1));},mana=n=>{s.
 const gap=a.positions?combatGap(a.positions):null,range=cl==='ranger'?.30:cl==='mage'?.27:cl==='cleric'||cl==='necro'?.21:.12,far=gap===null?cl==='ranger'&&a.turn<=Math.max(4,6+Math.round((v.move||0)*10)):gap>=range*.75,near=gap===null?!far:gap<range*.55;
 const cond={far,near,bleedHit:has('bleed'),burnHit:!!cast&&has('burn'),exposeHit:has('expose'),curseHit:has('poison')||has('expose'),slowHit:has('slow'),iceHit:has('slow')||has('freeze'),shockHit:has('shock'),execute:a.enemyHp<a.enemy.hp*.3,lowHit:s.hp<st.hp*.5,highManaHit:s.mana>=st.mana*.6,servantHit:s.servant>0,bossHit:boss,basic:!cast,holy:cast?.element==='holy'};
 const pow=st.powers||{},path=cast?trees33[cl].base.findIndex(p=>p.nodes.some(n=>n.id===cast.id)):-1,root=i=>s.talents['t33_'+cl+'_'+i+'_0']||0,rank=path<0?0:root(path),low60=s.hp<st.hp*.6;let synergyDamage=0;
-if(rank&&cast&&!cast.buff13){if((cl==='war'&&path===0&&has('bleed'))||(cl==='ranger'&&path===0&&far)||(cl==='mage'&&path===0&&has('burn'))||(cl==='cleric'&&path===0&&has('expose'))||(cl==='necro'&&path===2&&(has('poison')||has('expose'))))synergyDamage=(cl==='ranger'||cl==='mage'?.06:.05)+.02*rank;}
+if(rank&&cast&&!cast.buff13){if((cl==='war'&&path===0&&has('bleed'))||(cl==='ranger'&&path===0&&far)||(cl==='mage'&&path===0&&has('burn'))||(cl==='cleric'&&path===0&&has('expose'))||(cl==='necro'&&path===2&&(has('poison')||has('expose'))))synergyDamage=synergyValue(cl,path,rank);}
 const rider=cast&&(cast.id==='asc2'?subRider33[cl][s.subclass]:rider33[cl][cast.id]);let dmg=0,critical=false,comboCredit=0,relicCredit=0;
 if(cast?.buff13){s.buffs[cast.id]={...cast.buff13,left:cast.buff13.duration};}
 else{critical=random()<st.crit;let bonus=Object.keys(descriptions33).reduce((n,k)=>n+(cond[k]?(v[k]||0):0),0);const ex=cast&&(cast.id==='asc2'?subActive33[cl][s.subclass]:active33[cl][cast.id]);if(ex&&cond[ex[0]])bonus+=ex[1];bonus+=(cond.execute?((pow.execute||0)+(st.advanced?.execute||0)):0)+(cast&&cond.highManaHit?(pow.resonance||0):0);dmg=Math.max(1,Math.floor(st.damage*(cast?st.special*cast.power:1)*(critical?st.critMult:1)*(1+Math.min(.40,bonus))*(1+(a.masteryBonus||0))*damageByStatus(a.heroEffects,a.effects)*(.9+random()*.2)));if(random()<st.haste)dmg+=Math.max(1,Math.floor(st.damage*.65));if(synergyDamage)dmg=Math.round(dmg*(1+synergyDamage));const element=heroAttackElement(cl,cast);a.lastAttackElement=element;a.lastAttackSkill=cast?.name??null;dmg=Math.max(1,Math.round(dmg*(1-enemyResistance(a,element,boss))));const basicDamage=dmg,comboDamage=combo(a,element,dmg),relicDamage=cast?relicSkillDamage(s,st,a,dmg):0;
@@ -373,12 +394,12 @@ if(boss)dmg=Math.min(dmg,Math.max(1,Math.round(a.enemy.hp*.29)));
 const applied=Math.min(a.enemyHp,dmg);
 comboCredit=Math.min(comboDamage,Math.max(0,applied-basicDamage));
 relicCredit=Math.min(relicDamage,Math.max(0,applied-basicDamage-comboCredit));
-a.enemyHp=Math.max(0,a.enemyHp-dmg);if(cast){if(cast.guard)s.guard=3;if(cast.heal)heal(Math.min(st.hp*.2,st.hp*cast.heal*(1+st.heal)));for(const k of cast.effects||[])effect(a,k,dmg,v,boss);}heal(dmg*Math.min(.12,v.drain||0));if(cl==='necro'&&path===1&&rank&&low60)heal(Math.round((before-a.enemyHp)*(.015+.008*rank)));if(cast&&rank&&before>a.enemyHp){
+a.enemyHp=Math.max(0,a.enemyHp-dmg);if(cast){if(cast.guard)s.guard=3;if(cast.heal)heal(Math.min(st.hp*.2,st.hp*cast.heal*(1+st.heal)));for(const k of cast.effects||[])effect(a,k,dmg,v,boss);}heal(dmg*Math.min(.12,v.drain||0));if(cl==='necro'&&path===1&&rank&&low60)heal(Math.round((before-a.enemyHp)*synergyValue(cl,path,rank)));if(cast&&rank&&before>a.enemyHp){
  const restore=ratio=>mana(Math.max(1,Math.round(st.mana*ratio)));
- if(cl==='war'&&path===2&&cond.exposeHit)restore(.012+.008*rank);
- if(cl==='ranger'&&path===2&&poisoned)restore(.015+.008*rank);
- if(cl==='mage'&&path===2&&a.lastElement&&a.lastElement!==cast.element)restore(.025+.01*rank);
- if(cl==='cleric'&&path===1&&low60&&cast.heal)heal(Math.max(1,Math.round(st.hp*(.01+.006*rank))));
+ if(cl==='war'&&path===2&&cond.exposeHit)restore(synergyValue(cl,path,rank));
+ if(cl==='ranger'&&path===2&&poisoned)restore(synergyValue(cl,path,rank));
+ if(cl==='mage'&&path===2&&a.lastElement&&a.lastElement!==cast.element)restore(synergyValue(cl,path,rank));
+ if(cl==='cleric'&&path===1&&low60&&cast.heal)heal(Math.max(1,Math.round(st.hp*synergyValue(cl,path,rank))));
  if(cl==='necro'&&path===0&&s.minions.length){
   const shortest=s.minions.reduce((best,m)=>m.left<best.left?m:best);
   if(shortest.left<12+rank)shortest.left++;
@@ -413,7 +434,7 @@ function defensiveSynergy(amount,cl,s,a){
  const close=cl==='ranger'&&a.positions&&combatGap(a.positions)<.30*.55;
  const frost=cl==='mage'&&(a.effects?.slow||a.effects?.freeze);
  if(!guard&&!close&&!frost)return amount;
- return Math.max(1,Math.round(amount*(1-(guard?.03:.025)-.015*rank)));
+ return Math.max(1,Math.round(amount*(1-synergyValue(cl,path,rank))));
 }
 export function enemyStrike(cl,s,st,a,random,boss,deferRanged=false){
  if(a.enemyHp<=0||s.hp<=0||random()<st.dodge)return;
