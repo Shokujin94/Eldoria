@@ -133,10 +133,14 @@ function materialTarget(key){
 }
 function stock66(){const c=data.character;return '<div class="stock19-grid">'+(bagTab66==='mat'?Object.entries(c.materials).filter(([,n])=>n>0).map(([key,n])=>{
  const {name,src,grade}=materialInfo(key,c);
- return '<article class="stock19-slot material-slot" style="--rar:'+tooltipRarity[grade]+'"'+materialTarget(key)+'>'+
+ return '<article class="stock19-slot material-slot rarity61-'+(Number.isInteger(grade)?grade:0)+'"'+materialTarget(key)+'>'+
   (src?'<img src="'+esc(src)+'" alt="">':'<span aria-hidden="true">◆</span>')+
   '<span class="stock19-name">'+esc(name)+'</span><small>'+esc(rar[grade]||'Especial')+' · ×'+nf(n)+'</small></article>';
-}).join(''):Object.entries(c.runeStock).filter(([,n])=>n>0).map(([k,n])=>'<article class="stock19-slot" title="'+esc(c.runeCatalog[k]?.desc||k)+'">'+skillIcon63('arcane')+'<span class="stock19-name">'+esc(c.runeCatalog[k]?.name||k)+'</span><small>×'+nf(n)+'</small></article>').join(''))+'</div>';}
+}).join(''):Object.entries(c.runeStock).filter(([,n])=>n>0).map(([key,n])=>{
+ const rune=c.runeCatalog[key];
+ return '<article class="stock19-slot material-slot rarity61-'+(rune?.rarity??0)+'" tabindex="0" data-rune-tip="'+esc(key)+'">'+
+  skillIcon63('arcane')+'<span class="stock19-name">'+esc(rune?.name||key)+'</span><small>×'+nf(n)+'</small></article>';
+}).join(''))+'</div>';}
 function inventory66(){const nav='<nav class="gear46-tabs bag-nav19">'+[['equip','Equipamentos'],['mat','Materiais'],['rune','Runas']].map(([k,n])=>'<button class="secondary" data-bagtab66="'+k+'" aria-pressed="'+(bagTab66===k)+'">'+n+'</button>').join('')+'</nav>';return nav+(bagTab66==='equip'?inventory():'<div id="content-bag">'+stock66()+'</div>');}
 function analyzerDamage(a){
  return a?.damageSources?Object.values(a.damageSources).reduce((sum,damage)=>sum+damage,0):a?.damage||0;
@@ -449,7 +453,7 @@ async function run(fn){if(busy)return;busy=true;try{if(polling)await polling;awa
 function connect64(){const grid=document.querySelector('.tal47-grid'),svg=grid?.querySelector('svg');if(!svg||!data?.character)return;const r=grid.getBoundingClientRect();if(!r.width||!r.height)return;svg.setAttribute('viewBox','0 0 '+r.width+' '+r.height);const nodes=new Map([...grid.querySelectorAll('[data-node62]')].map(e=>[e.dataset.node62,e]));const model=data.character.talentTree.flatMap(p=>p.nodes);let markup='';for(const n of model){const e=nodes.get(n.id);if(!e)continue;const t=e.getBoundingClientRect();for(const id of n.req){const from=nodes.get(id);if(!from)continue;const s=from.getBoundingClientRect(),x=s.left+s.width/2-r.left,y=s.bottom-r.top,X=t.left+t.width/2-r.left,Y=t.top-r.top,mid=(y+Y)/2;markup+='<path class="'+((model.find(k=>k.id===id)?.rank||0)>=2?'lit':'')+'" d="M'+x+' '+y+' V'+mid+' H'+X+' V'+Y+'"/>';}}svg.innerHTML=markup;}
 const panelObserver64=new ResizeObserver(connect64);
 const tooltip64=document.createElement('div');tooltip64.id='tal47-tip';tooltip64.hidden=true;tooltip64.setAttribute('role','tooltip');document.body.append(tooltip64);
-const tooltipTargets='[data-node62],[data-bag64],[data-gearitem66],[data-hud-skill],[data-potion-tip],[data-material-tip]';
+const tooltipTargets='[data-node62],[data-bag64],[data-gearitem66],[data-hud-skill],[data-potion-tip],[data-material-tip],[data-rune-tip]';
 const tooltipRarity=['#b9bec6','#88c88f','#7aaff0','#c29ae5','#efc36e'];
 let tooltipAnchor=null;
 function hide64(){
@@ -490,12 +494,14 @@ function show64(e){
  const i=data.items.find(i=>String(i.id)===(el.dataset.bag64||el.dataset.gearitem66));
  const potionId=el.dataset.potionTip,p=c.potionsCatalog?.[potionId];
  const key=el.dataset.materialTip,m=key?materialInfo(key,c):null;
- if(!n&&!i&&!p&&!m)return;
+ const runeId=el.dataset.runeTip,rune=c.runeCatalog?.[runeId];
+ if(!n&&!i&&!p&&!m&&!rune)return;
  hide64();tooltipAnchor=el;
  if(!el.hasAttribute('aria-describedby'))el.setAttribute('aria-describedby',tooltip64.id);
- const theme=themes64[c.cls],color=m?tooltipRarity[m.grade]:i?tooltipRarity[i.rarity]:n?theme.colors[path]||theme.accent:({hp:'#d98289',mp:'#8eb4f2',attr:'#b5a0df',loot:'#efc36e'}[p.kind]);
+ const theme=themes64[c.cls],color=rune?tooltipRarity[rune.rarity]:m?tooltipRarity[m.grade]:i?tooltipRarity[i.rarity]:n?theme.colors[path]||theme.accent:({hp:'#d98289',mp:'#8eb4f2',attr:'#b5a0df',loot:'#efc36e'}[p.kind]);
  tooltip64.style.setProperty('--path',color||'#d7b775');
- tooltip64.innerHTML=m?tooltipHeader(m.src?'<img class="material-tooltip-icon" src="'+esc(m.src)+'" alt="">':'<span class="tal47-symbol">◆</span>',rar[m.grade]||'Material',m.name)+
+ tooltip64.innerHTML=rune?tooltipHeader('<span class="tal47-symbol">'+skillIcon63('arcane')+'</span>',rar[rune.rarity],rune.name)+
+  tooltipRows([['Encaixe',slots[rune.slot]],['Estoque',nf(c.runeStock[runeId]||0)]])+'<h4>Efeito</h4><p>'+esc(rune.desc)+'</p>':m?tooltipHeader(m.src?'<img class="material-tooltip-icon" src="'+esc(m.src)+'" alt="">':'<span class="tal47-symbol">◆</span>',rar[m.grade]||'Material',m.name)+
   tooltipRows([['Origem',m.source],['Região',regions[m.zone]],['Tier',m.zone+1],['Estoque',nf(c.materials[key]||0)],['Venda por unidade',c.materialQuotes?.[key]?nf(c.materialQuotes[key])+' ◈':null]])+
   (m.uses?'<h4>Uso</h4><p>'+esc(m.uses)+'</p>':''):i?itemTooltip(i,c):p?potionTooltip(potionId,p,c):
   tooltipHeader('<span class="tal47-symbol">'+skillIcon63(n.skill?.element||'attr')+'</span>',n.active?'Habilidade ativa':'Talento passivo',n.name)+

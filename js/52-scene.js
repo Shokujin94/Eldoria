@@ -159,6 +159,69 @@ function syncPendingProjectiles(a,old,cls,now){
   if(shot.flight)fx.push({at:now,projectile:shot});
  }
 }
+const elementalShapes={fire:'flame',ice:'crystal',arcane:'sigil',holy:'rays',poison:'cloud',shock:'bolt',dark:'vortex',heal:'rays'};
+const combatConditions={
+ bleed:['#d65b65','drop'],stun:['#dfb655','rays'],slow:['#9bb4d0','clock'],
+ expose:['#c391e8','sigil'],poison:['#75b86b','cloud'],burn:['#ee9150','flame'],
+ freeze:['#75c9ef','crystal'],shock:['#b1a1ef','bolt']
+};
+function combatGlyph(c,shape,r,t){
+ const count=shape==='bolt'?4:6;
+ if(shape==='sigil'||shape==='clock'){
+  c.beginPath();
+  if(shape==='clock')c.arc(0,0,r*.65,0,2*Math.PI);
+  else for(let j=0;j<=count;j++){
+   const angle=j*2*Math.PI/count-Math.PI/2;
+   c[j?'lineTo':'moveTo'](Math.cos(angle)*r,Math.sin(angle)*r);
+  }
+  c.stroke();
+  c.beginPath();
+  c.moveTo(0,-r*.42);c.lineTo(0,0);c.lineTo(r*.3,0);
+  c.stroke();
+  return;
+ }
+ if(shape==='drop'){
+  c.beginPath();c.moveTo(0,-r);
+  c.bezierCurveTo(r*.9,r*.2,r*.58,r*.77,0,r*.77);
+  c.bezierCurveTo(-r*.58,r*.77,-r*.9,r*.2,0,-r);c.stroke();
+  return;
+ }
+ for(let i=0;i<count;i++){
+  c.save();c.rotate(i*2*Math.PI/count+t);
+  c.beginPath();
+  switch(shape){
+   case 'flame':
+    c.moveTo(-r*.14,-r*.4);c.quadraticCurveTo(-r*.37,-r*.65,0,-r);
+    c.quadraticCurveTo(r*.35,-r*.64,r*.13,-r*.41);break;
+   case 'crystal':
+    c.moveTo(0,-r*.2);c.lineTo(0,-r);
+    c.moveTo(-r*.18,-r*.76);c.lineTo(0,-r*.57);c.lineTo(r*.18,-r*.76);break;
+   case 'cloud':
+    c.arc(0,-r*.56,r*.24,0,Math.PI*2);break;
+   case 'bolt':
+    c.moveTo(0,-r*.17);c.lineTo(r*.24,-r*.41);c.lineTo(-r*.08,-r*.56);
+    c.lineTo(r*.17,-r*.74);c.lineTo(0,-r);break;
+   case 'vortex':
+    c.moveTo(0,-r*.2);c.quadraticCurveTo(r*.85,-r*.3,r*.33,-r*.94);break;
+   default:
+    c.moveTo(0,-r*.38);c.lineTo(0,-r);
+  }
+  c.stroke();c.restore();
+ }
+}
+function drawConditions(c,effects,x,y,height){
+ const active=Object.entries(effects||{}).filter(([key,status])=>status.left>0&&combatConditions[key]);
+ const size=Math.max(6,Math.min(13,height*.12));
+ for(const [i,[key]] of active.entries()){
+  const [color,shape]=combatConditions[key];
+  c.save();
+  c.translate(x+(i-(active.length-1)/2)*size*2.5,y-height-size*.4);
+  c.fillStyle='#11141de8';c.beginPath();c.arc(0,0,size*1.12,0,2*Math.PI);c.fill();
+  c.strokeStyle=color;c.lineWidth=1.25;
+  combatGlyph(c,shape,size*.8,0);
+  c.restore();
+ }
+}
 function drawImpact(c,hit,w,h,hh,t){
  if(t>.55)return;
  const progress=t/.55,x=hit.x*w,y=hit.y*h-hh*.43;
@@ -183,9 +246,11 @@ function drawImpact(c,hit,w,h,hh,t){
  }else c.ellipse(x,y,8+progress*24,5+progress*15,0,0,Math.PI*2);
  c.stroke();
  if(!hit.skill)return;
- for(let i=0;i<12;i++){
-  const angle=i*Math.PI/6+progress*.4,radius=5+progress*30;
-  c.fillRect(x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,hit.element==='fire'?3:2,hit.element==='fire'?6:3);
+ const shape=elementalShapes[hit.element];
+ if(shape){
+  c.save();c.translate(x,y);
+  combatGlyph(c,shape,Math.max(12,hh*.19)*(1+progress),progress*.65);
+  c.restore();
  }
  c.font='bold 11px monospace';
  c.textAlign='center';
@@ -363,6 +428,7 @@ if(a.mode!=='gather'){
  const sprite=striking?(progress<.25?1:2):moving?1+Math.floor(now/180)%3:0;
  shadow(x+dx,heroY+dy,hh);
  draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy,hh,facing,false,lean);
+ drawConditions(c,a.heroEffects,x+dx,heroY+dy,hh);
  if(a?.enemy){const boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4,eh=hh*(boss?1.30:.96),ex=w*visual.enemy;if(defeated&&!motion.matches&&now-defeated.at<1050){
  const p=defeated.positions,px=w*p.enemy,py=h*(p.enemyY??.84),height=hh*(defeated.boss?1.30:.96);
  c.save();
@@ -373,6 +439,7 @@ if(a.mode!=='gather'){
 }else{
  shadow(ex,enemyY,eh);
  draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],ex,enemyY,eh,visual.enemy>=visual.hero,!motion.matches&&now>=flash&&now-flash<160);
+ drawConditions(c,a.effects,ex,enemyY,eh);
 }minionVisual.length=Math.min(minionVisual.length,(s.minions||[]).length);if(s.cls==='necro')for(const [i,m] of (s.minions||[]).entries()){const slot=minionVisual[i]??={x:m.x,y:m.y??0},step=motion.matches?1:1-Math.exp(-dt/172);slot.x+=(m.x-slot.x)*step;slot.y+=((m.y??0)-slot.y)*step;const mx=w*slot.x,my=enemyY+h*slot.y;shadow(mx,my,hh*.55);c.save();if(m.role!=='bone')c.filter=({sentinel:'saturate(.45) brightness(1.12)',archer:'sepia(.35) hue-rotate(65deg)',herald:'sepia(.6) hue-rotate(220deg)'})[m.role]||'none';draw(c,art.monsters[1][0],mx,my,hh*.55);c.restore();c.font='10px system-ui';c.textAlign='center';c.fillStyle='#d4e1d2';c.fillText(({bone:'Servo',sentinel:'Sentinela',archer:'Arqueiro',herald:'Arauto'})[m.role]||'Servo',mx,my-hh*.58);} }}
 if(a.mode==='gather'){
  const field=gatherFields[z],active=s.prof[a.prof].total%18,targetNode=field.find(node=>node.index===active);

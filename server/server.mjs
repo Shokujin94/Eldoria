@@ -9,6 +9,10 @@ import {schema,game,Fault} from './game.mjs';
 const scrypt=promisify(derive),db=new DatabaseSync(process.env.DB_PATH||'eldoria.sqlite');schema(db);db.exec('CREATE TABLE IF NOT EXISTS recovery_codes(account TEXT PRIMARY KEY REFERENCES accounts(id),digest TEXT NOT NULL,created INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS sessions_account ON sessions(account,expires);');const g=game(db);
 const origins=new Set((process.env.ALLOWED_ORIGINS||'http://localhost:8000,http://127.0.0.1:8000,http://localhost:8787,http://127.0.0.1:8787').split(',').map(s=>s.trim()).filter(Boolean));
 const staticFiles=new Map([['/',['../index.html','text/html; charset=utf-8']],['/index.html',['../index.html','text/html; charset=utf-8']],['/css/online51.css',['../css/online51.css','text/css; charset=utf-8']],['/js/51-online.js',['../js/51-online.js','text/javascript; charset=utf-8']],['/version.json',['../version.json','application/json; charset=utf-8']],['/js/52-scene.js',['../js/52-scene.js','text/javascript; charset=utf-8']],['/js/52-scene-art.js',['../js/52-scene-art.js','text/javascript; charset=utf-8']]]);
+for(const font of ['dm-serif-text','inter']){
+ const path='/assets/fonts/'+font+'.woff2';
+ staticFiles.set(path,['..'+path,'font/woff2']);
+}
 const staticEnabled=process.env.SERVE_PREVIEW==='1';
 const hash=s=>createHash('sha256').update(s).digest('hex'),age=7*86400000,buckets=new Map();
 function fail(status,message){throw new Fault(status,message);}

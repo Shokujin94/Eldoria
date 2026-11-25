@@ -79,6 +79,8 @@ try{
   const character=fixture.prepare('SELECT account,data FROM characters').get();
   const save=JSON.parse(character.data);
   save.potions.might=1;
+  save.materials['mining:0:2']=2;
+  save.runeStock.r30_weapon_might_2=1;
   save.rareEvent={z:0,k:0};
   fixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
@@ -125,8 +127,29 @@ try{
  assert.equal(await page.locator('.bag56').count(),1);
  await page.locator('[data-bag64]').first().focus();
  await page.locator('#tal47-tip').getByText('Nível do item',{exact:true}).waitFor();
+ const tooltipFonts=await page.locator('#tal47-tip').evaluate(async tooltip=>{
+  const title=getComputedStyle(tooltip.querySelector('h3')).fontFamily;
+  const body=getComputedStyle(tooltip.querySelector('dt')).fontFamily;
+  const [serif,sans]=await Promise.all([document.fonts.load('21px "DM Serif Text"'),document.fonts.load('600 12px Inter')]);
+  return {title,body,serif:serif.some(font=>font.status==='loaded'),sans:sans.some(font=>font.status==='loaded')};
+ });
+ assert.match(tooltipFonts.title,/DM Serif Text/);
+ assert.match(tooltipFonts.body,/Inter/);
+ assert.ok(tooltipFonts.serif&&tooltipFonts.sans);
  await page.keyboard.press('Escape');
  await page.locator('[data-bag64]').first().click();await page.locator('.stock19-details').waitFor();
+ const bag=page.locator('#win-bag');
+ const rarityColor=tile=>tile.evaluate(el=>getComputedStyle(el).getPropertyValue('--rar').trim());
+ assert.equal(await rarityColor(bag.locator('[data-bag64]').first()),'#b9bec6');
+ await bag.locator('[data-bagtab66=mat]').click();
+ const ore=bag.locator('[data-material-tip="mining:0:2"]');
+ assert.equal(await rarityColor(ore),'#7aaff0');
+ await bag.locator('[data-bagtab66=rune]').click();
+ const rune=bag.locator('[data-rune-tip="r30_weapon_might_2"]');
+ assert.equal(await rarityColor(rune),'#7aaff0');
+ await rune.hover();
+ await page.locator('#tal47-tip').getByText('Encaixe',{exact:true}).waitFor();
+ await page.keyboard.press('Escape');
  await page.locator('[data-tab=talent]').click();
  await page.locator('[data-path61]').first().waitFor();
  await page.locator('[data-tfilter62=passive]').click();await page.locator('[data-tfilter62=passive][aria-pressed=true]').waitFor();
