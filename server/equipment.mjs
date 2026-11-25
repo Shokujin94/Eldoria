@@ -32,7 +32,25 @@ export function itemData(i){const d=i.data;return {...d,upgrade:d.upgrade??0,ref
 export function rebuild(i){const d=itemData(i),raw={};for(const [k,v] of Object.entries(d.baseMods||{}))raw[k]=Math.round(Math.max(1,Math.round(v*(1+.1*d.upgrade)))*(1+.035*d.refine));for(const key of d.runes){const r=runes[key];if(!r||r.slot!==i.slot)throw Error('Runa incompatível');for(const [k,v] of Object.entries(r.mods))raw[k]=(raw[k]||0)+v;}d.mods=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,balance.itemMod(k,v,!!i.starter)]));return d;}
 export function upgradeQuote(i){const d=itemData(i),n=d.upgrade+1,z=i.tier,r=Math.max(0,i.rarity-1),req={['mob:'+z+':'+r]:2+Math.floor(n/2),['mining:'+z+':'+r]:1+Math.floor(n/3)};if(n>=5||d.relic!=null)req['boss:'+z]=1+Math.floor((n-1)/5);return {cost:n*20*materialPrice[i.rarity],req,allowed:!i.starter&&!i.escrow&&n<=10};}
 export function refineQuote(i){const d=itemData(i),n=d.refine+1,z=i.tier;return {cost:100*n*(z+1)*materialPrice[i.rarity],req:{['boss:'+z]:n,['mining:'+z+':'+Math.max(0,i.rarity-1)]:3*n},allowed:!i.starter&&!i.escrow&&d.upgrade===10&&n<=3};}
-export function setBonuses(list){const counts=Array(10).fill(0);for(const i of list){const id=itemData(i).setId;if(id!==null)counts[id]++;}let hp=0,def=0,damage=0;for(let z=0;z<10;z++)if(counts[z]>=3){if(z===0)hp+=.10;else if(z===1)def+=10;else if(z===2)damage+=.12;else{damage+=.06;hp+=.04;}}return {counts,hp,def,damage};}
+export function setBonuses(list){
+ const counts=Array(10).fill(0),active=[];
+ for(const i of list){const id=itemData(i).setId;if(id!==null)counts[id]++;}
+ let hp=1,def=0,damage=1,reduction=0,special=1;
+ for(const [tier,count] of counts.entries()){
+  const effects=[];
+  if(count>=2){hp*=1.05;effects.push({pieces:2,hp:.05});}
+  if(count>=3){
+   if(tier===0){hp*=1.10;effects.push({pieces:3,hp:.10});}
+   else if(tier===1){def+=10;effects.push({pieces:3,def:10});}
+   else if(tier===2){damage*=1.12;effects.push({pieces:3,damage:.12});}
+   else{hp*=1.04;damage*=1.06;effects.push({pieces:3,hp:.04,damage:.06});}
+  }
+  if(count>=4){reduction+=.04;effects.push({pieces:4,reduction:.04});}
+  if(count>=5){special*=1.08;effects.push({pieces:5,special:.08});}
+  if(effects.length)active.push({tier,count,effects});
+ }
+ return {counts,active,hp:hp-1,def,damage:damage-1,reduction,special:special-1};
+}
 export function runeProcs(list){const no={};for(const i of list)for(const key of itemData(i).runes){const r=runes[key];if(r?.effect)no[r.effect]=(no[r.effect]??1)*(1-r.proc/100);}return Object.fromEntries(Object.entries(no).map(([k,v])=>[k,1-v]));}
 export function effectivePower(i){const d=itemData(i);return i.power+Math.max(0,itemPower45({...i,baseMods:Object.fromEntries(Object.entries(d.baseMods||{}).map(([k,v])=>[k,Math.round(v*(1+.1*d.upgrade)*(1+.035*d.refine))]))})-i.power)+d.runes.reduce((n,k)=>n+(runes[k]?.rarity??0)+1,0)+(d.enchant?2:0)+(d.awake?4:0)+(d.corrupt&&d.corrupt!=='scar'?3:0)+(d.relic!=null?8:0);}
 

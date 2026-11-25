@@ -78,6 +78,8 @@ try{
   const save=JSON.parse(character.data);
   save.potions.might=1;
   fixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
+  const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
+  for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0}));
  }finally{fixture.close();}
  await page.locator('[data-group65="0"]').click();
  await page.locator('[data-tab=cons]').click();
@@ -95,6 +97,11 @@ try{
  assert.match(await page.locator('#win-character .stat13').filter({hasText:'Tenacidade'}).innerText(),/1,5%/);
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();await page.locator('[data-gearslot66=weapon]').click();await page.locator('.gear-cell.chosen[data-gearslot66=weapon]').waitFor();
+ await page.locator('[data-geartab66=stats]').click();
+ const setBonus=page.locator('#win-character .set-bonus66');
+ await setBonus.waitFor({state:'visible'});
+ assert.match(await setBonus.innerText(),/2 peças: \+5% PV/);
+ await page.locator('[data-geartab66=gear]').click();
  await page.locator('[data-tab=bag]').click();
  assert.equal(await page.locator('#win-character').isVisible(),true);
  await page.locator('#win-bag').waitFor({state:'visible'});

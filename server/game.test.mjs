@@ -200,3 +200,19 @@ test('legacy subclass passives affect the intended stats and restrict hunter dam
  }
  db.close();
 });
+
+test('legacy set bonuses unlock at two, three, four and five equipped pieces',async()=>{
+ const equipment=await import('./equipment.mjs');
+ const slots=['head','armor','legs','hands','feet'];
+ const pieces=slots.map(slot=>({slot,tier:2,rarity:2,data:{}}));
+ const excluded={slot:'armor',tier:2,rarity:4,data:{relic:0}};
+ assert.deepEqual(equipment.setBonuses([pieces[0],excluded]).active,[]);
+ assert.deepEqual(equipment.setBonuses(pieces.slice(0,2)).active[0].effects,[{pieces:2,hp:.05}]);
+ assert.deepEqual(equipment.setBonuses(pieces.slice(0,3)).active[0].effects.at(-1),{pieces:3,damage:.12});
+ assert.equal(equipment.setBonuses(pieces.slice(0,4)).reduction,.04);
+ assert(Math.abs(equipment.setBonuses(pieces).special-.08)<1e-9);
+ const set0=slots.slice(0,3).map(slot=>({slot,tier:0,rarity:3,data:{}}));
+ assert(Math.abs(equipment.setBonuses(set0).hp-(1.05*1.10-1))<1e-9);
+ const set1=slots.slice(0,3).map(slot=>({slot,tier:1,rarity:3,data:{}}));
+ assert.equal(equipment.setBonuses(set1).def,10);
+});
