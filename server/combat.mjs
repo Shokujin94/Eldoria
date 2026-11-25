@@ -105,7 +105,23 @@ function recordDamage(s,source,amount){
  const sources=s.analyzer?.damageSources;
  if(sources&&amount>0)sources[source]=(sources[source]||0)+amount;
 }
-export function tick(s,st,a){elapsePotionCooldowns(s,1);for(const k of Object.keys(s.cooldowns))s.cooldowns[k]=Math.max(0,s.cooldowns[k]-1);for(const [k,b] of Object.entries(s.buffs))if(--b.left<=0)delete s.buffs[k];s.guard=Math.max(0,s.guard-1);s.servant=Math.max(0,s.servant-1);for(const m of s.minions||[]){m.left--;m.cd=Math.max(0,m.cd-1);m.guard=Math.max(0,m.guard-1);}s.minions=(s.minions||[]).filter(m=>m.left>0);s.servant=Math.max(0,...s.minions.map(m=>m.left));s.mana=Math.min(st.mana,s.mana+st.manaRegen);a.effects??={};a.control=Math.max(0,(a.control||0)-1);a.heroEffects??={};if(trait(a,'regen')&&a.enemyHp>0)a.enemyHp=Math.min(a.enemy.hp,a.enemyHp+Math.max(1,Math.round(a.enemy.hp*.01)));for(const [k,e] of Object.entries(a.heroEffects)){if(EFFECTS[k]?.[4])damageHero(s,Math.max(1,Math.round(e.power*EFFECTS[k][4]*(e.stacks||1))));if(--e.left<=0)delete a.heroEffects[k];}for(const [k,e] of Object.entries(a.effects)){if(EFFECTS[k][4]){const before=a.enemyHp;a.enemyHp=Math.max(0,before-Math.max(1,Math.round(e.power*EFFECTS[k][4]*(e.stacks||1))));recordDamage(s,EFFECTS[k][0],before-a.enemyHp);}if(--e.left<=0)delete a.effects[k];}}
+function periodicDamage(effect,rate,exposed){
+ return Math.max(1,Math.round(effect.power*rate*(effect.stacks||1)*(exposed?1.2:1)));
+}
+export function tick(s,st,a){elapsePotionCooldowns(s,1);for(const k of Object.keys(s.cooldowns))s.cooldowns[k]=Math.max(0,s.cooldowns[k]-1);for(const [k,b] of Object.entries(s.buffs))if(--b.left<=0)delete s.buffs[k];s.guard=Math.max(0,s.guard-1);s.servant=Math.max(0,s.servant-1);for(const m of s.minions||[]){m.left--;m.cd=Math.max(0,m.cd-1);m.guard=Math.max(0,m.guard-1);}s.minions=(s.minions||[]).filter(m=>m.left>0);s.servant=Math.max(0,...s.minions.map(m=>m.left));s.mana=Math.min(st.mana,s.mana+st.manaRegen);a.effects??={};a.control=Math.max(0,(a.control||0)-1);a.heroEffects??={};if(trait(a,'regen')&&a.enemyHp>0)a.enemyHp=Math.min(a.enemy.hp,a.enemyHp+Math.max(1,Math.round(a.enemy.hp*.01)));const heroExposed=a.heroEffects.expose?.left>0,enemyExposed=a.effects.expose?.left>0;
+ for(const [k,e] of Object.entries(a.heroEffects)){
+  if(e.left>0&&EFFECTS[k]?.[4])damageHero(s,periodicDamage(e,EFFECTS[k][4],heroExposed));
+  if(--e.left<=0)delete a.heroEffects[k];
+ }
+ for(const [k,e] of Object.entries(a.effects)){
+  if(e.left>0&&EFFECTS[k]?.[4]){
+   const before=a.enemyHp;
+   a.enemyHp=Math.max(0,before-periodicDamage(e,EFFECTS[k][4],enemyExposed));
+   recordDamage(s,EFFECTS[k][0],before-a.enemyHp);
+  }
+  if(--e.left<=0)delete a.effects[k];
+ }
+}
 function effect(a,k,p,v,boss){if(!EFFECTS[k])return;if(['stun','freeze'].includes(k)){if(a.control||boss)return;a.control=4;}const old=a.effects[k];a.effects[k]={left:EFFECTS[k][3]+(k==='expose'?(v.exposeDuration||0):0),power:Math.min(a.enemy.hp*.30,Math.max(1,p)*(1+(v[k]||0))),stacks:k==='poison'?Math.min(3,(old?.stacks||0)+1):1};}
 const arenaMode=mode=>mode==='dungeon'||mode==='boss'||mode==='trial';
 const arenaFloor={left:88/800,right:712/800,top:224/600,bottom:515/600};

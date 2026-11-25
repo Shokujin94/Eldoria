@@ -388,3 +388,18 @@ test('offensive synergy multiplies a prepared hit even at the ordinary bonus cap
  }
  assert.equal(strike(1),Math.round(strike(0)*1.07));
 });
+
+test('exposure amplifies periodic damage on both sides through its final tick',()=>{
+ const st={hp:1000,mana:100,manaRegen:1};
+ function tick(expose){
+  const s=c.normalize({level:20,hp:1000,mana:100,analyzer:{damageTaken:0,damageSources:{}}});
+  const effects=()=>({...expose&&{expose:{left:1}},bleed:{left:2,power:200,stacks:1}});
+  const a={enemy:{hp:1000},enemyHp:1000,heroEffects:effects(),effects:effects()};
+  c.tick(s,st,a);
+  assert.equal(a.effects.expose,undefined);
+  return [s.analyzer.damageTaken,Object.values(s.analyzer.damageSources)[0]];
+ }
+ const ordinary=tick(false);
+ assert(ordinary.every(damage=>damage>0));
+ assert.deepEqual(tick(true),ordinary.map(damage=>Math.round(damage*1.2)));
+});
