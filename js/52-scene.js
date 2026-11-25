@@ -123,6 +123,27 @@ function showCombat(event,cls,now,currentEncounter){
  const otherDamage=Math.max(0,received-(enemyImpact?.damage??enemyShot?.damage??0));
  if(otherDamage)popup('-'+Math.ceil(otherDamage),'#f38585',now,p.hero,p.heroY??.84,true);
 }
+function syncPendingProjectiles(a,old,cls,now){
+ if(motion.matches||!a?.enemy)return;
+ for(const incoming of [false,true]){
+  const key=incoming?'pendingEnemyShot':'pendingHeroShot';
+  const pending=a[key],p=pending?.projectile;
+  if(!p)continue;
+  const prev=old?.encounter===a.encounter?old[key]?.projectile:null;
+  if(prev?.x===p.x&&prev?.y===p.y)continue;
+  const sameShot=f=>f.projectile?.encounter===a.encounter&&f.projectile.incoming===incoming;
+  // showCombat already started the visual if this snapshot contains a new launch.
+  if(!prev&&fx.some(sameShot))continue;
+  const element=pending.element??pending.cast?.element??({mage:'arcane',cleric:'holy',necro:'dark'}[cls]||'physical');
+  const shot=combatProjectile({positions:a.positions,encounter:a.encounter,element,enemyShot:{element,kind:p.kind}},cls,incoming);
+  shot.x=p.x/800;
+  shot.y=(p.y+8)/600;
+  const distance=Math.hypot((shot.toX-shot.x)*800,(shot.toY-shot.y)*600);
+  shot.flight=Math.max(0,distance-(shot.kind==='arrow'?15:19))/p.speed;
+  fx=fx.filter(f=>!sameShot(f));
+  if(shot.flight)fx.push({at:now,projectile:shot});
+ }
+}
 function drawImpact(c,hit,w,h,hh,t){
  if(t>.55)return;
  const progress=t/.55,x=hit.x*w,y=hit.y*h-hh*.43;
@@ -202,6 +223,7 @@ const g=s.lastGather,pg=previous.lastGather;if(a?.mode==='gather'&&g&&g.kind===a
 if(s.rareEventName&&(s.rareEvent?.k!==oldRare?.k||s.rareEvent?.z!==oldRare?.z)){
  popup(s.rareEventName+' · Crônicas','#e9cc82',now,.5,.26);
 }
+syncPendingProjectiles(a,old,s.cls,now);
 previous=s;state=s;if(!raf)raf=requestAnimationFrame(frame);}
 function drawAtmosphere(c,w,h,d,now,mode,z){
  if(motion.matches)return;

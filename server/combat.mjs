@@ -284,7 +284,7 @@ function launchProjectile(a,side,kind,boss){
  const x=positions[source]*800,y=(positions[source+'Y']??.84)*600-8;
  const nominal=kind==='arrow'?650:kind==='ice'?780:930;
  const speed=Math.max(.105,Math.min(.39,Math.hypot(target.x-x,target.y-y)/nominal));
- return {x,y,speed,radius:kind==='arrow'?1:5};
+ return {x,y,speed,kind,radius:kind==='arrow'?1:5};
 }
 function contactFraction(x,y,nextX,nextY,from,to,radius){
  const rx=to.rx+radius,ry=to.ry+radius;
