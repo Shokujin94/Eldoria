@@ -271,7 +271,11 @@ test('a projectile contacts a wide creature before a narrow one at the same dist
    pendingHeroShot:{cast:null,projectile:{x:378,y:502,speed:.001,radius:1}}};
   const {heroImpact}=c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,a.positions);
   assert.equal(!!heroImpact,landed);
-  if(heroImpact)assert.equal(heroImpact.x,.5);
+  if(heroImpact){
+   assert.equal(heroImpact.x,.5);
+   assert.ok(Number.isFinite(heroImpact.contactX)&&Number.isFinite(heroImpact.contactY));
+   assert.ok(heroImpact.contactX<heroImpact.x);
+  }
   assert.equal(a.enemyHp<100,landed);
  }
 });

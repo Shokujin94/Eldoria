@@ -137,9 +137,23 @@ function heroAttackPose(kind,progress){
  if(progress<=hold)return hit;
  return blendAttackPose(hit,neutralAttackPose,(progress-hold)/(1-hold));
 }
+function settleVisualProjectile(impact,encounter,incoming,now){
+ if(!Number.isFinite(impact?.contactX)||!Number.isFinite(impact.contactY))return now;
+ const flight=fx.findLast(f=>f.at<now&&f.projectile?.encounter===encounter&&!f.projectile.confirmed&&f.projectile.incoming===incoming);
+ const shot=flight?.projectile,point=shot?.drawn;
+ if(!point||now>=flight.at+shot.flight)return now;
+ const distance=Math.hypot((impact.contactX-point.x)*800,(impact.contactY-point.y)*600);
+ if(distance<1)return now;
+ const remaining=clamp(distance/.39,30,110);
+ Object.assign(shot,{x:point.x,y:point.y,toX:impact.contactX,toY:impact.contactY,flight:remaining,confirmed:true});
+ flight.at=now;
+ return now+remaining;
+}
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
  const {positions:p,dealt,received,critical,heroHit,heroLanded,heroImpact,heroShot,element,skill,support,enemyShot,enemyImpact,enemyMelee}=event;
+ const heroContactAt=settleVisualProjectile(heroImpact,event.encounter,false,now);
+ const enemyContactAt=settleVisualProjectile(enemyImpact,event.encounter,true,now);
  let release=now;
  if(heroShot||support||(heroHit&&!heroLanded)){
   const kind=support?'cast':cls==='war'?'melee':cls==='ranger'?'ranged':'cast';
@@ -158,12 +172,12 @@ function showCombat(event,cls,now,currentEncounter){
  }
  if(dealt){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
-  const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=(heroHit&&!heroLanded?release:now)+(shot?.flight||0);
+  const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=(heroHit&&!heroLanded?release:heroContactAt)+(shot?.flight||0);
   const x=heroImpact?.x??p.enemy,y=heroImpact?.y??p.enemyY??.84;
   if(shot?.flight)fx.push({at:release,projectile:shot});
   if(heroHit){
    if(event.encounter===currentEncounter)flash=impactTime;
-   fx.push({at:impactTime,impact:{x,y,color,element,skill,melee:cls==='war',side:Math.sign(p.enemy-p.hero)||1}});
+   fx.push({at:impactTime,impact:{x:heroImpact?.contactX??x,y:heroImpact?.contactY??y,color,element,skill,melee:cls==='war',side:Math.sign(p.enemy-p.hero)||1}});
 
   }
   popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,impactTime,x,y,true);
@@ -177,9 +191,15 @@ function showCombat(event,cls,now,currentEncounter){
   if(shot.flight)fx.push({at:now,projectile:shot});
   if(enemyShot.damage)popup('-'+Math.ceil(enemyShot.damage),'#f38585',now+shot.flight,p.hero,shot.toY,true);
  }
- if(enemyImpact)popup('-'+Math.ceil(enemyImpact.damage),'#f38585',now,enemyImpact.x,enemyImpact.y,true);
+ if(enemyImpact){
+  popup('-'+Math.ceil(enemyImpact.damage),'#f38585',enemyContactAt,enemyImpact.x,enemyImpact.y,true);
+  if(Number.isFinite(enemyImpact.contactX))fx.push({at:enemyContactAt,impact:{
+   x:enemyImpact.contactX,y:enemyImpact.contactY,element:enemyImpact.element,
+   color:impactColors[enemyImpact.element]||'#f38585',elemental:true
+  }});
+ }
  if(enemyMelee)popup('-'+Math.ceil(enemyMelee.damage),'#f38585',now,p.hero,p.heroY??.84,true);
- if(event.encounter===currentEncounter&&(enemyImpact?.damage||enemyMelee?.damage))heroHitAt=now;
+ if(event.encounter===currentEncounter&&(enemyImpact?.damage||enemyMelee?.damage))heroHitAt=enemyImpact?.damage?enemyContactAt:now;
  const otherDamage=Math.max(0,received-(enemyImpact?.damage??enemyShot?.damage??0)-(enemyMelee?.damage??0));
  if(otherDamage)popup('-'+Math.ceil(otherDamage),'#f38585',now,p.hero,p.heroY??.84,true);
 }
@@ -191,7 +211,7 @@ function syncPendingProjectiles(a,old,cls,now){
   if(!p)continue;
   const prev=old?.encounter===a.encounter?old[key]?.projectile:null;
   if(prev?.x===p.x&&prev?.y===p.y)continue;
-  const sameShot=f=>f.projectile?.encounter===a.encounter&&f.projectile.incoming===incoming;
+  const sameShot=f=>f.projectile?.encounter===a.encounter&&!f.projectile.confirmed&&f.projectile.incoming===incoming;
   // showCombat already started the visual if this snapshot contains a new launch.
   if(!prev&&(fx.some(sameShot)||combatQueue.some(({hit})=>
    hit.encounter===a.encounter&&(incoming?hit.enemyShot:hit.heroShot)
@@ -334,11 +354,13 @@ function drawProjectile(c,shot,w,h,hh,t){
  // Blend toward the displayed target in flight and land at the server's impact position.
  const follows=shot.encounter===state.activity?.encounter;
  const side=shot.incoming?'hero':'enemy';
- const tracking=follows?1-progress:0;
+ const tracking=follows&&!shot.confirmed?1-progress:0;
  const targetX=shot.toX+((visual[side]??shot.toX)-shot.toX)*tracking;
  const targetY=shot.toY+((visual[side+'Y']??shot.toY)-shot.toY)*tracking;
  const dx=w*(targetX-shot.x),dy=h*(targetY-shot.y);
- c.translate(w*shot.x+dx*progress,h*shot.y+dy*progress-hh*.43);
+ const x=shot.x+(targetX-shot.x)*progress,y=shot.y+(targetY-shot.y)*progress;
+ shot.drawn={x,y};
+ c.translate(w*x,h*y-hh*.43);
  c.rotate(Math.atan2(dy,dx));
  c.fillStyle=shot.color;
  if(shot.kind==='arrow'){
@@ -550,7 +572,7 @@ if(a.mode!=='gather'){
  const peak=action?heroAttackMotion[action.kind].peak:0;
  const sprite=striking?(progress<peak*.65?0:progress<.79?3:0):moving?1+Math.floor(heroStride)%2:0;
  shadow(x+dx,heroY+dy,hh);
- draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now-heroHitAt<130,angle+walk*.035,stretch+breathing*.009*(1-heroGait));
+ draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now>=heroHitAt&&now-heroHitAt<130,angle+walk*.035,stretch+breathing*.009*(1-heroGait));
  drawConditions(c,a.heroEffects,x+dx,heroY+dy,hh);
  if(a.enemy){
   drawCombatHealth(c,x+dx,heroY+dy,s.hp/s.stats.hp,'#83ac75');
