@@ -252,7 +252,7 @@ try{
    drawImage(...args);
   };
   ctx.ellipse=(...args)=>{
-   if(ctx.fillStyle==='#b17ba6'&&args[2]===6&&args[3]===4)seen.projectile=true;
+   if(ctx.fillStyle==='#b17ba6'&&args[2]===7&&args[3]===5)seen.projectile=true;
    if(ctx.strokeStyle==='#b17ba6'&&args[2]>=8)seen.impact=true;
    ellipse(...args);
   };

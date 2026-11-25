@@ -113,7 +113,7 @@ function combatProjectile(event,cls,incoming){
  const speed=clamp(distance/nominal,.105,.39);
  const flight=Math.max(0,distance-(kind==='arrow'?15:19))/speed;
  const color=kind==='arrow'&&element!=='poison'?'#d6d8d1':impactColors[kind]??impactColors[element]??'#bb9bea';
- return {x,y,toX,toY,flight,color,kind,incoming,encounter:event.encounter};
+ return {x,y,toX,toY,flight,color,kind,element,incoming,encounter:event.encounter};
 }
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
@@ -311,22 +311,38 @@ function drawProjectile(c,shot,w,h,hh,t){
  const targetX=shot.toX+((visual[side]??shot.toX)-shot.toX)*tracking;
  const targetY=shot.toY+((visual[side+'Y']??shot.toY)-shot.toY)*tracking;
  const dx=w*(targetX-shot.x),dy=h*(targetY-shot.y);
- c.translate(w*shot.x+dx*progress,h*shot.y+dy*progress-hh*.43-Math.sin(progress*Math.PI)*12);
+ c.translate(w*shot.x+dx*progress,h*shot.y+dy*progress-hh*.43);
  c.rotate(Math.atan2(dy,dx));
  c.fillStyle=shot.color;
  if(shot.kind==='arrow'){
-  c.fillRect(-30,-1,26,2);
-  c.beginPath();
-  c.moveTo(0,0);
-  c.lineTo(-8,-4);
-  c.lineTo(-8,4);
-  c.fill();
- }else{
-  c.fillRect(-16,-1,13,2);
-  c.beginPath();
-  c.ellipse(0,0,shot.kind==='ice'?8:6,4,0,0,Math.PI*2);
-  c.fill();
+  c.fillStyle='#292623';c.fillRect(-25,-1,30,2);
+  c.fillStyle='#bca17a';c.fillRect(-24,-1,28,1);
+  c.fillStyle=shot.element==='poison'?'#b9d58c':'#d4d5ca';
+  c.beginPath();c.moveTo(9,0);c.lineTo(1,-4);c.lineTo(3,0);c.lineTo(1,4);c.fill();
+  c.fillStyle='#b5a58e';
+  c.beginPath();c.moveTo(-17,0);c.lineTo(-28,-5);c.lineTo(-24,0);c.lineTo(-28,5);c.fill();
+  return;
  }
+ const element=shot.kind==='ice'||shot.kind==='fire'?shot.kind:shot.element;
+ c.globalAlpha*=.68;
+ for(let i=0;i<6;i++)c.fillRect(-10-i*5,Math.sin(t*8+i*2)*5,3,2);
+ c.globalAlpha/=.68;
+ c.beginPath();
+ if(element==='ice'){
+  c.moveTo(10,0);c.lineTo(0,-6);c.lineTo(-9,-3);c.lineTo(-10,3);c.lineTo(0,6);c.closePath();c.fill();
+  c.fillStyle='#e1f6fc';c.beginPath();c.moveTo(10,0);c.lineTo(0,-5);c.lineTo(-3,0);c.fill();
+ }else if(element==='fire'){
+  c.fillStyle='#d76535';c.moveTo(9,0);c.lineTo(4,-6);c.lineTo(-4,-8);c.lineTo(-13,-4);
+  c.lineTo(-7,0);c.lineTo(-15,5);c.lineTo(0,7);c.lineTo(7,4);c.fill();
+  c.fillStyle='#ffce80';c.beginPath();c.arc(2,0,4,0,Math.PI*2);c.fill();
+ }else if(element==='holy'){
+  c.arc(0,0,6,0,Math.PI*2);c.fill();
+  c.fillStyle='#fff0c5';c.fillRect(-8,-1,16,2);c.fillRect(-1,-8,2,16);
+ }else{
+  c.ellipse(0,0,7,5,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#e9dbef';c.beginPath();c.ellipse(2,0,4,2,0,0,Math.PI*2);c.fill();
+ }
+
 }
 function breakPixels(kind,z,index,now){
  if(motion.matches)return;
