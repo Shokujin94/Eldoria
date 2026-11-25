@@ -136,3 +136,18 @@ test('ranged hunt escape crosses both ways and returns to the lane',()=>{
   assert.equal(p.heroY,undefined);
  }
 });
+
+test('shock and exposure affect damage in both directions and defense caps at 63 percent',()=>{
+ const s=c.normalize({level:16,hp:100,mana:100,rotation:[]});
+ const st={hp:100,mana:100,damage:100,crit:0,haste:0,dodge:0,reduction:0,def:0};
+ const a={z:0,turn:2,enemy:{hp:1000,atk:100},enemyHp:1000,effects:{expose:{left:2}},heroEffects:{shock:{left:2}}};
+ assert.equal(c.turn('war',s,st,a,()=>.5,false),96);
+ a.effects={shock:{left:2}};
+ a.heroEffects={expose:{left:2}};
+ c.enemyStrike('war',s,st,a,()=>.5,false);
+ assert.equal(s.hp,4);
+ s.hp=100;
+ a.effects={};a.heroEffects={};
+ c.enemyStrike('war',s,{...st,reduction:.9},a,()=>.5,false);
+ assert.equal(s.hp,63);
+});
