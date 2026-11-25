@@ -165,3 +165,36 @@ test('base vocation attributes and secondary stat gains match the legacy coeffic
  }
  db.close();
 });
+
+test('legacy subclass passives affect the intended stats and restrict hunter damage to arenas',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ const cases={war:[['damage'],['hp','reduction'],['crit','critMult']],
+  ranger:[['crit','critMult'],['dodge','damage'],[]],
+  mage:[['special','damage'],['hp','reduction'],[]],
+  cleric:[['damage','special'],['hp','reduction'],['heal']],
+  necro:[['hp'],['special'],['heal']]};
+ for(const [cl,passives] of Object.entries(cases)){
+  db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(cl,cl,'test',0);
+  const base=g.create(cl,cl,cl).character.stats;
+  const save=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get(cl).data);
+  for(const [subclass,fields] of passives.entries()){
+   save.subclass=subclass;
+   db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),cl);
+   const next=g.state(cl).character.stats;
+   for(const field of fields)assert(next[field]>base[field],cl+':'+subclass+' '+field);
+   if(cl==='ranger'&&subclass===2)assert.equal(next.damage,base.damage);
+  }
+  if(cl==='ranger'){
+   save.level=16;
+   db.prepare('UPDATE characters SET level=16,data=? WHERE account=?').run(JSON.stringify(save),cl);
+   const town=g.state(cl).character.stats.damage;
+   const hunt=g.action(cl,{action:'start',mode:'hunt',zone:0}).character.stats.damage;
+   assert.equal(hunt,town);
+   g.action(cl,{action:'stop'});
+   const dungeon=g.action(cl,{action:'start',mode:'dungeon',zone:0}).character.stats.damage;
+   assert(dungeon>town);
+  }
+ }
+ db.close();
+});
