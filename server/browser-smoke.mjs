@@ -134,6 +134,8 @@ try{
  await forgeQuote.getByText('40 ◈',{exact:true}).waitFor();
  assert.equal(await forgeForm.locator('button').isDisabled(),true);
  await forgeQuote.getByText('✗ Materiais',{exact:true}).waitFor();
+ assert.equal(await forgeForm.locator('[name=grade_herb]').isHidden(),true);
+ assert.match(await forgeForm.locator('[name=grade_mob] option').first().textContent(),/0 \/ 5/);
  await forgeForm.locator('[name=grade_mob]').selectOption('1');
  await forgeQuote.getByText('59 ◈',{exact:true}).waitFor();
  await forgeForm.locator('[name=zone]').selectOption('1');

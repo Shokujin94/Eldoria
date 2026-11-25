@@ -301,7 +301,13 @@ export function game(db,{clock=Date.now,random=rng}={}){
    {label:'Espaço no inventário',ok:inventory.length<120||base,value:inventory.length+' / 120'},
    {label:'Peça base',ok:zone===0||base,value:zone===0?'Dispensada':'Tier '+zone}
   ];
-  return {...quote,checks,success:craft.success(s.craft.level,level,quote.quality)};
+  const stock={};
+  for(const key of Object.keys(quote.req)){
+   const [kind,z,grade]=key.split(':');
+   const keys=!rare&&grade!==undefined?Array.from({length:5},(_,i)=>kind+':'+z+':'+i):[key];
+   for(const material of keys)stock[material]=s.materials[material]||0;
+  }
+  return {...quote,stock,checks,success:craft.success(s.craft.level,level,quote.quality)};
  }
  return {create,state,action,market,trade,ranking,tickBatch,craftQuote};
 }

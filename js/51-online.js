@@ -171,8 +171,19 @@ function refreshCraftQuote(form){
   if(!form.isConnected||craftQuoteRequests.get(form)!==ticket)return;
   const percent=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:2})+'%';
   const names={mob:'Monstro',boss:'Chefe',...prof};
+  const ingredients=new Map(Object.entries(q.req).map(([key,count])=>[key.split(':')[0],count]));
+  for(const kind of ['mob','mining','wood','herb']){
+   const field=form.elements['grade_'+kind];
+   if(!field)continue;
+   const needed=ingredients.get(kind);
+   field.closest('label').hidden=!needed;
+   for(const option of field.options){
+    const key=kind+':'+zone.value+':'+option.value;
+    option.textContent=rar[Number(option.value)]+(needed?' · '+nf(q.stock[key]||0)+' / '+nf(needed):'');
+   }
+  }
   const requirements=Object.entries(q.req).map(([key,count])=>{
-   const [kind,,grade]=key.split(':'),available=data.character.materials[key]||0;
+   const [kind,,grade]=key.split(':'),available=q.stock[key]||0;
    return '<li>'+esc(names[kind])+(grade===undefined?'':' · '+esc(rar[grade]))+' '+nf(available)+' / '+nf(count)+'</li>';
   });
   const checks=q.checks.map(({label,ok,value})=>'<li>'+(ok?'✓ ':'✗ ')+esc(label)+(value?' · '+esc(value):'')+'</li>');
