@@ -161,6 +161,8 @@ try{
  await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=prof]').click();
  const gatherForm=page.locator('#gatherTravel');
  await gatherForm.locator('[name=prof]').selectOption('wood');
+ await gatherForm.locator('[data-gather-resources]').getByText('Madeira ancestral',{exact:true}).waitFor();
+ await gatherForm.locator('[data-gather-resources]').getByText('Comum · 72% · 0 em estoque',{exact:true}).waitFor();
  assert.equal(await gatherForm.locator('[name=zone] option[value="1"]').evaluate(option=>option.disabled),true);
  const drawnNodes=await page.evaluateHandle(()=>{
   const indices=new Set(),art=window.eldoria52Art,draw=art.drawGatherNode;

@@ -128,6 +128,11 @@ export const creatureCatalog=names.flatMap((row,z)=>[...row.map((name,index)=>({
 export function materialSale(key){if(typeof key!=='string')return 0;const m=/^(mob|mining|wood|herb):([0-9]):([0-4])$/.exec(key);if(m)return (+m[2]+1)*(m[1]==='mob'&&+m[2]<3?[2,5,12,35,95]:[3,7,17,45,120])[+m[3]];const b=/^boss:([0-9])$/.exec(key);return b?90*(+b[1]+1):0;}
 export function masteryBonus(n){return Math.min(.035,Math.floor((n||0)/1000)*.005);}
 
+export const professionResources={
+ mining:['Minério de ferro','Minério de prata','Minério de obsidiana','Ferro pantanoso','Prata glacial','Ferro de ossário','Aço negro','Adamante rubro','Prata lunar','Obsidiana abissal'],
+ wood:['Madeira ancestral','Madeira espectral','Madeira carbonizada','Madeira de mangue','Pinho branco','Cipreste fúnebre','Carvalho de guerra','Lenho ígneo','Ébano lunar','Raiz do vazio'],
+ herb:['Erva lunar','Erva sepulcral','Flor de cinzas','Lótus fúnebre','Flor de geada','Mandrágora pálida','Erva da vigília','Rosa de brasa','Flor do eclipse','Lírio negro']
+};
 export const professionTalents={speed:{max:3,level:1,name:'Eficiência',desc:'−1 s por ponto'},yield:{max:3,level:4,name:'Rendimento',desc:'+15 p.p. chance de recurso extra por ponto'},quality:{max:5,level:7,name:'Perícia',desc:'Melhora a chance de raridades'}};
 export const professionInterval=p=>1000*(6-Math.min(3,p.talents?.speed||0));
 export function professionOdds(p){

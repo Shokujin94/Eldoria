@@ -201,17 +201,28 @@ let gatherChoice={prof:'mining',zone:0};
 function gatherRegions(c,kind,selected){
  return regions.map((name,z)=>{
   const level=c.gatherGates[z],locked=c.prof[kind].level<level;
-  return '<option value="'+z+'" '+(locked?'disabled':z===selected?'selected':'')+'>'+esc(name)+' · Ofício Nv. '+level+'</option>';
+  return '<option value="'+z+'" '+(locked?'disabled':z===selected?'selected':'')+'>'+esc(c.professionResources[kind][z])+' · '+esc(name)+' · Ofício Nv. '+level+'</option>';
  }).join('');
+}
+function gatherResourcePreview(c,kind,zone){
+ const name=c.professionResources[kind][zone],img=window.eldoria52Art.materials[kind+':'+zone];
+ const rows=c.professionOdds[kind].map((chance,grade)=>{
+  const stock=c.materials[kind+':'+zone+':'+grade]||0;
+  return '<li>'+rar[grade]+' · '+chance.toLocaleString('pt-BR',{maximumFractionDigits:2})+
+   '% · '+nf(stock)+' em estoque</li>';
+ });
+ return '<div class="item">'+(img?'<img class="mat52" src="'+esc(img)+'" alt="">':'')+
+  '<strong>'+esc(name)+'</strong></div><ul>'+rows.join('')+'</ul>';
 }
 function gatherTravel(c){
  if(c.activity)return '';
  const kind=gatherChoice.prof;
  return '<form id="gatherTravel"><label>Profissão<select name="prof">'+options(prof,kind)+'</select></label>'+
   '<label>Área de coleta<select name="zone" required>'+gatherRegions(c,kind,gatherChoice.zone)+'</select></label>'+
+  '<div data-gather-resources>'+gatherResourcePreview(c,kind,gatherChoice.zone)+'</div>'+
   '<button type="submit">Viajar e iniciar coleta</button></form>';
 }
-function professions(){const c=data.character;return '<section id="gatheringStatus">'+gatheringStatus(c)+'</section>'+gatherTravel(c)+'<div class="grid">'+Object.entries(c.prof).map(([k,p])=>'<article><small>'+prof[k]+'</small><b>Nv. '+p.level+'</b><span>'+nf(p.total)+' coletados</span></article>').join('')+'</div><section><h3>Materiais</h3>'+Object.entries(c.materials).filter(([k,v])=>v>0).map(([k,v])=>{const [kind,z,r]=k.split(':');const src=window.eldoria52Art.materials[kind+':'+z];return '<article class="item"><span>'+ (src?'<img class="mat52" src="'+esc(src)+'" alt="">':'')+esc(({mob:'Criatura',boss:'Chefe',...prof})[kind]||kind)+' · T'+(+z+1)+' · '+esc(rar[+r]||'Especial')+'</span><b>×'+nf(v)+'</b></article>';}).join('')+'</section>';}
+function professions(){const c=data.character;return '<section id="gatheringStatus">'+gatheringStatus(c)+'</section>'+gatherTravel(c)+'<div class="grid">'+Object.entries(c.prof).map(([k,p])=>'<article><small>'+prof[k]+'</small><b>Nv. '+p.level+'</b><span>'+nf(p.total)+' coletados</span></article>').join('')+'</div><section><h3>Materiais</h3>'+Object.entries(c.materials).filter(([k,v])=>v>0).map(([k,v])=>{const [kind,z,r]=k.split(':');const src=window.eldoria52Art.materials[kind+':'+z];return '<article class="item"><span>'+ (src?'<img class="mat52" src="'+esc(src)+'" alt="">':'')+esc(c.professionResources[kind]?.[Number(z)]||({mob:'Criatura',boss:'Chefe'})[kind]||kind)+' · T'+(+z+1)+' · '+esc(rar[+r]||'Especial')+'</span><b>×'+nf(v)+'</b></article>';}).join('')+'</section>';}
 function vaultPanel(){const c=data.character,btn=(a,i,t)=>'<button data-act="'+a+'" data-id="'+esc(i.id)+'" '+(c.activity||i.equipped||i.escrow||i.starter?'disabled':'')+'>'+t+'</button>';return '<h2>Orven · Depósito</h2><p>'+data.vault.length+'/500 itens · Mochila '+data.items.length+'/120</p><h3>Mochila</h3>'+data.items.filter(i=>!i.starter&&!i.equipped&&!i.escrow).map(i=>'<article class="item"><span>'+label(i)+itemDetails(i)+'</span>'+btn('deposit',i,'Depositar')+'</article>').join('')+'<h3>Depositados</h3>'+data.vault.map(i=>'<article class="item"><span>'+label(i)+itemDetails(i)+'</span>'+btn('withdraw',i,'Retirar')+'</article>').join('');}
 function analysisPanel(){const c=data.character,card=a=>'<article><b>'+esc(regions[a.z])+' · '+esc(a.mode)+(a.reason?' · '+esc(a.reason):'')+'</b><p>'+nf(a.seconds)+' s · '+nf(a.offlineSeconds||0)+' s offline · '+nf(a.kills)+' abates · '+nf(a.items)+' equipamentos</p><p>'+nf(a.xp)+' XP · '+nf(a.gold)+' ouro bruto · '+(a.itemValue!==undefined&&a.consumableCost!==undefined?nf(a.gold+a.itemValue-a.consumableCost)+' lucro estimado · ':'')+nf(a.procs)+' golpes fortalecidos</p><p>DPS registrado '+nf(Math.round(analyzerDamage(a)/Math.max(1,a.seconds)))+' · Perda líquida de PV '+nf(Math.round(a.received))+'</p></article>';return '<h3>Analisador de combate</h3>'+(c.analyzer?card(c.analyzer):'<p>Nenhuma sessão ativa.</p>')+'<h3>Últimas 20 sessões</h3>'+ (c.history.map(card).join('')||'<p>Sem histórico.</p>');}
 function lootPanel(){const c=data.character,opts=Object.fromEntries(rar.map((n,i)=>[i,n]));return '<section><h3>Filtros de loot</h3><p>Proteção ao receber item e venda automática somente no retorno à cidade. Relíquias e itens de perfis são preservados.</p><form id="loot58"><label>Proteger a partir de<select name="protect">'+options({...opts,5:'Nunca (exceto relíquias)'},c.loot.protect)+'</select></label><label>Vender até<select name="sell">'+options({'-1':'Desativado',...opts},c.loot.sell)+'</select></label><label>Notificar a partir de<select name="notify">'+options({...opts,5:'Nunca (exceto relíquias)'},c.loot.notify)+'</select></label><button '+(c.activity?'disabled':'')+'>Salvar filtros</button></form>'+(c.lastAutoSale?'<p>Última venda: '+nf(c.lastAutoSale.items)+' itens · '+nf(c.lastAutoSale.gold)+' ouro</p>':'')+'<h3>Perfis de personagem</h3><p>Três perfis de atributos, talentos, equipamentos, rotação e poções. Redistribuição tem custo normal de reset.</p>'+[1,2,3].map(i=>'<article><b>Perfil '+i+' · '+(c.presets[i]?'Nv. '+c.presets[i].level:'Vazio')+'</b><div class="row">'+[['presetSave','Salvar'],['presetLoad','Restaurar'],['presetDelete','Excluir']].map(([a,n])=>'<button data-act="'+a+'" data-id="'+i+'" '+(c.activity||a!=='presetSave'&&!c.presets[i]?'disabled':'')+'>'+n+'</button>').join('')+'</div></article>').join('')+'</section>';}
@@ -445,6 +456,7 @@ $('windowLayer65').addEventListener('change',e=>{
   const {prof:kind,zone}=form.elements;
   if(field===kind)zone.innerHTML=gatherRegions(data.character,kind.value,Number(zone.value));
   gatherChoice={prof:kind.value,zone:Number(zone.value)};
+  form.querySelector('[data-gather-resources]').innerHTML=gatherResourcePreview(data.character,gatherChoice.prof,gatherChoice.zone);
   return;
  }
  if(!['forge','rare58'].includes(form?.id))return;
