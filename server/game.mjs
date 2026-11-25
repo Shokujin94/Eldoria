@@ -131,7 +131,15 @@ export function game(db,{clock=Date.now,random=rng}={}){
   const multiplier=1+Math.min(.10,(s.legacy.craft||0)*.005);
   s.tradeXP[trade]=Math.min(MAX,(s.tradeXP[trade]||0)+count*Math.round(base*multiplier));
  }
- function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],damage:0,received:0,procs:0}:null;}
+ function recordCombatMaterial(s,key){
+  const before=s.materials[key]||0;
+  mat(s,key,1);
+  const a=s.analyzer;
+  if(!a?.materialDrops||s.materials[key]===before)return;
+  a.materialDrops[key]=(a.materialDrops[key]||0)+1;
+  a.itemValue+=content.materialSale(key);
+ }
+ function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],materialDrops:{},runeDrops:{},damage:0,received:0,procs:0}:null;}
  function finishAnalysis(s,reason){if(s.analyzer?.seconds){s.history.unshift({...s.analyzer,reason});s.history=s.history.slice(0,20);}s.analyzer=null;}
  function combatTick(id,r,s){const a=s.activity;if(!a.enemy||!Number.isFinite(a.enemyHp))newEncounter(s);const e=a.enemy,st=stats(id,r,s),boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4;
  if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;const projectiles=!!(a.pendingHeroShot||a.pendingEnemyShot);
@@ -157,14 +165,14 @@ export function game(db,{clock=Date.now,random=rng}={}){
  if(a.mode==='trial'){s.subclass=a.trial;s.activity=null;delete s.clsForTrial;combat.clear(s);finishAnalysis(s,'Ascensão');autoSell(id,s);s.lastEvent='Ascensão conquistada · '+combat.subclassNames(r.cls)[s.subclass];return;}
   e.gold+=Math.floor(e.gold*Math.min(.10,(s.legacy.fortune||0)*.005));
   s.kills++;if(s.analyzer){s.analyzer.kills++;s.analyzer.xp+=e.xp;s.analyzer.gold+=e.gold;if(s.analyzer.enemies)s.analyzer.enemies[e.name]=(s.analyzer.enemies[e.name]||0)+1;}const key=boss?'boss:'+a.z:a.z+':'+a.index;s.bestiary[key]=Math.min(MAX,(s.bestiary[key]||0)+1);if(s.level>=100)s.legacyXP=Math.min(MAX,s.legacyXP+Math.max(1,Math.floor(e.xp/10)));const levelUp=earnXP(s,e.xp);credit(id,e.gold);s.skill??=1;s.skillXp??=0;s.skillXp+=boss?5:2;while(s.skill<100&&s.skillXp>=content.skillXpNeed(s.skill)){s.skillXp-=content.skillXpNeed(s.skill);s.skill++;}if(s.skill===100)s.skillXp=0;
-  if(a.mode==='hunt'&&!s.rareEvent&&random()<.003)s.rareEvent={z:a.z,k:Math.floor(random()*content.rareEvents.length)};if(boss){mat(s,'boss:'+a.z,1);if(!s.recipes[a.z]&&random()<.08)s.recipes[a.z]=true;}else if(random()<.8)mat(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random),1);if(a.mode==='dungeon'&&a.wave===4&&random()<.11){const key=equipment.runeDrop(a.z,random);s.runeStock[key]=(s.runeStock[key]||0)+1;s.lastRune={key,seq:(s.lastRune?.seq||0)+1};}
+  if(a.mode==='hunt'&&!s.rareEvent&&random()<.003)s.rareEvent={z:a.z,k:Math.floor(random()*content.rareEvents.length)};if(boss){recordCombatMaterial(s,'boss:'+a.z);if(!s.recipes[a.z]&&random()<.08)s.recipes[a.z]=true;}else if(random()<.8)recordCombatMaterial(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random));if(a.mode==='dungeon'&&a.wave===4&&random()<.11){const key=equipment.runeDrop(a.z,random);s.runeStock[key]=(s.runeStock[key]||0)+1;if(s.analyzer?.runeDrops){s.analyzer.runeDrops[key]=(s.analyzer.runeDrops[key]||0)+1;s.analyzer.itemValue+=equipment.runes[key].price;}s.lastRune={key,seq:(s.lastRune?.seq||0)+1};}
   const source=a.mode==='dungeon'?'dungeon':boss?a.mode:'hunt';let found=false;if((boss||random()<content.dropRates[a.index]*(a.mode==='hunt'&&s.elixirs.fortune>0?1.15:1))&&count(id)<120){const rarity=content.rollOdds(source==='boss'?content.bossOdds:source==='dungeon'&&boss?content.dungeonOdds:content.monsterOdds[a.index],random),slot=Object.keys(slots)[Math.floor(random()*9)];const uid=issue(id,slot,a.z,a.index,rarity,source);recordDrop(id,s,uid,rarity);found=true;}
   if(boss&&count(id)<120&&random()<.0025){const uid=issueRelic(id,a.z,source);recordDrop(id,s,uid,4,true);s.lastRelic={id:uid,name:equipment.relics[a.z].name,seq:(s.lastRelic?.seq||0)+1};}
   let skinFound=false;
   if(a.mode==='hunt'){
    s.skinXP=Math.min(MAX,s.skinXP+1);
    skinFound=random()<(.08+Math.min(.12,s.skinRank*.02));
-   if(skinFound)mat(s,'mob:'+a.z+':0',1);
+   if(skinFound)recordCombatMaterial(s,'mob:'+a.z+':0');
   }
   const potionStock=s.potions.hp1||0;
   const potionFound=potionStock<999&&random()<.07;

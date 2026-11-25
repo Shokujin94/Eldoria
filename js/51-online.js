@@ -65,11 +65,27 @@ function analyzerEnemies(a){
  const enemies=Object.entries(a?.enemies||{}).sort((x,y)=>y[1]-x[1]);
  return '<section class="an44-section"><h3>Inimigos derrotados</h3>'+(enemies.map(([name,count])=>'<div class="an44-row"><span>'+esc(name)+'</span><b>'+nf(count)+'</b></div>').join('')||'<p class="an44-empty">'+(a?.enemies?'Nenhum inimigo derrotado.':'Sem registros de inimigos para esta sessão.')+'</p>')+'</section>';
 }
+function analyzerSupplies(a,rareOnly){
+ const materials=Object.entries(a.materialDrops||{}).filter(([key])=>{
+  const [kind,,grade]=key.split(':');
+  return !rareOnly||kind==='boss'||Number(grade)>=2;
+ }).map(([key,n])=>{
+  const [kind,zone,grade]=key.split(':');
+  return [regions[Number(zone)]+' · '+(kind==='boss'?'Material de chefe':rar[Number(grade)]),n];
+ });
+ const catalog=data.character.runeCatalog;
+ const runes=Object.entries(a.runeDrops||{}).filter(([key])=>!rareOnly||(catalog[key]?.rarity??0)>=2)
+  .map(([key,n])=>[catalog[key]?.name||key,n]);
+ const section=(title,rows)=>'<section class="an44-section"><h3>'+title+'</h3>'+
+  (rows.map(([name,n])=>'<div class="an44-row"><span>'+esc(name)+'</span><b>'+nf(n)+'</b></div>').join('')||
+   '<p class="an44-empty">Sem registros nesta lista.</p>')+'</section>';
+ return section('Materiais encontrados',materials)+section('Runas encontradas',runes);
+}
 function analyzerLoot(a,rareOnly){
  if(!a?.drops)return '<p class="an44-empty">Sem registros de saque para esta sessão.</p>';
  const row=d=>'<div class="an44-row"><span><b>'+esc(d.name)+'</b><br>'+esc(rar[d.rarity])+' · '+esc(slots[d.slot]||d.slot)+' · Nv. '+nf(d.level)+'</span><b>'+nf(d.value)+' ◈</b></div>';
  const drops=rareOnly?a.drops.filter(d=>d.rarity>=2):a.drops;
- return '<section class="an44-section"><h3>Equipamentos por raridade</h3>'+a.rarities.map((count,i)=>'<div class="an44-row"><span>'+rar[i]+'</span><b>'+nf(count)+'</b></div>').join('')+(a.bestDrop?'<h3>Melhor saque</h3>'+row(a.bestDrop):'')+'</section><section class="an44-section"><h3>Saque recente</h3><p class="an44-note">Últimos 60 equipamentos · Valor estimado de venda ao mercador</p>'+(drops.map(row).join('')||'<p class="an44-empty">Nenhum equipamento nesta lista.</p>')+'</section>';
+ return '<section class="an44-section"><h3>Equipamentos por raridade</h3>'+a.rarities.map((count,i)=>'<div class="an44-row"><span>'+rar[i]+'</span><b>'+nf(count)+'</b></div>').join('')+(a.bestDrop?'<h3>Melhor saque</h3>'+row(a.bestDrop):'')+'</section><section class="an44-section"><h3>Saque recente</h3><p class="an44-note">Últimos 60 equipamentos · Valor estimado de venda ao mercador</p>'+(drops.map(row).join('')||'<p class="an44-empty">Nenhum equipamento nesta lista.</p>')+'</section>'+analyzerSupplies(a,rareOnly);
 }
 function analyzer66(){const c=data.character,a=c.analyzer||c.history[0],active=!!c.analyzer,gross=(a?.gold||0)+(a?.itemValue||0),cost=a?.consumableCost||0,complete=a?.itemValue!==undefined&&a?.consumableCost!==undefined,fmt=n=>nf(Math.round(n||0)),time=n=>[Math.floor(n/3600),Math.floor(n/60)%60,n%60].map(v=>String(Math.floor(v)).padStart(2,'0')).join(':'),card=(n,v,tone='')=>'<article class="an44-metric '+tone+'"><small>'+n+'</small><b>'+v+'</b></article>';return '<div id="content-analyzer"><header class="an44-header"><div><small>SESSÃO DE COMBATE</small><h2>'+esc(a?regions[a.z]:'Vespera')+'</h2><span>'+(active?'● Ativa':a?'○ Encerrada':'○ Sem sessão')+'</span></div><div class="an44-clock"><strong>'+time(a?.seconds||0)+'</strong><small>Offline '+time(a?.offlineSeconds||0)+'</small></div></header><nav class="an44-nav">'+[['summary','Resumo'],['combat','Combate'],['history','Histórico'],['loot','Saque'],['rare','Raros e superiores']].map(([k,n])=>'<button class="secondary" data-analyzer66="'+k+'" aria-pressed="'+(analyzerTab66===k)+'">'+n+'</button>').join('')+'</nav>'+(analyzerTab66==='history'?analysisPanel():['loot','rare'].includes(analyzerTab66)?analyzerLoot(a,analyzerTab66==='rare'):analyzerTab66==='combat'?'<div class="an44-grid">'+card('DPS efetivo',fmt(a?.damage/Math.max(1,a?.seconds||1)),'red44')+card('Perda líquida PV',fmt(a?.received),'red44')+card('Derrotas',a?.deaths===undefined?'—':fmt(a.deaths),'red44')+card('Golpes fortalecidos',fmt(a?.procs),'blue44')+'</div>'+analyzerEnemies(a):'<div class="an44-grid">'+card('Experiência',fmt(a?.xp),'xp44')+card('Ouro bruto',fmt(a?.gold),'gold44')+card('Abates',fmt(a?.kills),'green44')+card('Equipamentos',fmt(a?.items),'blue44')+card('XP/h',fmt((a?.xp||0)*3600/Math.max(1,a?.seconds||1)),'xp44')+card('Ouro/h',fmt((a?.gold||0)*3600/Math.max(1,a?.seconds||1)),'gold44')+card('Saque total estimado',complete?fmt(gross):'—','gold44')+card('Gasto com consumíveis',complete?fmt(cost):'—','gold44')+card('Consumíveis usados',a?.consumablesUsed===undefined?'—':fmt(a.consumablesUsed),'blue44')+card('Poções encontradas',a?.potionsFound===undefined?'—':fmt(a.potionsFound),'green44')+card('Lucro estimado',complete?fmt(gross-cost):'—','gold44')+card('Lucro/h',complete&&a.seconds?fmt((gross-cost)*3600/a.seconds):'—','gold44')+'</div>')+'</div>';}
 
