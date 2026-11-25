@@ -404,29 +404,36 @@ function arenaIncomingDamage(amount,cl,s,a,boss){
  if(dungeonProtection)amount=Math.round(amount*(1-dungeonProtection));
  return amount;
 }
+function defensiveSynergy(amount,cl,s,a){
+ if(!cl)return amount;
+ const path=cl==='cleric'?2:1;
+ const rank=s.talents['t33_'+cl+'_'+path+'_0']||0;
+ if(!rank||!trees33[cl].base[path].nodes.some(n=>n.active&&s.talents[n.id]>0))return amount;
+ const guard=(cl==='war'||cl==='cleric')&&s.guard>0;
+ const close=cl==='ranger'&&a.positions&&combatGap(a.positions)<.30*.55;
+ const frost=cl==='mage'&&(a.effects?.slow||a.effects?.freeze);
+ if(!guard&&!close&&!frost)return amount;
+ return Math.max(1,Math.round(amount*(1-(guard?.03:.025)-.015*rank)));
+}
 export function enemyStrike(cl,s,st,a,random,boss,deferRanged=false){
  if(a.enemyHp<=0||s.hp<=0||random()<st.dodge)return;
  const v=values(cl,s),effects=a.effects||{},pow=st.powers||{};
  const gap=a.positions?combatGap(a.positions):Infinity;
  const near=gap<({war:.12,ranger:.30,mage:.27,cleric:.21,necro:.21}[cl])*.55;
  const iceHit=!!(effects.slow||effects.freeze);
- const path=cl==='cleric'?2:1,rank=s.talents['t33_'+cl+'_'+path+'_0']||0;
- const eligible=rank&&trees33[cl].base[path].nodes.some(n=>n.active&&s.talents[n.id]>0);
- const synergy=eligible&&((cl==='war'||cl==='cleric')&&s.guard||cl==='ranger'&&near||cl==='mage'&&iceHit)
-  ?(cl==='war'||cl==='cleric'?.03:.025)+.015*rank:0;
  const reduction=(s.guard?.14+(v.guard||0):0)+(near?v.nearGuard||0:0)+(iceHit?v.controlGuard||0:0)
   +(boss?v.bossGuard||0:0)+(s.hp<st.hp*.4?(v.lowGuard||0)+(pow.ward||0):0)+(s.servant?v.servantGuard||0:0);
- const baseDamage=a.enemy.atk*(1-balance.armor(st.def,a.z))*(1-Math.min(.63,st.reduction+reduction+synergy))
+ const baseDamage=a.enemy.atk*(1-balance.armor(st.def,a.z))*(1-Math.min(.63,st.reduction+reduction))
   *(cl==='war'&&s.subclass===0?1.10:1)*(oath(s,1,1)&&s.energy>=50?.93:1);
  const damage=arenaIncomingDamage(baseDamage,cl,s,a,boss);
  const element=trait(a,'profane')?'dark':boss||a.index===4?affinities[a.z]:'physical';
  const ranged=rangedEnemy(a,boss);
  const shot={element,kind:a.z===1&&a.index===3?'arrow':a.z===2&&a.index===4?'fire':'dark'};
  if(ranged&&deferRanged){
-  a.pendingEnemyShot={damage,element,energy:v.hurtEnergy||0,projectile:launchProjectile(a,'hero',shot.kind,boss)};
+  a.pendingEnemyShot={damage,element,cl,energy:v.hurtEnergy||0,projectile:launchProjectile(a,'hero',shot.kind,boss)};
   return shot;
  }
- const dealt=incoming(s,st,a,damage,boss,random,element);
+ const dealt=incoming(s,st,a,defensiveSynergy(damage,cl,s,a),boss,random,element);
  s.energy=Math.min(100,s.energy+(v.hurtEnergy||0));
  if(ranged)return {...shot,damage:dealt};
 }
@@ -435,7 +442,7 @@ export function landEnemyShot(s,st,a,random){
  if(!shot)return;
  delete a.pendingEnemyShot;
  if(s.hp<=0||a.enemyHp<=0)return;
- const damage=incoming(s,st,a,shot.damage,false,random,shot.element);
+ const damage=incoming(s,st,a,defensiveSynergy(shot.damage,shot.cl,s,a),false,random,shot.element);
  s.energy=Math.min(100,s.energy+shot.energy);
  return damage;
 }
@@ -462,7 +469,7 @@ function heroEffect(a,k,n,tenacity=0){if(!EFFECTS[k])return;a.heroEffects??={};c
 export function combo(a,element,damage){const combos={fire:['poison',.25,'Combustão tóxica'],physical:['freeze',.25,'Estilhaçamento'],arcane:['shock',.20,'Sobrecarga'],bleed:['expose',.15,'Hemorragia']},p=combos[element];if(!p||!a.effects?.[p[0]])return 0;if(element!=='bleed')delete a.effects[p[0]];a.lastCombo=p[2];a.comboSeq=(a.comboSeq||0)+1;return Math.round(damage*p[1]);}
 function incoming(s,st,a,n,boss,random,element){let d=n*damageByStatus(a.effects,a.heroEffects)*(trait(a,'rage')?1+.35*(1-a.enemyHp/a.enemy.hp):1)*(trait(a,'exec')&&s.hp/st.hp<.35?1.25:1)*(boss?1+(a.phase||0)*.085:1)*(1-(st.advanced?.resist?.[element]||0));const sentinel=(s.minions||[]).find(m=>m.role==='sentinel'&&!m.guard&&Math.abs(m.x-(a.positions?.hero??.25))<=.35);if(sentinel){d*=.88;sentinel.guard=4;}d=Math.max(1,Math.round(d));damageHero(s,d);if(trait(a,'vamp'))a.enemyHp=Math.min(a.enemy.hp,a.enemyHp+Math.ceil(d*.2));if(s.hp>0){if(trait(a,'venom'))heroEffect(a,'poison',d,st.tenacity);if(trait(a,'profane')&&random()<.2)heroEffect(a,'expose',d,st.tenacity);}return d;}
 function noteBossMechanic(a,kind,name){a.mechanicEvent={seq:(a.mechanicEvent?.seq||0)+1,kind,name};}
-export function bossMechanic(s,st,a,random,cl){if(a.mode==='trial'||a.enemyHp<=0||s.hp<=0)return;const r=a.enemyHp/a.enemy.hp;a.phase=Math.max(a.phase||0,r<=.10?3:r<=.35?2:r<=.70?1:0);a.bossClock=(a.bossClock||0)+1;if(a.warning){a.warning=null;if(s.defensive&&s.hp/st.hp<=.30){a.lastMechanic='Recuo defensivo';noteBossMechanic(a,'retreat',a.lastMechanic);return;}const [name,k]=mechanics[a.z],element=affinities[a.z],resist=st.advanced?.resist?.[element]||0;const n=Math.max(1,Math.round(a.enemy.atk*.65*(1-resist)));incoming(s,st,a,arenaIncomingDamage(n,cl,s,a,true),true,random,element);if(s.hp>0)heroEffect(a,k,n,st.tenacity);a.lastMechanic=name;noteBossMechanic(a,'impact',name);}else if(a.bossClock%Math.max(4,9-a.phase)===0){a.warning=mechanics[a.z][0];noteBossMechanic(a,'warning',a.warning);}}
+export function bossMechanic(s,st,a,random,cl){if(a.mode==='trial'||a.enemyHp<=0||s.hp<=0)return;const r=a.enemyHp/a.enemy.hp;a.phase=Math.max(a.phase||0,r<=.10?3:r<=.35?2:r<=.70?1:0);a.bossClock=(a.bossClock||0)+1;if(a.warning){a.warning=null;if(s.defensive&&s.hp/st.hp<=.30){a.lastMechanic='Recuo defensivo';noteBossMechanic(a,'retreat',a.lastMechanic);return;}const [name,k]=mechanics[a.z],element=affinities[a.z],resist=st.advanced?.resist?.[element]||0;const n=Math.max(1,Math.round(a.enemy.atk*.65*(1-resist)));incoming(s,st,a,defensiveSynergy(arenaIncomingDamage(n,cl,s,a,true),cl,s,a),true,random,element);if(s.hp>0)heroEffect(a,k,n,st.tenacity);a.lastMechanic=name;noteBossMechanic(a,'impact',name);}else if(a.bossClock%Math.max(4,9-a.phase)===0){a.warning=mechanics[a.z][0];noteBossMechanic(a,'warning',a.warning);}}
 
 export const servantRoles={bone:{name:'Servo original',reach:.16,mult:1},sentinel:{name:'Sentinela Óssea',reach:.16,mult:.70},archer:{name:'Arqueiro Espectral',reach:.36,mult:.85},herald:{name:'Arauto das Cinzas',reach:.30,mult:.65}};
 function summon(s,st,a,v){if(s.subclass===2&&s.minions.length&&a.enemyHp>0){s.minions.shift();a.enemyHp=Math.max(0,a.enemyHp-Math.round(st.damage*.45));s.hp=Math.min(st.hp,s.hp+Math.round(st.hp*.025));}else{s.minions=Array.from({length:s.subclass===0?2:1},(_,i)=>({role:Object.hasOwn(servantRoles,s.servantChoices[i])?s.servantChoices[i]:'bone',left:(s.subclass===0?10:s.subclass===2?12:8)+(v.duration||0),x:a.positions?.hero??.25,y:0,nextStrike:2,cd:0,guard:0}));}s.servant=Math.max(0,...s.minions.map(m=>m.left));}

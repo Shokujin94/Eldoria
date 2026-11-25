@@ -365,3 +365,15 @@ test('funerary command extends only the shortest-lived servant',()=>{
  c.turn('necro',s,st,a,()=>.5,false);
  assert.deepEqual(s.minions.map(m=>m.left),[8,5]);
 });
+
+test('defensive path synergy reduces damage after the basic mitigation cap',()=>{
+ const st={hp:100,def:0,reduction:.63,dodge:0};
+ const a={z:0,index:0,enemy:{atk:100,hp:100},enemyHp:100,positions:{hero:.3,enemy:.45}};
+ const s=c.normalize({level:20,hp:100,talents:{t33_ranger_1_0:3}});
+ const skill=c.catalog('ranger',s)[1].nodes.find(n=>n.active);
+ c.enemyStrike('ranger',s,st,a,()=>.5,false);
+ assert.equal(s.hp,63);
+ s.hp=100;s.talents[skill.id]=1;
+ c.enemyStrike('ranger',s,st,a,()=>.5,false);
+ assert.equal(s.hp,66);
+});
