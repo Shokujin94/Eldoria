@@ -31,7 +31,11 @@ const armorSlots=['head','armor','legs','hands','feet'];
 export function itemData(i){const d=i.data;return {...d,upgrade:d.upgrade??0,refine:d.refine??0,sockets:d.sockets??(i.starter?0:i.rarity>=4?2:i.rarity>=2?1:0),runes:d.runes??[],setId:d.relic==null&&i.rarity>=2&&armorSlots.includes(i.slot)?i.tier:null};}
 export function rebuild(i){const d=itemData(i),raw={};for(const [k,v] of Object.entries(d.baseMods||{}))raw[k]=Math.round(Math.max(1,Math.round(v*(1+.1*d.upgrade)))*(1+.035*d.refine));for(const key of d.runes){const r=runes[key];if(!r||r.slot!==i.slot)throw Error('Runa incompatível');for(const [k,v] of Object.entries(r.mods))raw[k]=(raw[k]||0)+v;}d.mods=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,balance.itemMod(k,v,!!i.starter)]));return d;}
 export function upgradeQuote(i){const d=itemData(i),n=d.upgrade+1,z=i.tier,r=Math.max(0,i.rarity-1),req={['mob:'+z+':'+r]:2+Math.floor(n/2),['mining:'+z+':'+r]:1+Math.floor(n/3)};if(n>=5||d.relic!=null)req['boss:'+z]=1+Math.floor((n-1)/5);return {cost:n*20*materialPrice[i.rarity],req,allowed:!i.starter&&!i.escrow&&n<=10};}
-export function refineQuote(i){const d=itemData(i),n=d.refine+1,z=i.tier;return {cost:100*n*(z+1)*materialPrice[i.rarity],req:{['boss:'+z]:n,['mining:'+z+':'+Math.max(0,i.rarity-1)]:3*n},allowed:!i.starter&&!i.escrow&&d.upgrade===10&&n<=3};}
+function workshopCost(i){
+ const tier=i.tier;
+ return {cost:Math.round(35*(tier+1)*(i.rarity+1)*(1+.11*tier)),req:{['mob:'+tier+':0']:2}};
+}
+export function refineQuote(i){return {...workshopCost(i),allowed:!i.starter&&!i.escrow&&itemData(i).refine<3};}
 export function setBonuses(list){
  const counts=Array(10).fill(0),active=[];
  for(const i of list){const id=itemData(i).setId;if(id!==null)counts[id]++;}
@@ -62,7 +66,17 @@ export const relics=[
 {name:'Selo do Dragão de Cinza',slot:'ring',mods:{damage:18,int:10,crit:10,skill:8},effect:'+10% dano e +20% potência de habilidade'},
 ...['Olho da Matriarca','Coração do Inverno','Rosário dos Mártires','Juramento do Marechal','Brasa do Titã','Selo da Lua Morta','Coroa da Noite Eterna'].map((name,j)=>{const z=j+3;return {name,slot:['accessory','ring','head'][j%3],mods:{damage:12+z*4,vit:4+z*2,hp:35+z*12,crit:3},effect:'+8% dano e +5% PV'+(z===6?' · Última sentença: habilidades consomem o sangramento para causar dano imediato.':z===8?' · Eco profano: +0,25 de regeneração base de mana e +40% dano a cada quinta habilidade ofensiva.':'')};})];
 export function relicData(z,cls){const r=relics[z],baseMods={...r.mods};if(cls==='cleric'&&baseMods.int){baseMods.wis=baseMods.int;delete baseMods.int;}return {baseMods,quality:3,vocation:cls,relic:z,upgrade:0,refine:0,sockets:3,runes:[],affixes:[],power:null};}
-export function advancedQuote(i,a){const d=itemData(i),z=i.tier,rar=i.rarity,rules={reroll:{cost:90,allowed:Object.keys(d.baseMods||{}).length>0,req:{['mining:'+z+':0']:3}},enchant:{cost:60,allowed:true,req:{['herb:'+z+':0']:3}},corrupt:{cost:150,allowed:rar>=2&&!d.corrupt,req:{['boss:'+z]:1}},awaken:{cost:180,allowed:rar>=3&&d.upgrade>=5&&!d.awake,req:{['boss:'+z]:2}},addSocket:{cost:120,allowed:d.sockets<3,req:{['mining:'+z+':1']:4}}},q=rules[a];return {...q,cost:q.cost*(z+1)*materialPrice[rar],allowed:!i.starter&&!i.escrow&&q.allowed};}
+export function advancedQuote(i,a){
+ const d=itemData(i);
+ const allowed={
+  reroll:Object.keys(d.baseMods||{}).length>0,
+  enchant:true,
+  corrupt:!d.corrupt,
+  awaken:!d.awake&&(d.relic!=null||i.rarity>=3&&d.upgrade>=5),
+  addSocket:d.sockets<3
+ };
+ return {...workshopCost(i),allowed:!i.starter&&!i.escrow&&!!allowed[a]};
+}
 export function advancedBonuses(list,legacySurvive=0){const resist=Object.fromEntries(elements.map(k=>[k,0])),ids=new Set();let damage=0,hp=0,special=0,reduction=0,execute=0;for(const i of list){const d=itemData(i);if(d.relic!=null)ids.add(d.relic);if(d.enchant&&Object.hasOwn(resist,d.enchant))resist[d.enchant]+=.06+i.tier*.003;if(d.corrupt==='ward')for(const k of elements)resist[k]+=.025;if(d.corrupt==='power')damage+=.035;if(d.awake)special+=.04;if(['armor','offhand'].includes(i.slot))for(const k of elements)resist[k]+=i.tier*.003;}for(const z of ids){if(z===0){hp+=.12;reduction+=.08;}else if(z===1)execute=.35;else if(z===2){damage+=.10;special+=.20;}else{damage+=.08;hp+=.05;}}for(const k of elements)resist[k]=Math.min(.70,resist[k]+Math.min(.08,legacySurvive*.004));return {resist,damage:Math.min(.28,damage),hp:Math.min(.25,hp),special:Math.min(.25,special),reduction,execute,relics:[...ids]};}
 
 export function npcValue(i){const d=itemData(i);return Math.round((6+i.tier*8)*materialPrice[i.rarity]*(1+.1*(d.quality??1))*(d.relic!=null?6:1)*(1+.2*d.sockets));}
