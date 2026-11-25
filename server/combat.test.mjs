@@ -169,3 +169,10 @@ test('boss special applies resistance at preparation and impact and keeps the pr
  assert.equal(s.hp,58);
  assert.equal(a.heroEffects.slow.power,52);
 });
+
+test('tenacity shortens harmful boss effects using the legacy rounding',()=>{
+ const a={mode:'boss',z:3,enemy:{hp:1000,atk:20},enemyHp:1000,warning:'Maré tóxica'};
+ const s=c.normalize({level:31,hp:100});
+ c.bossMechanic(s,{hp:100,tenacity:.40},a,()=>.5);
+ assert.equal(a.heroEffects.poison.left,5);
+});

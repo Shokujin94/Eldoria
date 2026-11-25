@@ -139,3 +139,24 @@ test('experience advances beyond level 100 and also credits the legacy',()=>{
  assert(result.legacyXP>0);
  db.close();
 });
+
+test('base vocation attributes and secondary stat gains match the legacy coefficients',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ const bases={war:[8,3,2,7,0],ranger:[3,9,2,6,0],mage:[2,3,10,5,0],cleric:[3,2,0,7,8],necro:[2,3,9,5,1]};
+ const keys=['str','dex','int','vit','wis'];
+ for(const [cl,base] of Object.entries(bases)){
+  db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(cl,cl,'test',0);
+  const start=g.create(cl,cl,cl).character;
+  assert.deepEqual(keys.map(k=>start.stats.a[k]),base);
+ }
+ const row=db.prepare('SELECT data FROM characters WHERE account=?').get('necro');
+ const save=JSON.parse(row.data);save.level=20;
+ db.prepare('UPDATE characters SET level=20,data=? WHERE account=?').run(JSON.stringify(save),'necro');
+ const stats=g.state('necro').character.stats;
+ for(const [key,stat,delta] of [['str','critMult',.015],['dex','haste',.01],['vit','tenacity',.015],['wis','heal',.01]]){
+  const next=g.action('necro',{action:'attribute',key,points:5}).character.stats;
+  assert(Math.abs(next[stat]-stats[stat]-delta)<1e-9);
+ }
+ db.close();
+});
