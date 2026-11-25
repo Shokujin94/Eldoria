@@ -88,7 +88,8 @@ try{
  await page.locator('[data-tab=cons]').click();
  await page.locator('#auto-hp').waitFor();
  assert.equal(await page.locator('.cons-item11').count(),12);
- await page.locator('#win-cons [data-potion-tip=might]').focus();
+ await page.locator('#win-cons [data-potion-tip=might]').scrollIntoViewIfNeeded();
+ await page.locator('#win-cons [data-potion-tip=might]').hover();
  await page.locator('#tal47-tip').getByText('Duração',{exact:true}).waitFor();
  await page.keyboard.press('Escape');
  await page.locator('#win-cons [data-act=usePotion][data-id=might]').click();
@@ -123,7 +124,7 @@ try{
  await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
  assert.equal(await page.locator('.bag56').count(),1);
  await page.locator('[data-bag64]').first().focus();
- await page.locator('#tal47-tip').getByText('Nível / iLvl',{exact:true}).waitFor();
+ await page.locator('#tal47-tip').getByText('Nível do item',{exact:true}).waitFor();
  await page.keyboard.press('Escape');
  await page.locator('[data-bag64]').first().click();await page.locator('.stock19-details').waitFor();
  await page.locator('[data-tab=talent]').click();

@@ -467,8 +467,9 @@ function itemTooltip(i,c){
  const d=i.data,names={...attrNames67,damage:'Dano',def:'Defesa',hp:'Vida máxima',mana:'Mana máxima',crit:'Crítico',haste:'Ataque extra',tenacity:'Tenacidade',skill:'Maestria',regen:'Regeneração de mana'};
  const relic=d.relic!=null?c.relicCatalog[d.relic]:null;
  return tooltipHeader(itemIcon(i),rar[i.rarity],i.name+(d.upgrade?' +'+d.upgrade:''))+
-  tooltipRows([['Tipo',slots[i.slot]],['Nível / iLvl',i.level+' / '+i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino / Runas',(d.refine||0)+' / '+(d.runes?.length||0)+' de '+(d.sockets||0)],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
+  tooltipRows([['Tipo',slots[i.slot]],['Nível necessário',i.level],['Nível do item',i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:null],['Encaixes',(d.runes?.length||0)+' de '+(d.sockets||0)],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
   '<h4>Atributos</h4>'+tooltipRows(Object.entries(d.mods||{}).map(([k,v])=>[names[k]||k,(v>0?'+':'')+nf(v)]))+
+  (d.runes?.length?'<h4>Runas inseridas</h4>'+tooltipRows(d.runes.map((id,index)=>['Encaixe '+(index+1),c.runeCatalog?.[id]?.name||'Runa'])):'')+
   (relic?.effect?'<h4>Relíquia</h4><p>'+esc(relic.effect)+'</p>':'')+
   (d.enchant||d.awake||d.corrupt?'<h4>Oficina</h4><p>'+esc([d.enchant?'Resistência a '+elementNames[d.enchant]:null,d.awake?'Desperto':null,d.corrupt?'Corrupção: '+({ward:'Proteção',power:'Poder',scar:'Cicatriz'}[d.corrupt]):null].filter(Boolean).join(' · '))+'</p>':'');
 }
