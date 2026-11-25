@@ -176,6 +176,10 @@ try{
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
  await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama,impact,{timeout:15000});
+ const huntView=await page.evaluate(()=>window.eldoria52Scene.view());
+ const huntWidth=Math.min(1600,Math.max(440,huntView.w/(2.45*.55)));
+ assert.ok(Math.abs(huntView.scale-1600/huntWidth)<1e-6);
+ assert.ok(Math.abs(huntView.scaleY-1200/(huntView.h*huntWidth/huntView.w))<1e-6);
  await impact.dispose();
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
