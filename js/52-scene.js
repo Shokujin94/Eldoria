@@ -222,6 +222,12 @@ function breakPixels(kind,z,index,now){
 }
 function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];defeated=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
 if(previous){const event=s.lastCombat;
+ const mechanic=a?.mechanicEvent;
+ if(mechanic&&(a.encounter!==old?.encounter||mechanic.seq!==old?.mechanicEvent?.seq)){
+  const retreat=mechanic.kind==='retreat',side=retreat?'hero':'enemy',p=a.positions;
+  const label=mechanic.kind==='warning'?mechanic.name+' iminente':mechanic.name;
+  popup(label,retreat?'#8ccfa3':'#f4cf79',now,p[side],p[side+'Y']??.84,true);
+ }
  if(defeated&&event?.encounter===defeated.next&&event.seq!==previous.lastCombat?.seq)defeated=null;
  const fallen=s.lastDefeat;
  if(!motion.matches&&a?.enemy&&fallen&&s.kills===previous.kills+1&&fallen.encounter===old?.encounter
