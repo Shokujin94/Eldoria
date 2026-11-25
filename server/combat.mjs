@@ -46,8 +46,18 @@ export function tree(cl,s){return [...trees33[cl].base,...(s.subclass===null||s.
 export const freeTalents=s=>Math.max(0,s.level-1-sum(s.talents||{}));
 export function canLearn(cl,s,id){const all=tree(cl,s).flatMap(p=>p.nodes),n=all.find(x=>x.id===id);return !!(n&&freeTalents(s)>0&&s.level>=n.level&&(s.talents[id]||0)<n.max&&n.req.every(k=>(s.talents[k]||0)>=Math.min(2,all.find(x=>x.id===k)?.max||2)));}
 export function values(cl,s){const v={};for(const [id,n] of Object.entries(s.talents||{})){const p=passive33[id];if(p&&p.cl===cl&&(p.sub===undefined||p.sub===s.subclass))v[p.type]=(v[p.type]||0)+p.value*clamp(n,0,3);}return v;}
-export function skill(cl,s,id,maxMana){let k=skills[cl][id];if(id==='asc2'&&s.subclass!=null){const a=ASC12[cl][s.subclass];k={id,name:a[11],element:a[1],mana:a[12],cd:a[13],power:a[14],heal:a[15],guard:a[16],effects:a[17]};}if(!k)return null;const r=Math.max(0,(s.talents?.[id]||1)-1),v=values(cl,s);const x={...k,mana:Math.ceil(k.mana*(cl==='war'?.94:1)*(1-Math.min(.35,(v.manaCost||0)+(s.mana<maxMana*.35?v.lowManaCost||0:0)))),power:Math.min(2.15,k.power*(1+.11*r)*.94),heal:Math.min(.24,(k.heal||0)*(1+.15*r)*.77),buff13:k.buff?{stat:k.buff[0],value:k.buff[1]*(1+.12*r),duration:k.buff[2]}:null};const form=(s.casts?.[id]||0)>=30?s.forms?.[id]:null,master=(s.casts?.[id]||0)>=120;if(form==='power'){const f=master?1.12:1.07;x.power*=f;x.heal*=f;x.mana=Math.ceil(x.mana*1.1);if(x.buff13)x.buff13.value*=f;}else if(form==='flow'){x.mana=Math.max(1,Math.floor(x.mana*(master?.79:.88)));if(master)x.cd=Math.max(3,x.cd-1);}if(oath(s,0,1))x.mana=Math.max(1,Math.ceil(x.mana*.88));return balance.skill(x);}
-export function catalog(cl,s){return tree(cl,s).map(p=>({name:p.name,nodes:p.nodes.map(n=>({...n,rank:s.talents[n.id]||0,available:canLearn(cl,s,n.id),skill:n.active?skill(cl,s,n.id):null}))}));}
+export function skill(cl,s,id,maxMana=0){let k=skills[cl][id];if(id==='asc2'&&s.subclass!=null){const a=ASC12[cl][s.subclass];k={id,name:a[11],element:a[1],mana:a[12],cd:a[13],power:a[14],heal:a[15],guard:a[16],effects:a[17]};}if(!k)return null;const r=Math.max(0,(s.talents?.[id]||1)-1),v=values(cl,s);const x={...k,mana:Math.ceil(k.mana*(cl==='war'?.94:1)*(1-Math.min(.35,(v.manaCost||0)+(s.mana<maxMana*.35?v.lowManaCost||0:0)))),power:Math.min(2.15,k.power*(1+.11*r)*.94),heal:Math.min(.24,(k.heal||0)*(1+.15*r)*.77),buff13:k.buff?{stat:k.buff[0],value:k.buff[1]*(1+.12*r),duration:k.buff[2]}:null};const form=(s.casts?.[id]||0)>=30?s.forms?.[id]:null,master=(s.casts?.[id]||0)>=120;if(form==='power'){const f=master?1.12:1.07;x.power*=f;x.heal*=f;x.mana=Math.ceil(x.mana*1.1);if(x.buff13)x.buff13.value*=f;}else if(form==='flow'){x.mana=Math.max(1,Math.floor(x.mana*(master?.79:.88)));if(master)x.cd=Math.max(3,x.cd-1);}if(oath(s,0,1))x.mana=Math.max(1,Math.ceil(x.mana*.88));return balance.skill(x);}
+export function catalog(cl,s){
+ const hasDiscount=(values(cl,s).lowManaCost||0)>0;
+ return tree(cl,s).map(p=>({name:p.name,nodes:p.nodes.map(n=>{
+  const configured=n.active?skill(cl,s,n.id):null;
+  if(configured&&hasDiscount){
+   const low=skill(cl,s,n.id,Infinity).mana;
+   if(low<configured.mana)configured.lowManaCost=low;
+  }
+  return {...n,rank:s.talents[n.id]||0,available:canLearn(cl,s,n.id),skill:configured};
+ })}));
+}
 export const subclassNames=cl=>ASC12[cl].map(x=>x[0]);
 export function eligibleTrial(s){return s.level>=16&&s.skill>=5&&s.zoneDungeons[1]>=1&&s.zoneBosses[1]>=1&&s.subclass==null;}
 export function clear(s){s.buffs={};s.guard=0;s.servant=0;s.minions=[];s.energy=0;}
