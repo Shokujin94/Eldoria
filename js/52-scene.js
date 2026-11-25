@@ -13,7 +13,7 @@ const cityNPC=[
  {x:495,y:420,name:'Instrutor',role:'Treinamento',mode:'train',cls:'war'}
 ].map(n=>({...n,x:n.x/800,y:n.y/600}));
 const baseZoom=.55;
-let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],heroAction=null,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
+let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],heroAction=null,enemyAction=null,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 // The 0.45.0 gather points use the legacy 800 × 600 stage and its walkable floor.
 const gatherBounds=[[.09,.91],[.06,.94],[.11,.89],[.10,.90],[.11,.89],[.075,.925],[.07,.93],[.12,.88],[.075,.925],[.10,.90]];
@@ -129,6 +129,10 @@ function showCombat(event,cls,now,currentEncounter){
   }
   popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,impactTime,x,y,true);
  }
+ if(event.encounter===currentEncounter&&(enemyMelee||enemyShot)){
+  const dx=p.hero-p.enemy,dy=(p.heroY??.84)-(p.enemyY??.84);
+  enemyAction={at:now,dx,dy,ranged:!!enemyShot};
+ }
  if(enemyShot){
   const shot=combatProjectile(event,cls,true);
   if(shot.flight)fx.push({at:now,projectile:shot});
@@ -210,6 +214,11 @@ function combatGlyph(c,shape,r,t){
   }
   c.stroke();c.restore();
  }
+}
+function drawCombatHealth(c,x,y,ratio,color){
+ if(!Number.isFinite(ratio))return;
+ c.fillStyle='#101013';c.fillRect(x-22,y+5,44,5);
+ c.fillStyle=color;c.fillRect(x-21,y+6,42*clamp(ratio,0,1),3);
 }
 function drawConditions(c,effects,x,y,height){
  const active=Object.entries(effects||{}).filter(([key,status])=>status.left>0&&combatConditions[key]);
@@ -303,7 +312,7 @@ function breakPixels(kind,z,index,now){
  fx=fx.filter(f=>!f.parts);
  fx.push({parts,index,at:now});
 }
-function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];heroAction=null;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];heroAction=null;heroHitAt=-Infinity;visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){levelEffect=null;gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
+function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];heroAction=null;enemyAction=null;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];heroAction=null;enemyAction=null;heroHitAt=-Infinity;visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){levelEffect=null;gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
 if(previous){const event=s.lastCombat;
  const offline=(s.analyzer||s.history?.[0])?.offlineSeconds||0;
  const priorOffline=(previous.analyzer||previous.history?.[0])?.offlineSeconds||0;
@@ -441,6 +450,7 @@ if(a.mode!=='gather'){
  shadow(x+dx,heroY+dy,hh);
  draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy,hh,facing,!motion.matches&&now-heroHitAt<130,lean);
  drawConditions(c,a.heroEffects,x+dx,heroY+dy,hh);
+ if(a.enemy)drawCombatHealth(c,x+dx,heroY+dy,s.hp/s.stats.hp,'#83ac75');
  if(a?.enemy){const boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4,eh=hh*(boss?1.30:.96),ex=w*visual.enemy;if(defeated&&!motion.matches&&now-defeated.at<1050){
  const p=defeated.positions,px=w*p.enemy,py=h*(p.enemyY??.84),height=hh*(defeated.boss?1.30:.96);
  c.save();
@@ -449,9 +459,20 @@ if(a.mode!=='gather'){
  draw(c,defeated.boss?art.boss[z]:art.monsters[z]?.[defeated.index||0],px,py,height,p.enemy>=p.hero);
  c.restore();
 }else{
- shadow(ex,enemyY,eh);
- draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],ex,enemyY,eh,visual.enemy>=visual.hero,!motion.matches&&now>=flash&&now-flash<160);
- drawConditions(c,a.effects,ex,enemyY,eh);
+ let enemyX=ex,enemyFeet=enemyY,lean=0;
+ if(!motion.matches&&enemyAction){
+  const phase=clamp((now-enemyAction.at)/310,0,1);
+  const effort=phase===1?0:Math.sin(Math.PI*phase);
+  const dx=w*enemyAction.dx,dy=h*enemyAction.dy;
+  const distance=Math.hypot(dx,dy)||1;
+  const step=eh*effort*(enemyAction.ranged?-.055:.12);
+  enemyX+=dx/distance*step;enemyFeet+=dy/distance*step;
+  lean=effort*(enemyAction.ranged?-.065:.11);
+ }
+ shadow(enemyX,enemyFeet,eh);
+ draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet,eh,visual.enemy>=visual.hero,!motion.matches&&now>=flash&&now-flash<130,lean);
+ drawConditions(c,a.effects,enemyX,enemyFeet,eh);
+ drawCombatHealth(c,enemyX,enemyFeet,a.enemyHp/a.enemy.hp,'#ac4b47');
 }minionVisual.length=Math.min(minionVisual.length,(s.minions||[]).length);if(s.cls==='necro')for(const [i,m] of (s.minions||[]).entries()){const slot=minionVisual[i]??={x:m.x,y:m.y??0},step=motion.matches?1:1-Math.exp(-dt/172);slot.x+=(m.x-slot.x)*step;slot.y+=((m.y??0)-slot.y)*step;const mx=w*slot.x,my=enemyY+h*slot.y;shadow(mx,my,hh*.55);c.save();if(m.role!=='bone')c.filter=({sentinel:'saturate(.45) brightness(1.12)',archer:'sepia(.35) hue-rotate(65deg)',herald:'sepia(.6) hue-rotate(220deg)'})[m.role]||'none';draw(c,art.monsters[1][0],mx,my,hh*.55);c.restore();c.font='10px system-ui';c.textAlign='center';c.fillStyle='#d4e1d2';c.fillText(({bone:'Servo',sentinel:'Sentinela',archer:'Arqueiro',herald:'Arauto'})[m.role]||'Servo',mx,my-hh*.58);} }}
 if(a.mode==='gather'){
  const field=gatherFields[z],active=s.prof[a.prof].total%18,targetNode=field.find(node=>node.index===active);
