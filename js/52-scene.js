@@ -245,13 +245,14 @@ function drawImpact(c,hit,w,h,hh,t){
   c.arc(x,y,15+progress*8,angle-2.4,angle+.9);
  }else c.ellipse(x,y,8+progress*24,5+progress*15,0,0,Math.PI*2);
  c.stroke();
- if(!hit.skill)return;
+ if(!hit.skill&&!hit.elemental)return;
  const shape=elementalShapes[hit.element];
  if(shape){
   c.save();c.translate(x,y);
   combatGlyph(c,shape,Math.max(12,hh*.19)*(1+progress),progress*.65);
   c.restore();
  }
+ if(!hit.skill)return;
  c.font='bold 11px monospace';
  c.textAlign='center';
  c.fillText(hit.skill,x,y-47);
@@ -312,7 +313,15 @@ if(previous){const event=s.lastCombat;
  if(mechanic&&(a.encounter!==old?.encounter||mechanic.seq!==old?.mechanicEvent?.seq)){
   const retreat=mechanic.kind==='retreat',side=retreat?'hero':'enemy',p=a.positions;
   const label=mechanic.kind==='warning'?mechanic.name+' iminente':mechanic.name;
-  popup(label,retreat?'#8ccfa3':'#f4cf79',now,p[side],p[side+'Y']??.84,true);
+  popup(label,retreat?'#8ccfa3':impactColors[mechanic.element]??'#f4cf79',now,p[side],p[side+'Y']??.84,true);
+  if(!motion.matches&&mechanic.kind==='impact'){
+   const element=mechanic.element??'physical';
+   fx.push({at:now,impact:{x:p.hero,y:p.heroY??.84,color:impactColors[element],element,elemental:true,side:Math.sign(p.hero-p.enemy)||1,melee:element==='physical'}});
+  }
+ }
+ if(a?.lastCombo&&(!old||a.encounter!==old.encounter||a.comboSeq!==old.comboSeq)){
+  const p=a.positions,color=impactColors[a.lastComboElement]??'#f4cf79';
+  popup(a.lastCombo,color,now,p.enemy,p.enemyY??.84,true);
  }
  if(defeated&&event?.encounter===defeated.next&&event.seq!==previous.lastCombat?.seq)defeated=null;
  const fallen=s.lastDefeat;
