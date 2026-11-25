@@ -130,5 +130,16 @@ export function masteryBonus(n){return Math.min(.035,Math.floor((n||0)/1000)*.00
 
 export const professionTalents={speed:{max:3,level:1,name:'Eficiência',desc:'−1 s por ponto'},yield:{max:3,level:4,name:'Rendimento',desc:'+15 p.p. chance de recurso extra por ponto'},quality:{max:5,level:7,name:'Perícia',desc:'Melhora a chance de raridades'}};
 export const professionInterval=p=>1000*(6-Math.min(3,p.talents?.speed||0));
-export function professionOdds(p){const b=Math.min(10,(p.talents?.quality||0)*2),k=p.level>=15&&p.spec==='quality'?(p.level>=40?1.8:1):0;return [65-b-k,27,7+b*.7+k*.82,.9+b*.25+k*.16,.1+b*.05+k*.02];}
-export function gatherRoll(p,random){const rarity=rollOdds(professionOdds(p),random),chance=.15*(p.talents?.yield||0),spec=p.level>=15&&p.spec==='yield'?(p.level>=40?.16:.09):0,tool=.08*(p.tool||0);return {rarity,amount:1+(chance>0&&random()<chance?1:0)+(spec>0&&random()<spec?1:0),common:tool>0&&random()<tool?1:0};}
+export function professionOdds(p){
+ const n=Math.max(0,Math.min(5,p.talents?.quality||0));
+ const k=p.level>=15&&p.spec==='quality'?(p.level>=40?1.8:1):0;
+ return [72-n*2-k,22+n*.9,5.5+n*.95+k*.82,.46+n*.14+k*.16,.04+n*.01+k*.02];
+}
+export function gatherRoll(p,random){
+ const rarity=rollOdds(professionOdds(p),random),chance=.15*(p.talents?.yield||0);
+ const spec=p.level>=15&&p.spec==='yield'?(p.level>=40?.16:.09):0;
+ const tool=.08*(p.tool||0),extra=()=>spec>0&&random()<spec?1:0;
+ const amount=1+(chance>0&&random()<chance?1:0)+extra();
+ const common=tool>0&&random()<tool?1+extra():0;
+ return {rarity,amount,common};
+}
