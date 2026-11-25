@@ -99,7 +99,8 @@ try{
  assert.equal(new Set(flaskMarkup).size,12);
  await page.locator('#win-cons [data-potion-tip=might]').scrollIntoViewIfNeeded();
  await page.locator('#win-cons [data-potion-tip=might]').hover();
- await page.locator('#tal47-tip').getByText('Duração',{exact:true}).waitFor();
+ await page.locator('#tal47-tip .detail-tooltip-rows').getByText('Duração',{exact:true}).waitFor();
+ await page.locator('#tal47-tip .detail-tooltip-effects').getByText(/\+3/).waitFor();
  await page.keyboard.press('Escape');
  await page.locator('#win-cons [data-act=usePotion][data-id=might]').click();
  const effect=page.locator('#buffbar11 .buff11').filter({hasText:'Elixir da força'});
@@ -164,7 +165,8 @@ try{
  const rune=bag.locator('[data-rune-tip="r30_weapon_might_2"]');
  assert.equal(await rarityColor(rune),'#7aaff0');
  await rune.hover();
- await page.locator('#tal47-tip').getByText('Encaixe',{exact:true}).waitFor();
+ await page.locator('#tal47-tip .detail-tooltip-rows').getByText('Encaixe',{exact:true}).waitFor();
+ await page.locator('#tal47-tip .detail-tooltip-effects').getByText(/Dano base/).waitFor();
  await page.keyboard.press('Escape');
  await page.locator('[data-tab=talent]').click();
  await page.locator('[data-path61]').first().waitFor();
@@ -218,7 +220,7 @@ try{
  await commonWood.focus();
  const materialTip=page.locator('#tal47-tip');
  await materialTip.getByRole('heading',{name:'Madeira ancestral',exact:true}).waitFor();
- await materialTip.getByText('Usada em receitas de equipamento conforme o tipo de peça.',{exact:true}).waitFor();
+ await materialTip.locator('.detail-tooltip-effects').getByText('Usada em receitas de equipamento conforme o tipo de peça.',{exact:true}).waitFor();
  await page.keyboard.press('Escape');
  await materialTip.waitFor({state:'hidden'});
  assert.equal(await gatherForm.locator('[name=zone] option[value="1"]').evaluate(option=>option.disabled),true);

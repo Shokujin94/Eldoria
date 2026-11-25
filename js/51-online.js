@@ -506,6 +506,26 @@ function tooltipHeader(icon,type,name){
 function tooltipRows(rows){
  return '<dl class="detail-tooltip-rows">'+rows.filter(([,v])=>v!=null).map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join('')+'</dl>';
 }
+function tooltipEffects(title,entries){
+ const descriptions=entries.filter(([,text])=>text);
+ if(!descriptions.length)return '';
+ return '<h4>'+esc(title)+'</h4><div class="detail-tooltip-effects">'+descriptions.map(([label,text])=>
+  '<div>'+(label?'<strong>'+esc(label)+'</strong>':'')+'<p>'+esc(text)+'</p></div>'
+ ).join('')+'</div>';
+}
+function abilityTooltip(n,c){
+ const k=n.skill,s=n.synergy;
+ const conditions={...Object.fromEntries(Object.entries(heroStatuses).map(([id,[label]])=>[id,label])),curse:'Maldição'};
+ return tooltipHeader('<span class="tal47-symbol">'+(n.active?abilityIcon(n):skillIcon63('attr'))+'</span>',n.active?'Habilidade ativa':'Talento passivo',n.name)+
+  tooltipRows([['Grau',n.rank+' / '+n.max],['Nível necessário',n.level],['Elemento',elementNames[k?.element]],['Custo de mana',k?k.mana+' PM':null],['Custo abaixo de 35% de mana',k?.lowManaCost!=null?k.lowManaCost+' PM':null],['Recarga',k?k.cd+' s':null],['Recarga restante',c.cooldowns?.[n.id]>0?c.cooldowns[n.id]+' s':null],['Potência',k?.power?nf(k.power)+'×':null],['Cura base',k?.heal?nf(k.heal*100)+'%':null]])+
+  tooltipEffects('Efeito e condições',[
+   [null,k?n.desc:n.desc||n.name],
+   ['Condições aplicadas',k?.effects?.map(id=>conditions[id]||id).join(' · ')],
+   ['Guarda',k?.guard?'Concede guarda ao personagem.':null],
+   ['Bônus temporário',k?.buff13?(attrNames67[k.buff13.stat]||n.name)+' por '+k.buff13.duration+' s.':null]
+  ])+
+  (s?tooltipEffects('Sinergia',[[s.name,[s.condition,s.effect,s.requirement,s.rank?'Grau '+s.rank:'Prévia do grau 1'].filter(Boolean).join(' · ')] ]):'');
+}
 function itemTooltip(i,c){
  const d=i.data,names={...attrNames67,damage:'Dano',def:'Defesa',hp:'Vida máxima',mana:'Mana máxima',crit:'Crítico',haste:'Ataque extra',tenacity:'Tenacidade',skill:'Maestria',regen:'Regeneração de mana'};
  const relic=d.relic!=null?c.relicCatalog[d.relic]:null;
@@ -524,16 +544,15 @@ function itemTooltip(i,c){
  });
  const attributes=Object.entries(d.mods||{}).map(([k,v])=>[names[k]||k,(v>0?'+':'')+nf(v)]);
  return tooltipHeader(itemIcon(i),rar[i.rarity],i.name+(d.upgrade?' +'+d.upgrade:''))+
-  '<div class="item-tooltip-panels">'+
   tooltipRows([['Tipo',slots[i.slot]],['Nível necessário',i.level],['Nível do item',i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:null],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
   (attributes.length?'<h4>Atributos</h4>'+tooltipRows(attributes):'')+
-  (effects.length?'<h4>Efeitos especiais</h4><div class="item-tooltip-effects">'+effects.map(([name,description])=>'<div><strong>'+esc(name)+'</strong><p>'+esc(description)+'</p></div>').join('')+'</div>':'')+
+  tooltipEffects('Efeitos especiais',effects)+
   (socketCount?'<h4>Encaixes <span>'+runes.length+' / '+socketCount+'</span></h4><ol class="item-tooltip-sockets">'+sockets.map(socket=>
    '<li aria-label="'+esc(socket.label)+'"><span aria-hidden="true" class="item-tooltip-socket'+(socket.filled?' filled rarity61-'+(socket.rune?.rarity??0):'')+'"></span></li>'
   ).join('')+'</ol>'+sockets.filter(socket=>socket.filled).map(socket=>
    '<div class="item-tooltip-rune rarity61-'+(socket.rune?.rarity??0)+'"><strong>'+esc(socket.label)+'</strong>'+
    (socket.rune?.desc?'<p>'+esc(socket.rune.desc)+'</p>':'')+'</div>'
-  ).join(''):'')+'</div>';
+  ).join(''):'');
 }
 function potionTooltip(id,p,c){
  const instant=p.kind==='hp'||p.kind==='mp',life=p.kind==='hp',target=life?'PV':'PM';
@@ -541,7 +560,7 @@ function potionTooltip(id,p,c){
   p.kind==='attr'?'+3 '+attrNames67[p.attribute]+'.':'+15% relativo na chance de encontrar equipamento em caçada.';
  const remaining=instant?c.potionCD[p.kind]:c.elixirs[id];
  return tooltipHeader('<span class="tal47-symbol">'+potionIcon(id,p)+'</span>',instant?'Poção':'Elixir',p.name)+
-  '<p>'+esc(effects)+'</p>'+tooltipRows([[instant?'Recarga':'Duração',p.cd+' s'],['Estoque',nf(c.potions[id]||0)],['Mercador',nf(p.price)+' ◈'],['Tempo restante',remaining>0?remaining+' s':null]]);
+  tooltipRows([[instant?'Recarga':'Duração',p.cd+' s'],['Estoque',nf(c.potions[id]||0)],['Mercador',nf(p.price)+' ◈'],['Tempo restante',remaining>0?remaining+' s':null]])+tooltipEffects('Efeito',[[null,effects]]);
 }
 function show64(e){
  const el=e.target.closest?.(tooltipTargets),c=data?.character;
@@ -559,11 +578,9 @@ function show64(e){
  const theme=themes64[c.cls],color=rune?tooltipRarity[rune.rarity]:m?tooltipRarity[m.grade]:i?tooltipRarity[i.rarity]:n?theme.colors[path]||theme.accent:({hp:'#d98289',mp:'#8eb4f2',attr:'#b5a0df',loot:'#efc36e'}[p.kind]);
  tooltip64.style.setProperty('--path',color||'#d7b775');
  tooltip64.innerHTML=rune?tooltipHeader('<span class="tal47-symbol">'+skillIcon63('arcane')+'</span>',rar[rune.rarity],rune.name)+
-  tooltipRows([['Encaixe',slots[rune.slot]],['Estoque',nf(c.runeStock[runeId]||0)]])+'<h4>Efeito</h4><p>'+esc(rune.desc)+'</p>':m?tooltipHeader(m.src?'<img class="material-tooltip-icon" src="'+esc(m.src)+'" alt="">':'<span class="tal47-symbol">◆</span>',rar[m.grade]||'Material',m.name)+
+  tooltipRows([['Encaixe',slots[rune.slot]],['Estoque',nf(c.runeStock[runeId]||0)]])+tooltipEffects('Efeito',[[null,rune.desc]]):m?tooltipHeader(m.src?'<img class="material-tooltip-icon" src="'+esc(m.src)+'" alt="">':'<span class="tal47-symbol">◆</span>',rar[m.grade]||'Material',m.name)+
   tooltipRows([['Origem',m.source],['Região',regions[m.zone]],['Tier',m.zone+1],['Estoque',nf(c.materials[key]||0)],['Venda por unidade',c.materialQuotes?.[key]?nf(c.materialQuotes[key])+' ◈':null]])+
-  (m.uses?'<h4>Uso</h4><p>'+esc(m.uses)+'</p>':''):i?itemTooltip(i,c):p?potionTooltip(potionId,p,c):
-  tooltipHeader('<span class="tal47-symbol">'+(n.active?abilityIcon(n):skillIcon63('attr'))+'</span>',n.active?'Habilidade ativa':'Talento passivo',n.name)+
-  tooltipRows([['Grau',n.rank+'/'+n.max],['Nível necessário',n.level]])+'<h4>Efeito e condições</h4><p>'+esc(talentText61(n))+'</p>';
+  tooltipEffects('Uso',[[null,m.uses]]):i?itemTooltip(i,c):p?potionTooltip(potionId,p,c):abilityTooltip(n,c);
  tooltip64.hidden=false;
  const r=el.getBoundingClientRect(),w=tooltip64.offsetWidth,h=tooltip64.offsetHeight;
  tooltip64.style.left=Math.max(6,Math.min(innerWidth-w-6,r.right+8+w<=innerWidth?r.right+8:r.left-w-8))+'px';
