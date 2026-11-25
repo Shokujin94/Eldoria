@@ -401,5 +401,11 @@ test('alchemy brews the legacy life potion grades at the shared recipe cost',()=
  assert.equal(result.gold,16);
  assert.equal(result.materials['herb:0:0'],3);
  assert.equal(result.tradeXP.alch,30);
+ const veteran=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('alch').data);
+ Object.assign(veteran,{level:100,legacyXP:160000,legacy:{craft:19,fortune:19}});
+ db.prepare('UPDATE characters SET data=?,level=100 WHERE account=?').run(JSON.stringify(veteran),'alch');
+ assert.equal(g.action('alch',{action:'legacy',key:'craft'}).character.legacy.craft,20);
+ assert.equal(g.action('alch',{action:'legacy',key:'fortune'}).character.legacy.fortune,20);
+ assert.equal(g.action('alch',{action:'brew',key:'hp1',count:1}).character.tradeXP.alch,41);
  db.close();
 });
