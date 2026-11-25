@@ -128,6 +128,17 @@ try{
  assert.ok(await page.locator('.tal47-tier').count()>0);
  assert.match(await page.locator('.codex62-detail').innerText(),/Requisitos/);
  await page.locator('[data-tfilter62=all]').click();await page.locator('[data-tfilter62=all][aria-pressed=true]').waitFor();
+ await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=craft]').click();
+ const forgeForm=page.locator('#forge');
+ await forgeForm.locator('[name=zone]').selectOption('1');
+ const forgeLevel=forgeForm.locator('[name=level]');
+ assert.equal(await forgeLevel.inputValue(),'11');
+ assert.equal(await forgeLevel.getAttribute('max'),'15');
+ assert.equal(await forgeForm.locator('[name=baseId]').evaluate(select=>select.required&&select.options.length===1),true);
+ await forgeForm.locator('[name=zone]').selectOption('0');
+ assert.equal(await forgeLevel.getAttribute('max'),'5');
+ assert.equal(await forgeForm.locator('[name=baseId]').evaluate(select=>select.required),false);
+ await page.locator('#win-craft [data-close65]').click();
  await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=market]').click();
  await page.locator('[data-market65=sell]').click();
  await page.locator('#listing').waitFor();
