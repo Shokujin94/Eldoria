@@ -44,6 +44,11 @@ const server=createServer(async(req,res)=>{const origin=req.headers.origin;res.s
  if(path==='/auth/logout'&&method==='POST'){db.prepare('DELETE FROM sessions WHERE hash=?').run(a.key);return reply(200,{ok:true});}
  if(path==='/auth/recovery-code'&&method==='POST'){rate('security:'+a.id,5,300000);const p=await body(req),r=db.prepare('SELECT password FROM accounts WHERE id=?').get(a.id);if(!validPassword(p.password)||!await matches(p.password,r))fail(403,'Senha atual inválida.');const code=atomic(()=>{if(db.prepare('SELECT password FROM accounts WHERE id=?').get(a.id)?.password!==r.password||!db.prepare('SELECT hash FROM sessions WHERE hash=? AND expires>?').get(a.key,Date.now()))fail(401,'Sessão expirada.');return newRecovery(a.id);});return reply(200,{recoveryCode:code});}
  if(path==='/auth/change-password'&&method==='POST'){rate('security:'+a.id,5,300000);const p=await body(req),r=db.prepare('SELECT password FROM accounts WHERE id=?').get(a.id);if(!validPassword(p.password)||!validPassword(p.newPassword)||!await matches(p.password,r))fail(403,'Senha atual inválida ou nova senha fora dos requisitos.');const pass=await password(p.newPassword);atomic(()=>{if(!db.prepare('SELECT hash FROM sessions WHERE hash=? AND expires>?').get(a.key,Date.now())||db.prepare('UPDATE accounts SET password=? WHERE id=? AND password=?').run(pass,a.id,r.password).changes!==1)fail(401,'Sessão expirada.');db.prepare('DELETE FROM sessions WHERE account=?').run(a.id);db.prepare('DELETE FROM recovery_codes WHERE account=?').run(a.id);});return reply(200,{ok:true});}
+ if(path==='/craft-quote'&&method==='GET'){
+  const p=url.searchParams;
+  const grades=Object.fromEntries(['mob','mining','wood','herb'].map(k=>[k,Number(p.get(k)??0)]));
+  return reply(200,g.craftQuote(a.id,{zone:Number(p.get('zone')??NaN),slot:p.get('slot'),level:Number(p.get('level')??NaN),kind:p.get('kind'),grades}));
+ }
  if(path==='/state'&&method==='GET')return reply(200,g.state(a.id,url.searchParams.get('compact')==='1'));
  if(path==='/character'&&method==='POST'){const p=await body(req);return reply(201,g.create(a.id,p.name,p.cls));}
  if(path==='/action'&&method==='POST'){rate('actions:'+a.id,60,60000);return reply(200,g.action(a.id,await body(req)));}

@@ -130,6 +130,10 @@ try{
  await page.locator('[data-tfilter62=all]').click();await page.locator('[data-tfilter62=all][aria-pressed=true]').waitFor();
  await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=craft]').click();
  const forgeForm=page.locator('#forge');
+ const forgeQuote=forgeForm.locator('[data-craft-quote]');
+ await forgeQuote.getByText('40 ◈',{exact:true}).waitFor();
+ await forgeForm.locator('[name=grade_mob]').selectOption('1');
+ await forgeQuote.getByText('59 ◈',{exact:true}).waitFor();
  await forgeForm.locator('[name=zone]').selectOption('1');
  const forgeLevel=forgeForm.locator('[name=level]');
  assert.equal(await forgeLevel.inputValue(),'11');

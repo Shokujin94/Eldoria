@@ -280,5 +280,17 @@ export function game(db,{clock=Date.now,random=rng}={}){
  });}
  function ranking(category='level',page=0){if(!Object.hasOwn(rankingColumns,category)||!integer(page,0,1000))fail('Ranking inválido.');const col=rankingColumns[category];return {category,page,rows:db.prepare('SELECT name,cls,level,'+col+' AS score FROM characters ORDER BY score DESC, '+(category==='level'?'xp DESC, ':'')+'namekey ASC LIMIT 50 OFFSET ?').all(page*50).map((r,i)=>({rank:page*50+i+1,...r}))};}
  let cursor='';function tickBatch(limit=10,budgetMs=Infinity){const rows=db.prepare("SELECT account FROM characters WHERE account>? AND json_extract(data,'$.activity') IS NOT NULL ORDER BY account LIMIT ?").all(cursor,limit),start=performance.now();let processed=0;for(const r of rows){if(processed&&performance.now()-start>=budgetMs)break;tx(db,()=>settle(r.account));cursor=r.account;processed++;}if(processed===rows.length&&rows.length<limit)cursor='';return processed;}
- return {create,state,action,market,trade,ranking,tickBatch};
+ function craftQuote(id,p){
+  if(!row(id))fail('Personagem não encontrado.',404);
+  const {s}=get(id),{zone,slot,level}=p;
+  if(!integer(zone,0,9)||!Object.hasOwn(slots,slot)||!integer(level,1+10*zone,5+10*zone))fail('Receita inválida.');
+  const rare=p.kind==='rare';
+  if(rare&&(slot!=='accessory'||!s.recipes[zone]))fail('Receita bloqueada.');
+  let quote;
+  try{
+   quote=rare?{req:{['boss:'+zone]:1,['mining:'+zone+':2']:4},cost:150*(zone+1),quality:2,odds:[0,0,0,100,0]}:content.recipe(slot,zone,p.grades);
+  }catch{fail('Qualidade inválida.');}
+  return {...quote,success:craft.success(s.craft.level,level,quote.quality)};
+ }
+ return {create,state,action,market,trade,ranking,tickBatch,craftQuote};
 }
