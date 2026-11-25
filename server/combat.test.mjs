@@ -9,7 +9,7 @@ test('affixes, elemental combo and boss warnings follow server rules',()=>{const
 
 test('grimoire roles and legacy normalization',()=>{const s=c.normalize({level:30});assert.equal(s.servantChoices.length,2);assert.equal(s.minions.length,0);assert.equal(Object.keys(c.servantRoles).length,4);c.clear(s);assert.equal(s.minions.length,0);});
 
-test('minions strike independently of hero range and synchronize lifetime',()=>{const s=c.normalize({level:30,subclass:0,hp:100,mana:100,minions:[{role:'archer',x:.4,left:4,cd:0,guard:0},{role:'bone',x:.1,left:4,cd:0,guard:0}]});const a={z:0,mode:'hunt',enemy:{hp:100,atk:10},enemyHp:100,effects:{},positions:{hero:.1,enemy:.7,servant:.4}};const st={damage:100,hp:100,mana:100,manaRegen:1};assert(c.minionStrike(s,st,a)>0);assert.equal(s.minions[0].cd,4);assert.equal(s.minions[1].cd,0);c.tick(s,st,a);assert.equal(s.servant,3);assert.equal(s.minions[0].cd,3);s.hp=0;assert.equal(c.minionStrike(s,st,a),0);});
+test('minions strike independently of hero range and synchronize lifetime',()=>{const s=c.normalize({level:30,subclass:0,hp:100,mana:100,minions:[{role:'archer',x:.4,left:4,cd:0,guard:0},{role:'bone',x:.1,left:4,cd:0,guard:0}]});const a={z:0,mode:'hunt',enemy:{hp:100,atk:10},enemyHp:100,effects:{},positions:{hero:.1,enemy:.7,servant:.4}};const st={damage:100,hp:100,mana:100,manaRegen:1};assert.equal(c.minionStrike(s,st,a),0);assert(c.minionStrike(s,st,a)>0);assert.equal(s.minions[0].cd,4);assert.equal(s.minions[1].cd,0);c.tick(s,st,a);assert.equal(s.servant,3);assert.equal(s.minions[0].cd,3);s.hp=0;assert.equal(c.minionStrike(s,st,a),0);});
 
 test('automatic potion uses selected strength',()=>{const s=c.normalize({hp:20,mana:10,level:2});s.potions.hp1=5;s.potions.hp2=1;s.autoPotion.hp=50;s.autoPotion.hpKey='hp2';const st={hp:100,mana:100};c.autoPotion(s,st);assert.equal(s.hp,65);assert.equal(s.potions.hp1,5);assert.equal(s.potions.hp2,0);s.hp=20;s.potionCD.hp=0;c.autoPotion(s,st);assert.equal(s.hp,20);});
 
@@ -25,7 +25,7 @@ test('two legacy servants reach separate lanes and stay in attack range',()=>{
  assert(far.x>a.positions.enemy&&near.x<a.positions.enemy);
  assert(far.y>0&&near.y<0);
  assert(Math.abs(far.y)<=52/1200&&Math.abs(near.y)<=52/1200);
- assert(c.minionStrike(s,st,a)>0);
+ assert.equal(c.minionStrike(s,st,a),0);assert(c.minionStrike(s,st,a)>0);
  assert(a.enemyHp<1000);
 });
 
@@ -38,4 +38,85 @@ test('arena movement uses two axes and keeps melee outside overlap',()=>{
  for(let i=0;i<10;i++)c.move('war',s,{move:0},a,false);
  assert(Math.abs(Math.hypot(p.enemy-p.hero,(p.enemyY-p.heroY)*.75)-.12)<1e-6);
  assert(p.heroY>=224/600&&p.enemyY<=515/600);
+});
+
+test('legacy attack clocks track hero and enemy independently and reset on control',()=>{
+ const a={index:3,positions:{hero:.30,enemy:.42},effects:{},heroEffects:{}};
+ let hero=0,enemy=0;
+ for(let tick=0;tick<20;tick++){
+  hero+=Number(c.attackReady(a,'hero','war',false));
+  enemy+=Number(c.attackReady(a,'enemy','war',false));
+ }
+ assert.equal(hero,17);
+ assert.equal(enemy,13);
+ a.heroEffects.stun={left:1};
+ assert.equal(c.attackReady(a,'hero','war',false),false);
+ assert.equal(a.attackClock.hero,0);
+ delete a.heroEffects.stun;
+ a.heroEffects.slow={left:20};
+ for(let tick=0;tick<20;tick++)hero+=Number(c.attackReady(a,'hero','war',false));
+ assert.equal(hero,29);
+ a.positions.enemy=.9;
+ const before=a.attackClock.enemy;
+ assert.equal(c.attackReady(a,'enemy','war',false),false);
+ assert.equal(a.attackClock.enemy,before);
+});
+
+test('ranged vocations retreat in hunts and sidestep when the arena border blocks retreat',()=>{
+ const s=c.normalize({level:30});
+ for(const cl of ['ranger','mage','cleric','necro']){
+  const hunt={mode:'hunt',positions:{hero:.30,enemy:.42,servant:.34},effects:{stun:{left:1}}};
+  assert(c.move(cl,s,{move:0},hunt,false).hero<.30);
+  const arena={mode:'dungeon',positions:{hero:.11,enemy:.23,heroY:.6,enemyY:.6,servant:.34},effects:{stun:{left:1}}};
+  const p=c.move(cl,s,{move:0},arena,false);
+  assert.equal(p.hero,.11);
+  assert.notEqual(p.heroY,.6);
+  assert(Math.hypot(p.enemy-p.hero,(p.enemyY-p.heroY)*.75)>.12);
+  const y=p.heroY;
+  arena.heroEffects={freeze:{left:1}};
+  c.move(cl,s,{move:0},arena,false);
+  assert.equal(p.heroY,y);
+ }
+});
+
+test('legacy ranged species engage at distance and back away when crowded',()=>{
+ const s=c.normalize({level:30}),st={move:0};
+ const caster={z:1,index:3,mode:'dungeon',heroEffects:{freeze:{left:8}},effects:{},
+  positions:{hero:.4,enemy:.50,heroY:.6,enemyY:.6}};
+ c.move('war',s,st,caster,false);
+ assert(caster.positions.enemy>.50);
+ caster.positions.enemy=.65;
+ assert.equal(c.attackReady(caster,'enemy','war',false),false);
+ assert.equal(c.attackReady(caster,'enemy','war',false),true);
+ const melee={...caster,index:4,attackClock:undefined,positions:{...caster.positions}};
+ assert.equal(c.attackReady(melee,'enemy','war',false),false);
+ c.move('war',s,st,melee,false);
+ assert(melee.positions.enemy<.65);
+ const chief={...caster,attackClock:undefined,positions:{...caster.positions}};
+ assert.equal(c.attackReady(chief,'enemy','war',true),false);
+});
+
+test('an arena escape routes around a stationary enemy without overlapping it',()=>{
+ const s=c.normalize({level:30});
+ const a={mode:'dungeon',retreatBlocked:2,positions:{hero:.11,enemy:.23,heroY:.6,enemyY:.6},
+  effects:{stun:{left:12}}};
+ const p=a.positions;
+ for(let tick=0;tick<8;tick++){
+  c.move('mage',s,{move:0},a,false);
+  assert(Math.hypot(p.enemy-p.hero,(p.enemyY-p.heroY)*.75)>=.12-1e-9);
+ }
+ assert(p.hero>p.enemy);
+ assert.equal(a.escapeRoute,undefined);
+});
+test('servants retry every tick while out of range and wait two ticks after landing a hit',()=>{
+ const m={role:'bone',x:.20,left:8,nextStrike:2,cd:0,guard:0};
+ const s=c.normalize({level:30,hp:100,minions:[m]}),st={damage:100,hp:100};
+ const a={enemyHp:100,effects:{},positions:{enemy:.75}};
+ assert.equal(c.minionStrike(s,st,a),0);
+ assert.equal(c.minionStrike(s,st,a),0);
+ assert.equal(s.minions[0].nextStrike,0);
+ s.minions[0].x=.65;
+ assert(c.minionStrike(s,st,a)>0);
+ assert.equal(c.minionStrike(s,st,a),0);
+ assert(c.minionStrike(s,st,a)>0);
 });

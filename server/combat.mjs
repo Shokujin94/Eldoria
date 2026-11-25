@@ -62,28 +62,87 @@ function effect(a,k,p,v,boss){if(!EFFECTS[k])return;if(['stun','freeze'].include
 const arenaMode=mode=>mode==='dungeon'||mode==='boss'||mode==='trial';
 const arenaFloor={left:88/800,right:712/800,top:224/600,bottom:515/600};
 const combatGap=p=>Math.hypot(p.enemy-p.hero,((p.enemyY??0)-(p.heroY??0))*.75);
+// Corresponds to rangedIds in the 0.45.0 catalogue, indexed by region and species.
+const rangedSpecies=[[4],[3],[2,4],[4],[4],[2,4],[2,4],[2,4],[2,4],[4]];
+const rangedEnemy=(a,boss)=>!boss&&!!rangedSpecies[a.z]?.includes(a.index);
+const arenaContains=(x,y)=>x>=arenaFloor.left&&x<=arenaFloor.right&&y>=arenaFloor.top&&y<=arenaFloor.bottom;
+function escapeArena(p,range,step,a){
+ const distance=combatGap(p);
+ if(a.escapeWait>0)a.escapeWait--;
+ if(!a.escapeRoute&&a.retreatBlocked>=2&&!a.escapeWait&&distance>0&&distance<range*.77){
+  const ux=(p.enemy-p.hero)/distance,uy=(p.enemyY-p.heroY)*.75/distance;
+  const routes=[];
+  for(const sign of [-1,1]){
+   const start={x:p.hero-uy*sign*.16,y:p.heroY+ux*sign*.16/.75};
+   const around={x:p.enemy-uy*sign*.16,y:p.enemyY+ux*sign*.16/.75};
+   const far={x:p.enemy+ux*range*.87-uy*sign*.08,y:p.enemyY+(uy*range*.87+ux*sign*.08)/.75};
+   if([start,around,far].every(point=>arenaContains(point.x,point.y)))routes.push([start,around,far]);
+  }
+  const cost=([start,around,far])=>Math.hypot(start.x-p.hero,(start.y-p.heroY)*.75)+
+   Math.hypot(around.x-start.x,(around.y-start.y)*.75)+Math.hypot(far.x-around.x,(far.y-around.y)*.75);
+  routes.sort((a,b)=>cost(a)-cost(b));
+  if(routes.length)a.escapeRoute={points:routes[0],left:8};
+ }
+ const route=a.escapeRoute;
+ if(!route)return false;
+ const target=route.points[0],dx=target.x-p.hero,dy=target.y-p.heroY,d=Math.hypot(dx,dy*.75);
+ const t=d?Math.min(1,step/d):1;
+ const x=p.hero+dx*t,y=p.heroY+dy*t;
+ if(Math.hypot(x-p.enemy,(y-p.enemyY)*.75)>=Math.min(.12,distance)){
+  p.hero=x;p.heroY=y;
+  if(t===1)route.points.shift();
+ }
+ if(--route.left<=0||!route.points.length||(route.points.length===1&&combatGap(p)>=range*.90)){
+  delete a.escapeRoute;
+  a.escapeWait=5;a.retreatBlocked=0;
+ }
+ return true;
+}
 function arenaStep(p,actor,other,step){
  const axis=actor+'Y',otherAxis=other+'Y';
  const dx=p[other]-p[actor],dy=p[otherAxis]-p[axis],distance=Math.hypot(dx,dy*.75);
  if(!distance||!step)return;
- const x=Math.max(arenaFloor.left,Math.min(arenaFloor.right,p[actor]+dx*step/distance));
- const y=Math.max(arenaFloor.top,Math.min(arenaFloor.bottom,p[axis]+dy*step/distance));
- if(step<0&&Math.hypot(x-p[other],(y-p[otherAxis])*.75)<=distance){
-  const direction=p[axis]<(arenaFloor.top+arenaFloor.bottom)/2?1:-1;
-  p[axis]=Math.max(arenaFloor.top,Math.min(arenaFloor.bottom,p[axis]+direction*Math.abs(step)));
-  return;
+ const ux=dx/distance,uy=dy*.75/distance;
+ const candidate=(vx,vy)=>{
+  const x=Math.max(arenaFloor.left,Math.min(arenaFloor.right,p[actor]+vx*step));
+  const y=Math.max(arenaFloor.top,Math.min(arenaFloor.bottom,p[axis]+vy*step/.75));
+  return {x,y,gap:Math.hypot(x-p[other],(y-p[otherAxis])*.75)};
+ };
+ let next=candidate(ux,uy);
+ if(step<0&&next.gap<=distance+1e-9){
+  for(const side of [-1,1]){
+   const flank=candidate(-uy*side,ux*side);
+   if(flank.gap>next.gap)next=flank;
+  }
+  if(next.gap<=distance+1e-9)return;
  }
- p[actor]=x;p[axis]=y;
+ p[actor]=next.x;p[axis]=next.y;
 }
-function moveArena(p,cl,range,step,speed,a){
+function heroMovement(cl,gap,range,speed){
+ if(cl==='war')return gap>range?Math.min(speed,gap-range):0;
+ if(gap>range*.96)return Math.min(speed,gap-range*.88);
+ if(gap<range*.66)return -Math.min(speed*.66,range*.77-gap);
+ return 0;
+}
+function enemyMovement(ranged,gap,speed){
+ if(!ranged)return gap>.12?Math.min(speed,gap-.12):0;
+ const pace=speed*.137/.185;
+ if(gap>.264)return Math.min(pace,gap-.264);
+ if(gap<.156)return -Math.min(pace*.45,.156-gap);
+ return 0;
+}
+function moveArena(p,cl,range,step,speed,a,ranged){
  p.heroY??=.72;p.enemyY??=.51;
  const gap=combatGap(p);
  if(!a.heroEffects?.stun&&!a.heroEffects?.freeze){
-  if(gap>range)arenaStep(p,'hero','enemy',Math.min(step,gap-range));
-  else if(cl==='ranger'&&gap<range*.65)arenaStep(p,'hero','enemy',-Math.min(step*.7,range*.77-gap));
+  const movement=heroMovement(cl,gap,range,step);
+  if(cl==='war'||!escapeArena(p,range,step,a)){
+   arenaStep(p,'hero','enemy',movement);
+   if(movement<0&&combatGap(p)-gap<Math.abs(movement)*.5)a.retreatBlocked=(a.retreatBlocked||0)+1;
+   else a.retreatBlocked=0;
+  }
  }
- const enemyGap=combatGap(p);
- if(enemyGap>.12)arenaStep(p,'enemy','hero',Math.min(speed,enemyGap-.12));
+ arenaStep(p,'enemy','hero',enemyMovement(ranged,combatGap(p),speed));
 }
 function moveMinions(minions,positions,mode){
  const arena=arenaMode(mode),depth=arena?.075:52/1200;
@@ -106,14 +165,14 @@ export function move(cl,s,st,a,boss){
  const step=.085*(1+Math.min(.3,(v.move||0)+(st.move||0)))*(a.heroEffects?.slow?.left>0?.7:1);
  const stopped=a.effects?.stun||a.effects?.freeze;
  const speed=stopped?0:(a.effects?.slow?.left>0?.033:.065)*(boss?.75:1)*(trait(a,'fast')?1.18:1);
- if(arenaMode(a.mode))moveArena(p,cl,range,step,speed,a);
+ const ranged=rangedEnemy(a,boss);
+ if(arenaMode(a.mode))moveArena(p,cl,range,step,speed,a,ranged);
  else{
   const gap=p.enemy-p.hero;
   if(!a.heroEffects?.stun&&!a.heroEffects?.freeze){
-   if(gap>range)p.hero=Math.min(p.enemy-range,p.hero+step);
-   else if(cl==='ranger'&&gap<range*.65)p.hero=Math.max(.08,p.hero-step*.7);
+   p.hero=Math.max(.08,p.hero+heroMovement(cl,gap,range,step));
   }
-  p.enemy=Math.min(.79,Math.max(p.hero+.12,p.enemy-speed));
+  p.enemy=Math.min(.79,Math.max(p.hero+.12,p.enemy-enemyMovement(ranged,p.enemy-p.hero,speed)));
  }
  if(s.servant>0){
   const target=Math.min(.92,p.enemy+.13);
@@ -123,15 +182,29 @@ export function move(cl,s,st,a,boss){
  return p;
 }
 
+const heroReach={war:.14,ranger:.32,mage:.29,cleric:.23,necro:.23};
+const heroAttackRate={war:1.06,ranger:1.04,mage:.89,cleric:.95,necro:.94};
+const monsterAttackRate=[1,1.13,1,.81,.91];
+export function attackReady(a,side,cl,boss){
+ const effects=side==='hero'?a.heroEffects:a.effects;
+ const reach=side==='hero'?heroReach[cl]:rangedEnemy(a,boss)?.30:.16;
+ if(a.positions&&combatGap(a.positions)>reach)return false;
+ const clocks=a.attackClock??={hero:0,enemy:0};
+ if(effects?.stun||effects?.freeze){clocks[side]=0;return false;}
+ const rate=side==='hero'?heroAttackRate[cl]:boss?1:monsterAttackRate[a.index]??1;
+ clocks[side]=Math.min(1.99,clocks[side]+rate*.82*(effects?.slow?.left>0?.7:1));
+ if(clocks[side]<1)return false;
+ clocks[side]-=1;
+ return true;
+}
 export function learnedSkills(cl,s){return tree(cl,s).flatMap(p=>p.nodes).filter(n=>n.active&&(s.talents[n.id]||0)>0).map(n=>skill(cl,s,n.id)).filter(Boolean);}
-export function turn(cl,s,st,a,random,boss){const v=values(cl,s),has=k=>!!a.effects[k],all=learnedSkills(cl,s),learned=s.rotation===null?all:s.rotation.map(id=>all.find(k=>k.id===id)).filter(Boolean);if(a.heroEffects?.stun||a.heroEffects?.freeze)return 0;if(a.positions&&combatGap(a.positions)>(cl==='ranger'?.32:cl==='mage'?.29:cl==='cleric'||cl==='necro'?.23:.14))return 0;let cast=s.rotation===null?learned.find(k=>k.buff13&&!s.buffs[k.id]&&!s.cooldowns[k.id]&&s.mana>=k.mana):null;if(!cast&&learned.length){for(let i=0;i<learned.length;i++){const j=s.rotation===null?(s.cursor+i)%learned.length:i,k=learned[j],cond=s.rotationConditions?.[k.id]||'always';if(s.rotation!==null&&(cond==='hp'&&s.hp/st.hp>=.5||cond==='mp'&&s.mana/st.mana>=.35||cond==='execute'&&a.enemyHp/a.enemy.hp>=.3||cond==='boss'&&!boss&&!a.affixes?.length&&a.mode!=='dungeon'||cond==='control'&&(has('stun')||has('freeze'))))continue;if((!k.buff13||s.rotation!==null&&!s.buffs[k.id])&&!s.cooldowns[k.id]&&s.mana>=k.mana){cast=k;s.cursor=(j+1)%learned.length;break;}}}
+export function turn(cl,s,st,a,random,boss){const v=values(cl,s),has=k=>!!a.effects[k],all=learnedSkills(cl,s),learned=s.rotation===null?all:s.rotation.map(id=>all.find(k=>k.id===id)).filter(Boolean);if(a.heroEffects?.stun||a.heroEffects?.freeze)return 0;if(a.positions&&combatGap(a.positions)>heroReach[cl])return 0;let cast=s.rotation===null?learned.find(k=>k.buff13&&!s.buffs[k.id]&&!s.cooldowns[k.id]&&s.mana>=k.mana):null;if(!cast&&learned.length){for(let i=0;i<learned.length;i++){const j=s.rotation===null?(s.cursor+i)%learned.length:i,k=learned[j],cond=s.rotationConditions?.[k.id]||'always';if(s.rotation!==null&&(cond==='hp'&&s.hp/st.hp>=.5||cond==='mp'&&s.mana/st.mana>=.35||cond==='execute'&&a.enemyHp/a.enemy.hp>=.3||cond==='boss'&&!boss&&!a.affixes?.length&&a.mode!=='dungeon'||cond==='control'&&(has('stun')||has('freeze'))))continue;if((!k.buff13||s.rotation!==null&&!s.buffs[k.id])&&!s.cooldowns[k.id]&&s.mana>=k.mana){cast=k;s.cursor=(j+1)%learned.length;break;}}}
 const heal=n=>{s.hp=Math.min(st.hp,s.hp+n*(trait(a,'curse')?.7:1));},mana=n=>{s.mana=Math.min(st.mana,s.mana+n);};
 if(cast){s.mana-=cast.mana;s.cooldowns[cast.id]=cast.cd;s.casts[cast.id]=(s.casts[cast.id]||0)+1;s.lastCast=cast.name;}
 const gap=a.positions?combatGap(a.positions):null,range=cl==='ranger'?.30:cl==='mage'?.27:cl==='cleric'||cl==='necro'?.21:.12,far=gap===null?cl==='ranger'&&a.turn<=Math.max(4,6+Math.round((v.move||0)*10)):gap>=range*.75,near=gap===null?!far:gap<range*.55;
 const cond={far,near,bleedHit:has('bleed'),burnHit:!!cast&&has('burn'),exposeHit:has('expose'),curseHit:has('poison')||has('expose'),slowHit:has('slow'),iceHit:has('slow')||has('freeze'),shockHit:has('shock'),execute:a.enemyHp<a.enemy.hp*.3,lowHit:s.hp<st.hp*.5,highManaHit:s.mana>=st.mana*.6,servantHit:s.servant>0,bossHit:boss,basic:!cast,holy:cast?.element==='holy'};
-const pow=st.powers||{},path=cast?trees33[cl].base.findIndex(p=>p.nodes.some(n=>n.id===cast.id)):-1,root=i=>s.talents['t33_'+cl+'_'+i+'_0']||0,learnedPath=i=>trees33[cl].base[i].nodes.some(n=>n.active&&s.talents[n.id]>0),rank=path<0?0:root(path),low60=s.hp<st.hp*.6;let synergyDamage=0,synergyGuard=0;
+const pow=st.powers||{},path=cast?trees33[cl].base.findIndex(p=>p.nodes.some(n=>n.id===cast.id)):-1,root=i=>s.talents['t33_'+cl+'_'+i+'_0']||0,rank=path<0?0:root(path),low60=s.hp<st.hp*.6;let synergyDamage=0;
 if(rank&&cast&&!cast.buff13){if((cl==='war'&&path===0&&has('bleed'))||(cl==='ranger'&&path===0&&far)||(cl==='mage'&&path===0&&has('burn'))||(cl==='cleric'&&path===0&&has('expose'))||(cl==='necro'&&path===2&&(has('poison')||has('expose'))))synergyDamage=(cl==='ranger'||cl==='mage'?.06:.05)+.02*rank;}
-const gi=cl==='cleric'?2:1;if(root(gi)&&learnedPath(gi)&&((['war','cleric'].includes(cl)&&s.guard)||(cl==='ranger'&&near)||(cl==='mage'&&cond.iceHit)))synergyGuard=(['war','cleric'].includes(cl)?.03:.025)+.015*root(gi);
 const rider=cast&&(cast.id==='asc2'?subRider33[cl][s.subclass]:rider33[cl][cast.id]);let dmg=0,critical=false;
 if(cast?.buff13){s.buffs[cast.id]={...cast.buff13,left:cast.buff13.duration};}
 else{critical=random()<st.crit;let bonus=Object.keys(descriptions33).reduce((n,k)=>n+(cond[k]?(v[k]||0):0),0);const ex=cast&&(cast.id==='asc2'?subActive33[cl][s.subclass]:active33[cl][cast.id]);if(ex&&cond[ex[0]])bonus+=ex[1];bonus+=synergyDamage+(cond.execute?((pow.execute||0)+(st.advanced?.execute||0)):0)+(cast&&cond.highManaHit?(pow.resonance||0):0);dmg=Math.max(1,Math.round(st.damage*(cast?st.special*cast.power:1)*(critical?st.critMult:1)*(1+Math.min(.40,bonus))*(1+(a.masteryBonus||0))*(.9+random()*.2)));const element=cast?.element||({mage:'arcane',cleric:'holy',necro:'dark'}[cl]||'physical');dmg=Math.max(1,Math.round(dmg*(1-enemyResistance(a,element,boss))));dmg+=combo(a,element,dmg);if(boss)dmg=Math.min(dmg,Math.max(1,Math.round(a.enemy.hp*.29)));a.enemyHp=Math.max(0,a.enemyHp-dmg);if(cast){if(cast.guard)s.guard=3;if(cast.heal)heal(Math.min(st.hp*.2,st.hp*cast.heal*(1+st.heal)));for(const k of cast.effects||[])effect(a,k,dmg,v,boss);}heal(dmg*Math.min(.12,(v.drain||0)+(cl==='necro'&&path===1&&rank&&low60?.015+.008*rank:0)));if(cast&&rank){if(cl==='war'&&path===2&&has('expose'))mana(st.mana*(.012+.008*rank));if(cl==='ranger'&&path===2&&has('poison'))mana(st.mana*(.015+.008*rank));if(cl==='mage'&&path===2&&a.lastElement&&a.lastElement!==cast.element)mana(st.mana*(.025+.01*rank));if(cl==='cleric'&&path===1&&low60&&cast.heal)heal(st.hp*(.01+.006*rank));if(cl==='necro'&&path===0&&s.minions.length){for(const m of s.minions)m.left=Math.min(12+rank,m.left+1);s.servant=Math.max(...s.minions.map(m=>m.left));}}if(cast)a.lastElement=cast.element;for(const [k,chance] of Object.entries(st.runeProcs||{}))if(a.enemyHp>0&&random()<chance)effect(a,k,dmg,v,boss);if(random()<st.haste&&a.enemyHp>0)a.enemyHp=Math.max(0,a.enemyHp-Math.round(st.damage));}
@@ -139,8 +212,24 @@ if(rider){const [kind,raw]=rider,n=typeof raw==='number'?raw*(1+.1*Math.max(0,(s
 s.energy=Math.min(100,s.energy+(cast?12:8)+(cast?v.castEnergy||0:0)+(critical?v.critEnergy||0:0)+(far?v.farEnergy||0:0)+(cl==='necro'&&!s.servant?v.noServantEnergy||0:0)+(cast&&oath(s,0,0)?8:0));
 if(dmg>0&&s.energy>=100&&(s.energyProfile==='auto'||s.energyProfile==='boss'&&boss||s.energyProfile==='hurt'&&s.hp/st.hp<.65)){s.energy=0;s.energyProcs++;const p=paths[cl]?.[s.subclass],bonus=(p?p[3]:({war:.22,ranger:.25,mage:.24,cleric:.12,necro:.08}[cl]))+(oath(s,1,0)?.10:0)+(oath(s,2,0)?.18:0)+(affinity(cl,s,a,critical,cast,st,far,boss)?.10:0);const extra=Math.round(dmg*bonus),applied=boss?Math.min(extra,Math.max(0,Math.round(a.enemy.hp*.29)-dmg)):extra;a.enemyHp=Math.max(0,a.enemyHp-applied);dmg+=applied;if(cl==='necro')summon(s,st,a,v);if(p?.[2]==='guard')s.guard=Math.max(s.guard,3);else if(p?.[2]&&a.enemyHp>0)effect(a,p[2],dmg*(oath(s,2,0)?1.15:.75),v,boss);heal(st.hp*((p?p[4]:cl==='cleric'?.05:0)+(oath(s,2,1)?.04:0)+(v.procHeal||0)));mana(st.mana*((p?p[5]:cl==='mage'?.05:0)+(oath(s,2,1)?.05:0)+(v.procMana||0)));}
 
-if(a.enemyHp>0&&!has('stun')&&!has('freeze')&&(gap===null?(!far||a.turn%4===0):(gap<=.16||a.index===4&&gap<=.3))&&random()>=st.dodge){const reduction=(s.guard?.14+(v.guard||0):0)+(near?v.nearGuard||0:0)+(cond.iceHit?v.controlGuard||0:0)+(boss?v.bossGuard||0:0)+(s.hp<st.hp*.4?v.lowGuard||0:0)+(s.servant?v.servantGuard||0:0);incoming(s,st,a,a.enemy.atk*(1-balance.armor(st.def,a.z))*(1-Math.min(.42,st.reduction+reduction+synergyGuard+(s.hp<st.hp*.4?(pow.ward||0):0)))*(has('slow')?.85:1)*(oath(s,1,1)&&s.energy>=50?.93:1),boss,random,trait(a,'profane')?'dark':boss?affinities[a.z]:a.index===4?affinities[a.z]:'physical');s.energy=Math.min(100,s.energy+(v.hurtEnergy||0));}
 a.lastHit=dmg;a.lastCritical=critical;a.hitSeq=(a.hitSeq||0)+1;return dmg;}
+export function enemyStrike(cl,s,st,a,random,boss){
+ if(a.enemyHp<=0||s.hp<=0||random()<st.dodge)return;
+ const v=values(cl,s),effects=a.effects||{},pow=st.powers||{};
+ const gap=a.positions?combatGap(a.positions):Infinity;
+ const near=gap<({war:.12,ranger:.30,mage:.27,cleric:.21,necro:.21}[cl])*.55;
+ const iceHit=!!(effects.slow||effects.freeze);
+ const path=cl==='cleric'?2:1,rank=s.talents['t33_'+cl+'_'+path+'_0']||0;
+ const eligible=rank&&trees33[cl].base[path].nodes.some(n=>n.active&&s.talents[n.id]>0);
+ const synergy=eligible&&((cl==='war'||cl==='cleric')&&s.guard||cl==='ranger'&&near||cl==='mage'&&iceHit)
+  ?(cl==='war'||cl==='cleric'?.03:.025)+.015*rank:0;
+ const reduction=(s.guard?.14+(v.guard||0):0)+(near?v.nearGuard||0:0)+(iceHit?v.controlGuard||0:0)
+  +(boss?v.bossGuard||0:0)+(s.hp<st.hp*.4?(v.lowGuard||0)+(pow.ward||0):0)+(s.servant?v.servantGuard||0:0);
+ const damage=a.enemy.atk*(1-balance.armor(st.def,a.z))*(1-Math.min(.42,st.reduction+reduction+synergy))
+  *(effects.slow?.85:1)*(oath(s,1,1)&&s.energy>=50?.93:1);
+ incoming(s,st,a,damage,boss,random,trait(a,'profane')?'dark':boss||a.index===4?affinities[a.z]:'physical');
+ s.energy=Math.min(100,s.energy+(v.hurtEnergy||0));
+}
 export function onVictory(cl,s,st){const v=values(cl,s);s.hp=Math.min(st.hp,s.hp+Math.min(st.hp*.08,st.hp*((v.killHeal||0)+(st.powers?.harvest||0)+(st.recovery||0))));s.mana=Math.min(st.mana,s.mana+st.mana*(v.killMana||0));s.energy=Math.min(100,s.energy+(v.killEnergy||0));}
 
 // Original vocation oath catalogue.
@@ -167,5 +256,5 @@ export function bossMechanic(s,st,a,random){if(a.mode==='trial'||a.enemyHp<=0||s
 export function fastAttack(s,st,a,random,boss){if(!trait(a,'fast')||a.turn%8!==3||a.enemyHp<=0||s.hp<=0||a.effects?.freeze||a.effects?.stun||!a.positions||combatGap(a.positions)>.16||random()<st.dodge)return;incoming(s,st,a,a.enemy.atk*(1-balance.armor(st.def,a.z))*(1-(st.reduction||0)),boss,random,trait(a,'profane')?'dark':'physical');}
 
 export const servantRoles={bone:{name:'Servo original',reach:.16,mult:1},sentinel:{name:'Sentinela Óssea',reach:.16,mult:.70},archer:{name:'Arqueiro Espectral',reach:.36,mult:.85},herald:{name:'Arauto das Cinzas',reach:.30,mult:.65}};
-function summon(s,st,a,v){if(s.subclass===2&&s.minions.length&&a.enemyHp>0){s.minions.shift();a.enemyHp=Math.max(0,a.enemyHp-Math.round(st.damage*.45));s.hp=Math.min(st.hp,s.hp+Math.round(st.hp*.025));}else{s.minions=Array.from({length:s.subclass===0?2:1},(_,i)=>({role:Object.hasOwn(servantRoles,s.servantChoices[i])?s.servantChoices[i]:'bone',left:(s.subclass===0?10:s.subclass===2?12:8)+(v.duration||0),x:a.positions?.hero??.25,y:0,cd:0,guard:0}));}s.servant=Math.max(0,...s.minions.map(m=>m.left));}
-export function minionStrike(s,st,a,boss=false){if(s.hp<=0)return 0;const v=values('necro',s),pow=st.powers||{},before=a.enemyHp;for(const m of s.minions||[]){const role=servantRoles[m.role];if(a.enemyHp<=0||Math.hypot(m.x-(a.positions?.enemy??.75),(m.y??0)*.75)>role.reach+.025)continue;let dmg=st.damage*Math.min(.44,.24+(v.servant||0)+(pow.pact||0))*role.mult*(s.subclass===0?.76:s.subclass===1?1.12:1);if(s.subclass===1&&(a.effects.poison||a.effects.expose))dmg*=1.12;if(m.role==='archer'&&!m.cd){dmg*=1.3;m.cd=4;}if(m.role==='herald'&&!m.cd){effect(a,'slow',dmg,v,boss);m.cd=5;}a.enemyHp=Math.max(0,a.enemyHp-Math.max(1,Math.round(dmg)));}return before-a.enemyHp;}
+function summon(s,st,a,v){if(s.subclass===2&&s.minions.length&&a.enemyHp>0){s.minions.shift();a.enemyHp=Math.max(0,a.enemyHp-Math.round(st.damage*.45));s.hp=Math.min(st.hp,s.hp+Math.round(st.hp*.025));}else{s.minions=Array.from({length:s.subclass===0?2:1},(_,i)=>({role:Object.hasOwn(servantRoles,s.servantChoices[i])?s.servantChoices[i]:'bone',left:(s.subclass===0?10:s.subclass===2?12:8)+(v.duration||0),x:a.positions?.hero??.25,y:0,nextStrike:2,cd:0,guard:0}));}s.servant=Math.max(0,...s.minions.map(m=>m.left));}
+export function minionStrike(s,st,a,boss=false){if(s.hp<=0)return 0;const v=values('necro',s),pow=st.powers||{},before=a.enemyHp;for(const m of s.minions||[]){const role=servantRoles[m.role];if(a.enemyHp<=0)break;m.nextStrike=Math.max(0,(m.nextStrike??2)-1);if(m.nextStrike)continue;if(Math.hypot(m.x-(a.positions?.enemy??.75),(m.y??0)*.75)>role.reach+.025)continue;m.nextStrike=2;let dmg=st.damage*Math.min(.44,.24+(v.servant||0)+(pow.pact||0))*role.mult*(s.subclass===0?.76:s.subclass===1?1.12:1);if(s.subclass===1&&(a.effects.poison||a.effects.expose))dmg*=1.12;if(m.role==='archer'&&!m.cd){dmg*=1.3;m.cd=4;}if(m.role==='herald'&&!m.cd){effect(a,'slow',dmg,v,boss);m.cd=5;}a.enemyHp=Math.max(0,a.enemyHp-Math.max(1,Math.round(dmg)));}return before-a.enemyHp;}
