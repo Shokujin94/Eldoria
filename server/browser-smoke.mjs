@@ -59,7 +59,8 @@ try{
  await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale>1);
  const camera=await page.evaluate(()=>window.eldoria52Scene.view());
  assert.ok(Math.abs(camera.scale-.70/.55)<1e-6);
- assert.ok(camera.ox<=0&&camera.oy<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.oy>=camera.h*(1-camera.scale)-.01);
+ assert.ok(Math.abs(camera.scaleY-camera.scale*.62)<1e-6);
+ assert.ok(camera.ox<=0&&camera.backgroundY<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.backgroundY>=camera.h*(1-camera.scale)-.01);
  await page.locator('#scene52').focus();
  await page.keyboard.down('ArrowDown');
  try{await page.waitForFunction(oy=>window.eldoria52Scene.view()?.oy<oy-20,camera.oy,{timeout:3000});}
@@ -67,7 +68,7 @@ try{
  await page.locator('#zoomOut61').click();
  await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
  const cityCanvas=await page.locator('#scene52').boundingBox();
- await page.mouse.click(cityCanvas.x+cityCanvas.width*302/800,cityCanvas.y+cityCanvas.height*408/600-6);
+ await page.mouse.click(cityCanvas.x+cityCanvas.width*302/800,cityCanvas.y+cityCanvas.height*(.33+.62*408/600)-6);
  await page.locator('#win-vault').waitFor({state:'visible'});
  await page.locator('#win-vault [data-close65]').click();
  await page.locator('#scene52').focus();await page.keyboard.press('ArrowUp');
@@ -197,9 +198,9 @@ try{
  await page.evaluate(()=>window.eldoria52Scene.zoom(1));
  await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale===1.8);
  const narrowCamera=await page.evaluate(()=>window.eldoria52Scene.view());
- assert.ok(narrowCamera.ox<=0&&narrowCamera.oy<=0);
+ assert.ok(narrowCamera.ox<=0&&narrowCamera.backgroundY<=0);
  assert.ok(narrowCamera.ox>=narrowCamera.w*(1-narrowCamera.scale)-.01);
- assert.ok(narrowCamera.oy>=narrowCamera.h*(1-narrowCamera.scale)-.01);
+ assert.ok(narrowCamera.backgroundY>=narrowCamera.h*(1-narrowCamera.scale)-.01);
  assert.deepEqual(errors,[]);
  console.log('Browser smoke: registration, vocation, character, bag, talents, market, ranking, gathering, hunt, return, mobile passed');
 }finally{await browser?.close();if(child.exitCode===null){child.kill('SIGTERM');await once(child,'exit');}await rm(dir,{recursive:true,force:true});}
