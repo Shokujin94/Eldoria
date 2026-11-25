@@ -217,3 +217,21 @@ test('ranged strikes report projectile damage already resolved by the server',()
  c.landEnemyShot(s,st,a,()=>.5);
  assert.equal(s.hp,100-hit.damage);
 });
+
+test('hero projectile consumes mana at launch and resolves only once',()=>{
+ const s=c.normalize({level:2,hp:100,mana:100,talents:{x:1}});
+ const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:100,effects:{}};
+ const st={hp:100,mana:100,damage:10,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ const shot=c.turn('mage',s,st,a,()=>.5,false,true);
+ assert.equal(typeof shot.element,'string');
+ assert.equal(a.enemyHp,100);
+ assert(s.mana<100);
+ assert(s.cooldowns.x>0);
+ assert.equal(s.casts.x,1);
+ assert.equal(c.landHeroShot('mage',s,st,a,()=>.5,false),true);
+ const remaining=a.enemyHp;
+ assert(remaining<100);
+ assert.equal(c.landHeroShot('mage',s,st,a,()=>.5,false),false);
+ assert.equal(a.enemyHp,remaining);
+ assert.equal(s.casts.x,1);
+});

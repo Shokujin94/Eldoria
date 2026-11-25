@@ -92,20 +92,24 @@ function combatProjectile(event,cls,incoming){
 }
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
- const {positions:p,dealt,received,critical,heroHit,element,skill,support,enemyShot}=event;
+ const {positions:p,dealt,received,critical,heroHit,heroLanded,heroShot,element,skill,support,enemyShot}=event;
  if(support){
   popup(support.skill,impactColors[support.element]??'#8ccfa3',now,p.hero,p.heroY??.84,true);
   tone('buff');
  }
+ if(heroShot){
+  const shot=combatProjectile({...event,element:heroShot.element},cls,false);
+  if(shot.flight)fx.push({at:now,projectile:shot});
+ }
  if(dealt){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
-  const shot=heroHit&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=now+(shot?.flight||0);
+  const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=now+(shot?.flight||0);
   const x=p.enemy,y=p.enemyY??.84;
   if(shot?.flight)fx.push({at:now,projectile:shot});
   if(heroHit){
    pulse=now;
    if(event.encounter===currentEncounter)flash=impactTime;
-   fx.push({at:impactTime,impact:{x,y,color,element,skill,melee:!shot,side:Math.sign(p.enemy-p.hero)||1}});
+   fx.push({at:impactTime,impact:{x,y,color,element,skill,melee:cls==='war',side:Math.sign(p.enemy-p.hero)||1}});
 
   }
   popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,impactTime,x,y,true);
@@ -189,7 +193,7 @@ if(previous){const event=s.lastCombat;
  const fallen=s.lastDefeat;
  if(!motion.matches&&a?.enemy&&fallen&&s.kills===previous.kills+1&&fallen.encounter===old?.encounter
     &&fallen.encounter!==a.encounter&&fallen.mode===a.mode&&fallen.zone===a.z&&event?.encounter!==a.encounter){
-  const delay=fallen.finalHit?.heroHit&&s.cls!=='war'?combatProjectile(fallen.finalHit,s.cls,false).flight:0;
+  const delay=fallen.finalHit?.heroHit&&!fallen.finalHit.heroLanded&&s.cls!=='war'?combatProjectile(fallen.finalHit,s.cls,false).flight:0;
   defeated={next:a.encounter,at:now+delay,boss:fallen.boss,index:fallen.index,positions:fallen.positions};
  }
  if(a?.enemy&&event&&event.seq!==previous.lastCombat?.seq&&event.mode===a.mode&&event.zone===a.z)showCombat(event,s.cls,now,a.encounter);
