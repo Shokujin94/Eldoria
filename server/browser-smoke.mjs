@@ -203,6 +203,13 @@ try{
  assert.ok(Math.abs(huntView.scale-1600/huntWidth)<1e-6);
  assert.ok(Math.abs(huntView.scaleY-1200/(huntView.h*huntWidth/huntView.w))<1e-6);
  await impact.dispose();
+ const statePoll=/\/state\?compact=1$/;
+ await page.route(statePoll,route=>route.fulfill({status:502,contentType:'text/html',body:'<!DOCTYPE html><title>Bad Gateway</title>'}),{times:1});
+ await page.locator('#status').filter({hasText:'Servidor temporariamente indisponível'}).waitFor({state:'attached'});
+ await page.waitForFunction(()=>!document.getElementById('status').textContent.includes('temporariamente indisponível'));
+ const expectedGatewayError=errors.indexOf('Failed to load resource: the server responded with a status of 502 (Bad Gateway)');
+ if(expectedGatewayError>=0)errors.splice(expectedGatewayError,1);
+ assert.equal(await page.locator('#target60').isVisible(),true);
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
  const expeditionFixture=new DatabaseSync(join(dir,'test.sqlite'));
