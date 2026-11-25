@@ -306,3 +306,13 @@ test('direct damage rounds down after variance and retains the one-point minimum
   assert.equal(100-a.enemyHp,expected);
  }
 });
+
+test('arena protection scales by vocation, level and dungeon difficulty',()=>{
+ const st={hp:100,def:0,reduction:0,dodge:0};
+ for(const [level,mode,difficulty,expected] of [[80,'boss',0,73],[50,'boss',0,87],[80,'dungeon',4,61],[80,'trial',0,100]]){
+  const s=c.normalize({level,hp:100});
+  const a={z:0,mode,difficulty,index:0,enemy:{atk:100,hp:100},enemyHp:100};
+  c.enemyStrike('ranger',s,st,a,()=>.5,true);
+  assert.equal(100-s.hp,expected);
+ }
+});

@@ -149,7 +149,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  if(s.hp>0&&a.enemyHp>0){combat.tick(s,st,a);combat.autoPotion(s,st);}
  if(a.recovery&&s.hp>0){a.recovery--;if(s.analyzer)s.analyzer.seconds++;return;}
  a.turn++;
- if(boss&&s.hp>0&&a.enemyHp>0)combat.bossMechanic(s,st,a,random);
+ if(boss&&s.hp>0&&a.enemyHp>0)combat.bossMechanic(s,st,a,random,r.cls);
  if(!projectiles&&s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);
  const heroAction=!a.pendingHeroShot&&s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'hero',r.cls,boss)
   ?combat.turn(r.cls,s,st,a,random,boss,true):null;
