@@ -406,3 +406,31 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 .achievement11{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px;border-left:3px solid var(--ac)}.achievement11>div{display:grid;gap:4px}.achievement11 progress{width:100%;height:5px;accent-color:var(--ac)}.cons-settings11,.cons-grid11{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:9px 0}.cons-settings11 form,.cons-item11{min-width:0;padding:9px;border:1px solid #66676d;border-radius:6px;background:linear-gradient(145deg,#242427,#141416)}.cons-item11{display:grid;grid-template-columns:30px minmax(0,1fr);gap:6px;margin:0}.cons-item11>div:last-child{display:grid;gap:3px}.cons-ico11 svg{width:29px;height:29px}.cons-item11 p{margin:3px 0}.cons-item11 button{font-size:11px;padding:5px}.cons-item11 small{font-size:11px}@container(max-width:400px){.cons-settings11,.cons-grid11{grid-template-columns:1fr}}
 
 .achievement11 b{color:var(--ac)}
+
+.playing61 #game .placed-hud{
+ position:fixed!important;
+ inset:var(--hud-y) auto auto var(--hud-x)!important;
+ transform:none!important;
+}
+#game.editing-hud .movable-hud:not([hidden]){
+ outline:1px dashed #e1c182;
+ cursor:move;
+ pointer-events:auto;
+ touch-action:none;
+}
+#hudEditBar{
+ position:fixed;
+ z-index:10000;
+ top:8px;
+ left:50%;
+ transform:translateX(-50%);
+ padding:4px;
+ background:#171519;
+ border:1px solid #81745a;
+ border-radius:4px;
+ white-space:nowrap;
+}
+
+#game:not(.editing-hud) .hidden-hud{display:none!important}
+.hud-options{display:flex;flex-wrap:wrap;gap:8px 16px}
+.hud-options label{display:flex;align-items:center;gap:5px}

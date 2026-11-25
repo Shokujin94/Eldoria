@@ -12,7 +12,7 @@ A revisão de referência é `9018633036cc60e20743e63038bdd3d7c5f8e71d`, cujo ma
 | Mundo | Parcial | Vespera tem NPCs e serviços, e o cliente tem atlas, caçadas, dungeons, chefes, torre, bestiário, eventos e treinamento. A movimentação da cidade é visual. Falta comparar geometria, colisões, progressão de salas e eventos. |
 | Combate | Parcial | O servidor aplica alcance, estados, fases, lacaios e retorno à cidade na derrota. O motor usa posições em um eixo. A movimentação 2D e a cadência do legado ainda precisam ser reproduzidas. |
 | Registros e progresso offline | Parcial | Há registro da aventura, histórico, Hunt Analyzer e recuperação de tempo no servidor. Falta comparar as métricas, a cadência e os limites da simulação. |
-| HUD e janelas | Parcial | Há orbes, barra de habilidades, zoom, minimapa e janelas simultâneas com arraste, resize e memória de layout. Falta conferir a edição do HUD, a câmera, as animações e a disposição em resoluções diferentes. |
+| HUD e janelas | Parcial | Há orbes, barra de habilidades, zoom, minimapa e janelas simultâneas com arraste, redimensionamento e memória de layout. A edição da HUD permite mover módulos, escolher quais exibir e restaurar o layout. A barra de combate é movida como um conjunto. Falta comparar a câmera, as animações e a disposição em resoluções diferentes. |
 | Persistência do legado | Incompatível com importação direta | O save local era alterável pelo jogador. A persistência online parte de estados criados e atualizados pelo servidor. |
 | Sistemas adicionados no online | Preservados nesta etapa | Contas, recuperação, sessões, mercado, ranking, SQLite, Docker, túnel e rotinas de backup permanecem no fluxo existente. |
 

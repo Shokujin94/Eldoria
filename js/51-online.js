@@ -30,7 +30,7 @@ function configured(){try{const u=new URL(api);return u.protocol==='https:'||u.p
 async function request(path,method='GET',body){if(!configured())throw Error('Backend não configurado. A versão online não usa saves locais.');const r=await fetch(api+path,{method,cache:'no-store',signal:AbortSignal.timeout(12000),headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok){if(r.status===401&&token&&!path.startsWith('/auth/')){token='';data=null;display();}throw Error(d.error||'Erro no servidor.');}return d;}
 const options=(o,sel)=>Object.entries(o).map(([k,v])=>'<option value="'+esc(k)+'" '+(String(sel)===k?'selected':'')+'>'+esc(v)+'</option>').join('');
 $('vocations').innerHTML=options(voc);const classDesc={war:'Corpo a corpo · resistência e ímpeto',ranger:'Distância · precisão e mobilidade',mage:'Magia · controle elemental',cleric:'Devoção · cura e proteção',necro:'Almas · invocações e maldições'};const classCards=$('class61');classCards.innerHTML=Object.entries(voc).map(([k,n])=>'<button type="button" data-cls61="'+k+'" aria-pressed="'+(k==='war')+'"><img src="'+esc(window.eldoria52Art.hero[k][0])+'" alt=""><b>'+n+'</b><small>'+classDesc[k]+'</small></button>').join('');classCards.onclick=e=>{const b=e.target.closest('[data-cls61]');if(!b)return;$('vocations').value=b.dataset.cls61;for(const x of classCards.querySelectorAll('button'))x.setAttribute('aria-pressed',String(x===b));};const invitation=$('inviteField');if(window.ELDORIA_CONFIG.registrationMode==='invite'){invitation.hidden=false;invitation.querySelector('input').disabled=false;}
-function display(){const c=data?.character;document.body.classList.toggle('playing61',!!c);document.body.classList.toggle('play14',!!c);$('login').hidden=!!token;$('create').hidden=!token||!!c;$('game').hidden=!token||!c;$('logout').hidden=!token;$('security54').hidden=!token;if(!c){closeAll65();selectedBag64=null;marketTab65='offers';gearSlot66='weapon';gearTab66='gear';bagTab66='equip';dungeonZone66=0;analyzerTab66='summary';window.eldoria52Scene?.apply(null);return;}window.eldoria52Scene?.apply(c);hud52(c);$('gold63').textContent=nf(c.gold)+' ◈ ouro';$('activity63').textContent=c.activity?'Em atividade':'Zona segura · Vespera';$('character63').textContent='Nível '+c.level;$('hero').innerHTML='<div class="hero61-identity"><img src="'+esc(window.eldoria52Art.hero[c.cls][0])+'" alt=""><div><small>'+esc(voc[c.cls])+'</small><h2>'+esc(c.name)+' · Nv. '+c.level+'</h2><span>XP '+nf(c.xp)+' · PV '+nf(Math.floor(c.hp))+'/'+nf(c.stats.hp)+' · PM '+nf(Math.floor(c.mana))+'/'+nf(c.stats.mana)+'</span></div></div><div><small>PODER DE COMBATE</small><h2>'+nf(c.power)+'</h2><b>'+nf(c.gold)+' ◈</b></div>';const tracker=$('tracker56'),m=c.creatureCatalog?.find(x=>x.key===c.trackCreature),n=m?c.bestiary[m.key]||0:0,goal=[1,50,250,1000,5000,20000].find(x=>x>n)||20000;tracker.hidden=!m;if(m)tracker.innerHTML='<small>MAESTRIA DE CRIATURAS</small><b>'+esc(n?m.name:'Criatura não registrada')+'</b><progress max="'+goal+'" value="'+Math.min(n,goal)+'"></progress><small>'+nf(n)+' / '+nf(goal)+'</small>';const pending=$('catchup55');pending.hidden=!c.catchupSeconds;pending.textContent=c.catchupSeconds?'Sincronizando progresso offline: '+Math.ceil(c.catchupSeconds/60)+' min de atividade pendente. Aguarde a conclusão antes de realizar ações.':'';}
+function display(){const c=data?.character;document.body.classList.toggle('playing61',!!c);document.body.classList.toggle('play14',!!c);$('login').hidden=!!token;$('create').hidden=!token||!!c;$('game').hidden=!token||!c;$('logout').hidden=!token;$('security54').hidden=!token;if(!c){editHud(false);closeAll65();selectedBag64=null;marketTab65='offers';gearSlot66='weapon';gearTab66='gear';bagTab66='equip';dungeonZone66=0;analyzerTab66='summary';window.eldoria52Scene?.apply(null);return;}window.eldoria52Scene?.apply(c);hud52(c);applyHud();$('gold63').textContent=nf(c.gold)+' ◈ ouro';$('activity63').textContent=c.activity?'Em atividade':'Zona segura · Vespera';$('character63').textContent='Nível '+c.level;$('hero').innerHTML='<div class="hero61-identity"><img src="'+esc(window.eldoria52Art.hero[c.cls][0])+'" alt=""><div><small>'+esc(voc[c.cls])+'</small><h2>'+esc(c.name)+' · Nv. '+c.level+'</h2><span>XP '+nf(c.xp)+' · PV '+nf(Math.floor(c.hp))+'/'+nf(c.stats.hp)+' · PM '+nf(Math.floor(c.mana))+'/'+nf(c.stats.mana)+'</span></div></div><div><small>PODER DE COMBATE</small><h2>'+nf(c.power)+'</h2><b>'+nf(c.gold)+' ◈</b></div>';const tracker=$('tracker56'),m=c.creatureCatalog?.find(x=>x.key===c.trackCreature),n=m?c.bestiary[m.key]||0:0,goal=[1,50,250,1000,5000,20000].find(x=>x>n)||20000;tracker.hidden=!m;if(m)tracker.innerHTML='<small>MAESTRIA DE CRIATURAS</small><b>'+esc(n?m.name:'Criatura não registrada')+'</b><progress max="'+goal+'" value="'+Math.min(n,goal)+'"></progress><small>'+nf(n)+' / '+nf(goal)+'</small>';const pending=$('catchup55');pending.hidden=!c.catchupSeconds;pending.textContent=c.catchupSeconds?'Sincronizando progresso offline: '+Math.ceil(c.catchupSeconds/60)+' min de atividade pendente. Aguarde a conclusão antes de realizar ações.':'';}
 const itemArt=i=>{const d=i.data||{},a=window.eldoria52Art;if(d.relic!=null)return a.relic[d.relic];const cl=d.vocation||data.character.cls;return a.gear[(cl==='necro'?'mage':cl)+':'+(i.tier||0)+':'+i.slot]?.src;};
 const itemIcon=i=>{const src=itemArt(i);return src?'<img class="gear61-icon" src="'+esc(src)+'" alt="" loading="lazy">':'';};
 const label=i=>(i.data?.relic!=null?'✦ ':'')+esc(i.name)+(i.data?.upgrade?' +'+i.data.upgrade:'')+' · Nv. '+i.level+' · '+rar[i.rarity]+' · iLvl '+i.power;
@@ -111,7 +111,7 @@ function activity65(id){const c=data.character,train=id==='train',desc={hunt:'En
 function dungeon65(){const c=data.character,z=dungeonZone66,req=3+10*z;return '<div id="content-dungeon"><div class="dungeon11"><aside><div class="atlas-heading">EXPEDIÇÕES</div>'+original66.names.map((n,i)=>'<button class="atlas-select '+(i===z?'sel':'')+'" data-dungeon-zone="'+i+'" aria-pressed="'+(i===z)+'"><img src="assets/maps/crypt'+i+'-mini.webp" alt=""><span><b>'+esc(n)+'</b><small>Nv. '+(3+i*10)+'+</small></span></button>').join('')+'</aside><div class="atlas66-body"><div class="atlas-hero" data-atlas-map="crypt'+z+'"><div><small>'+esc(regions[z])+' · 4 CÂMARAS</small><h2>'+esc(original66.names[z])+'</h2><p>'+esc(original66.descs[z])+'</p></div></div><div class="dungeon-summary11"><div><small>Entrada</small><b>Nv. '+req+'+</b></div><div><small>Nível sugerido</small><b>'+(req+3)+'+</b></div><div><small>Inimigos</small><b>9 elites + chefe</b></div></div><form id="expedition57"><input type="hidden" name="zone" value="'+z+'"><label>Dificuldade<select name="difficulty">'+options(['Normal','Heroica','Pesadelo','Abissal','Profana'])+'</select></label><label>Expedição<select name="tower"><option value="false">Dungeon</option><option value="true">Torre Infinita</option></select></label><button class="primary" '+(c.activity||c.catchupSeconds||c.level<req?'disabled':'')+'>Viajar à entrada</button></form><h3>Andares e inimigos</h3>'+original66.rooms[z].map((n,i)=>'<div class="dungeon-floor11"><b>'+(i+1)+' · '+esc(n)+'</b>'+creatures66(c,z)+'</div>').join('')+'<div class="dungeon-floor11"><b>Câmara final</b>'+creatures66(c,z,true)+'</div><p>Recorde da Torre Infinita: '+nf(c.towerRecord)+'</p></div></div></div>';}
 function chronicles65(){const html=chronicles();return html.slice(html.indexOf('<h3>Eventos raros'));}
 function city65(){return '<h3>Vespera</h3><div class="city65-grid">'+[['train','Treinamento'],['play','Regiões'],['craft','Forja'],['merchant','Mercador'],['sub','Subclasses'],['prof','Ofícios'],['vault','Depósito'],['market','Mercado']].map(([id,n])=>'<button type="button" class="secondary" data-open65="'+id+'">'+emblem63(defs65[id][0])+esc(n)+'</button>').join('')+'</div><button data-act="stop" '+(!data.character.activity?'disabled':'')+'>Retornar a Vespera</button>';}
-function settings65(){return '<h3>Interface e conta</h3><div class="settings65"><button type="button" class="secondary" data-ui65="reset">Restaurar posição das janelas</button><button type="button" class="secondary" data-ui65="security">Segurança da conta</button><button type="button" class="secondary" data-ui65="logout">Sair da conta</button></div>'+combatDetails();}
+function settings65(){return '<h3>Interface e conta</h3><div class="settings65"><button type="button" class="secondary" data-ui65="reset">Restaurar posição das janelas</button><button type="button" class="secondary" data-ui65="security">Segurança da conta</button><button type="button" class="secondary" data-ui65="logout">Sair da conta</button></div><h3>Organização da HUD</h3><div class="hud-options">'+Object.entries(hudLabels).map(([key,label])=>'<label><input type="checkbox" data-hud-visible="'+key+'" '+(hiddenHud[key]?'':'checked')+'>'+label+'</label>').join('')+'</div>'+combatDetails();}
 function log65(){const c=data.character;return '<h3>Registro da aventura</h3><p>'+esc(c.lastEvent)+'</p><p>'+esc(c.lastCast||'')+'</p><h4>Sessões recentes</h4>'+c.history.map(a=>'<p>'+esc(regions[a.z])+' · '+esc(a.reason||a.mode)+' · '+nf(a.kills)+' abates</p>').join('');}
 let marketTab65='offers';
 function market65(){const d=market,html=marketPanel(),a=html.indexOf('<form id="listing"'),b=html.indexOf('<h3>Ofertas'),c=html.indexOf('<h3>Meus anúncios');return '<header class="bag46-head"><div><small>COMÉRCIO ENTRE AVENTUREIROS</small><h3>Mercado</h3><p>Ouro disponível · '+nf(d.gold)+' ◈</p></div></header><nav class="filter61">'+[['offers','Ofertas'],['sell','Anunciar'],['mine','Meus anúncios']].map(([k,n])=>'<button class="secondary" type="button" data-market65="'+k+'" aria-pressed="'+(marketTab65===k)+'">'+n+'</button>').join('')+'</nav>'+(marketTab65==='sell'?html.slice(a,b):marketTab65==='mine'?html.slice(c):html.slice(b,c));}
@@ -181,5 +181,89 @@ $('windowLayer65').addEventListener('click',e=>{if(busy)return;const win=e.targe
 $('windowLayer65').addEventListener('change',e=>{if(e.target.id==='rankcat'){focus65('ranking');category=e.target.value;rankPage=0;run(renderPanel);}});
 $('windowLayer65').addEventListener('input',e=>{const f=e.target.closest('#listing');if(!f||!market)return;const d=new FormData(f),i=market.items.find(i=>i.id===d.get('itemId')),p=Number(d.get('price'));if(!i||!Number.isSafeInteger(p)||p<2||p>1e9)return;const bps=Math.min(1200,300+4*(i.level-1)+80*i.rarity+({hunt:0,craft:50,dungeon:100,boss:200}[i.source]||0)),burn=Math.ceil(p*bps/10000);$('quote').textContent='Taxa '+(bps/100).toFixed(2)+'% · Queima '+nf(burn)+' ◈ · Recebe '+nf(p-burn)+' ◈';});
 setInterval(()=>{if(!token||!data?.character||busy||polling||document.hidden)return;polling=(async()=>{const old=data.character,snap=await request('/state?compact=1');if(!snap.character){data=snap;}else if(old.level!==snap.character.level||old.subclass!==snap.character.subclass||!!old.activity!==!!snap.character.activity){data=await request('/state');}else data={...data,character:{...old,...snap.character}};display();const c=data?.character;if(c&&windows65.has('analyzer')&&!windows65.get('analyzer').hidden&&!windows65.get('analyzer').matches(':hover'))windows65.get('analyzer').querySelector('.panel65').innerHTML=analyzer66();if(c&&windows65.has('play')&&!windows65.get('play').hidden){if($('live-event'))$('live-event').textContent=c.lastEvent;if($('live-activity'))$('live-activity').textContent=activityText(c);if($('live-enemy'))$('live-enemy').innerHTML=enemyHTML(c);if($('live-cast'))$('live-cast').textContent=c.lastCast?'Última habilidade: '+c.lastCast:'';}})().catch(e=>status(e.message)).finally(()=>{polling=null;});},1500);
+const hudParts=document.querySelectorAll('#tabs,.world52-top,#resource63,#adventure61,#target60,#combatHUD22,.maptools61,#city61');
+const hudStorage='eldoria-online-hud';
+const hudLabels={'world52-top':'Região',resource63:'Ouro',adventure61:'Registro',target60:'Alvo',combatHUD22:'Barra de combate',city61:'Interação'};
+const hudKey=part=>part.id||part.classList[0];
+let hiddenHud={};
+let hudPositions={};
+try{hudPositions=JSON.parse(localStorage.getItem(hudStorage))||{};hiddenHud=JSON.parse(localStorage.getItem(hudStorage+'-hidden'))||{};}catch{}
+const hudEdit=document.createElement('button');
+hudEdit.type='button';
+hudEdit.id='editHud';
+hudEdit.textContent='✥';
+hudEdit.title='Mover elementos da HUD';
+hudEdit.setAttribute('aria-label',hudEdit.title);
+document.querySelector('.maptools61').append(hudEdit);
+const hudBar=document.createElement('div');
+hudBar.id='hudEditBar';
+hudBar.hidden=true;
+hudBar.innerHTML='<button type="button" id="resetHud">Restaurar HUD</button><button type="button" id="finishHud">Concluir edição</button>';
+$('game').append(hudBar);
+function editHud(enabled){
+ $('game').classList.toggle('editing-hud',enabled);
+ hudBar.hidden=!enabled;
+ hudEdit.setAttribute('aria-pressed',String(enabled));
+}
+function placeHud(part,x,y){
+ const {width,height}=part.getBoundingClientRect();
+ part.style.setProperty('--hud-x',Math.max(0,Math.min(x,innerWidth-width))+'px');
+ part.style.setProperty('--hud-y',Math.max(0,Math.min(y,innerHeight-height))+'px');
+ part.classList.add('placed-hud');
+}
+function applyHud(){
+ for(const part of hudParts){
+  const key=hudKey(part),pos=hudPositions[key];
+  part.classList.toggle('hidden-hud',!!hiddenHud[key]);
+  if(Number.isFinite(pos?.x)&&Number.isFinite(pos?.y))placeHud(part,pos.x,pos.y);
+  else part.classList.remove('placed-hud');
+ }
+}
+function saveHud(){
+ try{localStorage.setItem(hudStorage,JSON.stringify(hudPositions));localStorage.setItem(hudStorage+'-hidden',JSON.stringify(hiddenHud));}catch{}
+}
+for(const part of hudParts){
+ const key=hudKey(part);
+ part.classList.add('movable-hud');
+ part.addEventListener('pointerdown',ev=>{
+  if(hudBar.hidden||ev.button!==0||ev.target.closest('#editHud'))return;
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+  const {left,top}=part.getBoundingClientRect(),dx=ev.clientX-left,dy=ev.clientY-top;
+  placeHud(part,left,top);
+  part.setPointerCapture(ev.pointerId);
+  const move=e=>{if(e.pointerId===ev.pointerId)placeHud(part,e.clientX-dx,e.clientY-dy);};
+  const finish=e=>{
+   if(e.pointerId!==ev.pointerId)return;
+   part.removeEventListener('pointermove',move);
+   part.removeEventListener('lostpointercapture',finish);
+   const {left:x,top:y}=part.getBoundingClientRect();
+   hudPositions[key]={x,y};
+   saveHud();
+  };
+  part.addEventListener('pointermove',move);
+  part.addEventListener('lostpointercapture',finish);
+ },true);
+ part.addEventListener('click',ev=>{
+  if(hudBar.hidden||ev.target.closest('#editHud'))return;
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+ },true);
+}
+hudEdit.onclick=()=>editHud(hudBar.hidden);
+$('finishHud').onclick=()=>editHud(false);
+$('resetHud').onclick=()=>{
+ hudPositions={};hiddenHud={};saveHud();applyHud();
+ for(const checkbox of document.querySelectorAll('[data-hud-visible]'))checkbox.checked=true;
+};
+$('windowLayer65').addEventListener('change',e=>{
+ const key=e.target.dataset.hudVisible;
+ if(!Object.hasOwn(hudLabels,key))return;
+ hiddenHud[key]=!e.target.checked;
+ saveHud();
+ applyHud();
+});
+window.addEventListener('resize',applyHud);
+editHud(false);
 if(!configured()){status('Servidor ainda não publicado/configurado. O jogo online permanece bloqueado.');for(const b of $('auth').querySelectorAll('button'))b.disabled=true;}display();
 })();
