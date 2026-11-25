@@ -1,7 +1,17 @@
 /* Presentation only. Server snapshots are the only source of progress. */
 (()=>{'use strict';
 const art=window.eldoria52Art,canvas=()=>document.getElementById('scene52'),motion=matchMedia('(prefers-reduced-motion: reduce)'),cache=new Map();
-let cityPos={x:.50,y:.72},cityDest=null,cityNear=null,cityClickNPC=null,cityRoute=[],cityKeys=new Set(),lastCityFrame=0,projection=null;const cityNPC=[{x:.381,y:.47,name:'Bram',role:'Ferreiro',mode:'forge',cls:'war'},{x:.619,y:.47,name:'Mira',role:'Mercadora',mode:'merchant',cls:'ranger'},{x:.381,y:.72,name:'Instrutor',role:'Treinamento',mode:'train',cls:'war'},{x:.619,y:.72,name:'Cartógrafo',role:'Jornada',mode:'zones',cls:'ranger'},{x:.50,y:.36,name:'Mestre de Provas',role:'Ascensão',mode:'sub',cls:'cleric'},{x:.50,y:.79,name:'Mestre de Ofícios',role:'Coleta',mode:'prof',cls:'mage'},{x:.50,y:.83,name:'Orven',role:'Depósito',mode:'vault',cls:'necro'}];
+const citySpawn={x:400/800,y:300/600};
+let cityPos={...citySpawn},cityDest=null,cityNear=null,cityClickNPC=null,cityRoute=[],cityKeys=new Set(),lastCityFrame=0,projection=null;
+const cityNPC=[
+ {x:150,y:192,name:'Bram',role:'Ferreiro',mode:'forge',cls:'war'},
+ {x:270,y:192,name:'Mira',role:'Mercadora',mode:'merchant',cls:'ranger'},
+ {x:400,y:166,name:'Cartógrafo',role:'Viagens e regiões',mode:'zones',cls:'ranger'},
+ {x:540,y:190,name:'Mestre de Provas',role:'Ascensão',mode:'sub',cls:'cleric'},
+ {x:638,y:195,name:'Mestre de Ofícios',role:'Profissões',mode:'prof',cls:'mage'},
+ {x:302,y:408,name:'Orven',role:'Depósito',mode:'vault',cls:'necro'},
+ {x:495,y:420,name:'Instrutor',role:'Treinamento',mode:'train',cls:'war'}
+].map(n=>({...n,x:n.x/800,y:n.y/600}));
 let zoom61=1,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],pulse=0,flash=0,defeated=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 // The 0.45.0 gather points use the legacy 800 × 600 stage and its walkable floor.
@@ -209,7 +219,7 @@ function breakPixels(kind,z,index,now){
  fx=fx.filter(f=>!f.parts);
  fx.push({parts,index,at:now});
 }
-function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;gatherHero=null;seen='';cityPos={x:.50,y:.72};zoom61=1;state=previous=null;fx=[];defeated=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){gatherHero=null;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={x:.5,y:.66};}}if(defeated?.next!==a?.encounter)defeated=null;
+function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;gatherHero=null;seen='';cityPos={...citySpawn};zoom61=1;state=previous=null;fx=[];defeated=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];visual={hero:a?.positions?.hero??.32,enemy:a?.positions?.enemy??.68,servant:a?.positions?.servant??.46,heroY:a?.positions?.heroY??.84,enemyY:a?.positions?.enemyY??.84};if(areaChanged){gatherHero=null;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
 if(previous){const event=s.lastCombat;
  if(defeated&&event?.encounter===defeated.next&&event.seq!==previous.lastCombat?.seq)defeated=null;
  const fallen=s.lastDefeat;

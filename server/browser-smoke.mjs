@@ -60,13 +60,13 @@ try{
  const camera=await page.evaluate(()=>window.eldoria52Scene.view());
  assert.ok(camera.ox<=0&&camera.oy<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.oy>=camera.h*(1-camera.scale)-.01);
  await page.locator('#scene52').focus();
- await page.keyboard.down('ArrowUp');
- try{await page.waitForFunction(oy=>window.eldoria52Scene.view()?.oy>oy+20,camera.oy,{timeout:3000});}
- finally{await page.keyboard.up('ArrowUp');}
+ await page.keyboard.down('ArrowDown');
+ try{await page.waitForFunction(oy=>window.eldoria52Scene.view()?.oy<oy-20,camera.oy,{timeout:3000});}
+ finally{await page.keyboard.up('ArrowDown');}
  await page.locator('#zoomOut61').click();
  await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
  const cityCanvas=await page.locator('#scene52').boundingBox();
- await page.mouse.click(cityCanvas.x+cityCanvas.width*.5,cityCanvas.y+cityCanvas.height*.83-6);
+ await page.mouse.click(cityCanvas.x+cityCanvas.width*302/800,cityCanvas.y+cityCanvas.height*408/600-6);
  await page.locator('#win-vault').waitFor({state:'visible'});
  await page.locator('#win-vault [data-close65]').click();
  await page.locator('#scene52').focus();await page.keyboard.press('ArrowUp');
