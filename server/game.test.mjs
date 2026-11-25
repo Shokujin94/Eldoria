@@ -452,3 +452,20 @@ test('equipped corruptions and awakenings multiply per item',async()=>{
  assert.ok(Math.abs(bonuses.damage-(1.035**2-1))<1e-10);
  assert.ok(Math.abs(bonuses.special-(1.04**2-1))<1e-10);
 });
+
+test('warrior dungeon rooms and bosses use separate legacy damage multipliers',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('arena','arena','test',0);
+ g.create('arena','Arena','war');
+ const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('arena').data);
+ s.level=13;
+ db.prepare('UPDATE characters SET data=?,level=13 WHERE account=?').run(JSON.stringify(s),'arena');
+ const city=g.state('arena').character.stats.damage;
+ const rooms=g.action('arena',{action:'start',mode:'dungeon',zone:0}).character.stats.damage;
+ g.action('arena',{action:'stop'});
+ const boss=g.action('arena',{action:'start',mode:'boss',zone:0}).character.stats.damage;
+ assert.ok(Math.abs(rooms/city-1.45*1.20)<1e-10);
+ assert.ok(Math.abs(boss/city-1.10)<1e-10);
+ db.close();
+});
