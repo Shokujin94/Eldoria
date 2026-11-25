@@ -151,3 +151,12 @@ test('shock and exposure affect damage in both directions and defense caps at 63
  c.enemyStrike('war',s,{...st,reduction:.9},a,()=>.5,false);
  assert.equal(s.hp,63);
 });
+
+test('Voraz advances the enemy attack clock without striking through control',()=>{
+ const a={index:0,affixes:['fast'],effects:{},positions:{hero:.25,enemy:.37}};
+ assert.equal(c.attackReady(a,'enemy','war',false),true);
+ assert(Math.abs(a.attackClock.enemy-.07)<1e-9);
+ a.effects.freeze={left:2};
+ assert.equal(c.attackReady(a,'enemy','war',false),false);
+ assert.equal(a.attackClock.enemy,0);
+});

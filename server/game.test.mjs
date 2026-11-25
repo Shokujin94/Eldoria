@@ -68,3 +68,28 @@ test('common forging retains the weighted grade of consumed materials',()=>{
  assert.equal(d.character.gold,1000-Math.ceil(40*32/11));
  db.close();
 });
+
+test('defeating a boss clears its phase, clock and pending attack before the next encounter',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ let now=100000;
+ const g=game(db,{clock:()=>now,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);
+ g.create('a','Alda','war');
+ const read=()=>JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);
+ const write=s=>db.prepare('UPDATE characters SET data=?,level=? WHERE account=?').run(JSON.stringify(s),s.level,'a');
+ const hero=read();hero.level=5;write(hero);
+ g.action('a',{action:'start',mode:'boss',zone:0});
+ const s=read(),a=s.activity;
+ a.enemyHp=1;a.phase=3;a.bossClock=5;a.lastMechanic='Raízes';
+ a.positions={hero:.25,enemy:.37,heroY:.65,enemyY:.65,servant:.34};
+ a.attackClock.hero=.9;write(s);
+ now+=1000;
+ const result=g.state('a').character;
+ assert.equal(result.zoneBosses[0],1);
+ assert.notEqual(result.activity.encounter,a.encounter);
+ assert.equal(result.activity.phase,0);
+ assert.equal(result.activity.bossClock,0);
+ assert.equal(result.activity.warning,undefined);
+ assert.equal(result.activity.lastMechanic,undefined);
+ db.close();
+});
