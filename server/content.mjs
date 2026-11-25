@@ -5,7 +5,12 @@ const clamp41=(x,a,b)=>Math.max(a,Math.min(b,x)),pick=(a,rng)=>a[Math.min(a.leng
 const names=[['Mucor, a Gosma Errante','Lobo de Uivacinza','Tecedeira do Espinhal','Cerval, o Javali Ferido','Lâmia da Bruma Verde'],['Ossário Andante de Valdren','Asa de Túmulo','Voraz das Catacumbas','Oficiante do Sino Rachado','Vassalo do Juramento Morto'],['Pedra Viva de Karvash','Draco das Sete Brasas','Íncubo da Carvoaria','Aguilhão de Vidro Negro','Vulcário, o Coração de Escória'],['Sugador de Várzea','Mastim dos Afogados','Tecedeira do Lodo','Torvo, o Inchado','Morwen, a Bruxa Submersa'],['Mucor de Cristal','Lobo de Dente Branco','Asa da Geada Fúnebre','Jotun de Nhal','O Sem-Sopro'],['Aranha de Costelas','Mastim das Urnas','Sacristão sem Olhos','Varkun, o Talhador de Marfim','Custódio das Cinzas'],['Vigia da Bandeira Rota','Mastim de Ferro','Besteiro da Última Patrulha','Cavaleiro de Elmo Vazio','Capelão do Sangue Seco'],['Verme da Fornalha','Fera de Pele em Brasa','Flagelante Rubro','Colosso do Ferro Líquido','Salamandra de Karvash'],['Umbral, o Rastejante','Lobo da Lua Cega','Vidente do Sol Morto','Algoz do Astro Partido','Serafim de Asas Queimadas'],['Limo da Boca do Mundo','Tricéfalo de Nethar','Aracne do Vazio','Gigante da Última Porta','Profeta do Silêncio Eterno']];
 
 const bossNames=['Aldren, o Coração das Raízes','Odran, Rei do Juramento Partido','Karvash, Dragão da Cinza Eterna','Morghessa, Mãe dos Afogados','Nhal, o Arauto sem Primavera','Vortem, Cardeal de Marfim','Veyr, Marechal do Elmo Vazio','Azrak, Titã das Forjas Mortas','Elyr, Prelado do Sol Negro','Nethar, Senhor da Última Noite'];
-export const xpNeed=l=>Math.round(62+22*l+11*l*l+14*l**1.55+Math.max(0,l-100)**2*14);
+export function xpNeed(level){
+ const excess=Math.max(0,level-100);
+ const base=Math.round(62+22*level+11*level**2+14*level**1.55+excess**2*14);
+ return Math.round(base*(1.55+Math.min(level,100)*.011+Math.log2(1+excess)*.08));
+}
+export const skillXpNeed=level=>Math.round((12+level*3)*1.2);
 export const dropRates=[.055,.07,.085,.105,.13];
 export const monsterOdds=[[86,12,1.85,.14,.01],[82,15,2.7,.28,.02],[77,18,4.4,.55,.05],[71,22,6.2,.72,.08],[66,25,7.8,1.08,.12]];
 export const materialOdds=[[65,27,7,.9,.1],[55,30,12,2.7,.3],[47,32,16,4.5,.5],[38,34,20,7,1],[28,35,25,10,2]];

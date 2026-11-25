@@ -88,6 +88,9 @@ try{
  assert.match(await effect.innerText(),/\d+ s/);
  await page.locator('#win-cons [data-close65]').click();
  await page.locator('[data-tab=character]').click();
+ const mastery=page.locator('#win-character .mastery-progress');
+ await mastery.waitFor({state:'visible'});
+ assert.match(await mastery.innerText(),/Domínio dos mortos.*0 \/ 18 XP de maestria/);
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();await page.locator('[data-gearslot66=weapon]').click();await page.locator('.gear-cell.chosen[data-gearslot66=weapon]').waitFor();
  await page.locator('[data-tab=bag]').click();
