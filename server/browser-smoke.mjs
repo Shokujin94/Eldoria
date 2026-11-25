@@ -171,6 +171,20 @@ try{
  await impact.dispose();
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
+ const expeditionFixture=new DatabaseSync(join(dir,'test.sqlite'));
+ try{
+  const character=expeditionFixture.prepare('SELECT account,data FROM characters').get();
+  const save=JSON.parse(character.data);save.level=5;
+  expeditionFixture.prepare('UPDATE characters SET level=5,data=? WHERE account=?').run(JSON.stringify(save),character.account);
+ }finally{expeditionFixture.close();}
+ await page.waitForFunction(()=>document.getElementById('character63').textContent==='Nível 5');
+ await page.locator('[data-tab=dungeon]').click();
+ await page.locator('#expedition57 button').click();
+ await page.waitForFunction(()=>document.getElementById('dungeon-progress66')?.textContent.includes('Andar 1/3 · 0/3 elites'));
+ assert.match(await page.locator('#world52-location').innerText(),/Andar 1\/3 · 0\/3 elites/);
+ await page.locator('#win-dungeon [data-close65]').click();
+ await page.locator('[data-quick61=stop]').click();
+ await page.locator('#city61').waitFor({state:'visible'});
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'mobile overflow');
  assert.deepEqual(errors,[]);

@@ -237,3 +237,36 @@ test('each legacy rare event is identified and settles its original reward once'
  }
  db.close();
 });
+
+test('dungeons advance after three elites per floor and tower bosses advance the tower record',async()=>{
+ const content=await import('./content.mjs');
+ const regional=content.enemy(0,4,'boss'),final=content.enemy(0,4,'dungeon',4);
+ assert.equal(final.hp,Math.round(regional.hp*1.1));
+ assert.equal(final.atk,Math.round(regional.atk*1.03));
+ assert.equal(final.xp,Math.round(content.enemy(0,1).xp*2*1.3));
+ const db=new DatabaseSync(':memory:');schema(db);
+ let now=100000;
+ const g=game(db,{clock:()=>now,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);
+ g.create('a','Alda','war');
+ const read=()=>JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);
+ const write=s=>db.prepare('UPDATE characters SET data=?,level=? WHERE account=?').run(JSON.stringify(s),s.level,'a');
+ const save=read();save.level=5;write(save);
+ for(const tower of [false,true]){
+  g.action('a',{action:'start',mode:'dungeon',zone:0,tower});
+  let result;
+  for(let kill=1;kill<=10;kill++){
+   const s=read(),a=s.activity;
+   a.enemyHp=1;a.recovery=0;a.attackClock.hero=.9;
+   a.positions={hero:.25,enemy:.37,heroY:.65,enemyY:.65,servant:.34};
+   write(s);now+=1000;result=g.state('a').character;
+   assert.equal(result.activity.wave,kill===10?1:Math.floor(kill/3)+1);
+   assert.equal(result.activity.floorKills,kill===10?0:kill%3);
+  }
+  assert.equal(result.activity.floor,tower?2:1);
+  assert.equal(result.towerRecord,tower?1:0);
+  assert.equal(result.zoneDungeons[0],tower?2:1);
+  g.action('a',{action:'stop'});
+ }
+ db.close();
+});
