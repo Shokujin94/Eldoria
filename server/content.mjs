@@ -14,6 +14,8 @@ export const rareEvents=Object.freeze([
  'Mercador itinerante','Baú amaldiçoado','Mini-boss errante','Portal secreto','Altar antigo','Criatura rara'
 ]);
 export const skillXpNeed=level=>Math.round((12+level*3)*1.2);
+export const earlyCombatScale=level=>.56+.44*Math.min(1,Math.max(0,(level-1)/29));
+export const encounterScale=(zone,index,boss)=>earlyCombatScale(1+10*zone+2*(boss?1:index));
 export const dropRates=[.055,.07,.085,.105,.13];
 export const monsterOdds=[[86,12,1.85,.14,.01],[82,15,2.7,.28,.02],[77,18,4.4,.55,.05],[71,22,6.2,.72,.08],[66,25,7.8,1.08,.12]];
 export const materialOdds=[[65,27,7,.9,.1],[55,30,12,2.7,.3],[47,32,16,4.5,.5],[38,34,20,7,1],[28,35,25,10,2]];
@@ -45,6 +47,9 @@ export function enemy(z,i,mode='hunt',wave=1,level=1,{difficulty=0,floor=1,affix
  if(boss){a.hp=Math.round(a.hp*1.28);a.xp=Math.round(a.xp*1.13);a.gold=Math.round(a.gold*1.10);}
  const goldScale=(z===0?.85:.64-z*.019)/(1+.012*over);
  a.gold=Math.max(1,Math.round(a.gold*goldScale*(1+.035*d)));
+ const scale=encounterScale(z,i,boss);
+ a.hp=Math.max(1,Math.round(a.hp*scale));
+ a.atk=Math.max(1,Math.round(a.atk*scale));
  return a;
 }
 const qFactor=[.85,1,1.12,1.25],rarFactor=[1,1.19,1.43,1.73,2.10],affixCount=[0,1,2,3,4];

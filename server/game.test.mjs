@@ -19,7 +19,7 @@ test('server-only state, elapsed time, ranking, custody and gold burn',()=>{
 });
 
 test('regional port, real item ranges, timed battles, attributes and failed-action settlement',async()=>{
- const c=await import('./content.mjs');assert.equal(c.enemy(0,0).hp,45);assert.equal(c.enemy(0,0).name,'Mucor, a Gosma Errante');assert.equal(c.sourceRange(4,'forge')[1],45);assert.equal(c.xpNeed(1),170);assert.equal(c.xpNeed(50),72830);assert.equal(c.xpNeed(101),361474);
+ const c=await import('./content.mjs');assert.equal(c.enemy(0,0).hp,25);assert.equal(c.enemy(0,0).name,'Mucor, a Gosma Errante');assert.equal(c.sourceRange(4,'forge')[1],45);assert.equal(c.xpNeed(1),170);assert.equal(c.xpNeed(50),72830);assert.equal(c.xpNeed(101),361474);
  const item=c.generate({tier:2,rarity:4,quality:2,vocation:'war',slot:'weapon'},'hunt',2,()=>.5);assert(item.level>=25&&item.level<=27);assert.equal(item.affixes.length,4);assert(c.itemPower45({name:'Teste',slot:'weapon',baseMods:item.baseMods})>0);
  assert.equal(c.recipe('weapon',0,{}).cost,40);assert(c.recipe('weapon',1,{mob:3,mining:3,wood:3}).req['boss:1']===2);
  const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.5});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Alda','war');
@@ -147,7 +147,7 @@ test('base vocation attributes and secondary stat gains match the legacy coeffic
  const keys=['str','dex','int','vit','wis'];
  const mana={war:38,ranger:38,mage:61,cleric:44,necro:60};
  const special={war:1.637805,ranger:1.637805,mage:1.951598,cleric:1.666394,necro:1.755374};
- const hp={war:108,ranger:97,mage:95,cleric:103,necro:96};
+ const hp={war:60,ranger:54,mage:53,cleric:58,necro:54};
  const def={war:5.7,ranger:5.38,mage:5.06,cleric:3.7,necro:5.56};
  const regen={war:1.103081,ranger:1.103081,mage:1.497559,cleric:1.591872,necro:1.521295};
  for(const [cl,base] of Object.entries(bases)){
@@ -241,8 +241,8 @@ test('each legacy rare event is identified and settles its original reward once'
 test('dungeons advance after three elites per floor and tower bosses advance the tower record',async()=>{
  const content=await import('./content.mjs');
  const regional=content.enemy(0,4,'boss'),final=content.enemy(0,4,'dungeon',4);
- assert.equal(final.hp,Math.round(regional.hp*1.1));
- assert.equal(final.atk,Math.round(regional.atk*1.03));
+ assert.equal(regional.hp,295);assert.equal(final.hp,324);
+ assert.equal(regional.atk,11);assert.equal(final.atk,11);
  assert.equal(final.xp,41);
  const db=new DatabaseSync(':memory:');schema(db);
  let now=100000;
@@ -274,8 +274,29 @@ test('dungeons advance after three elites per floor and tower bosses advance the
 test('encounter layers combine before overlevel and regional reward rounding',async()=>{
  const {enemy}=await import('./content.mjs');
  const encounter=enemy(1,2,'dungeon',2,40,{difficulty:3,floor:3,affixes:2});
- assert.deepEqual(encounter,{name:'Voraz das Catacumbas de elite',hp:1504,atk:76,xp:61,gold:8});
+ assert.deepEqual(encounter,{name:'Voraz das Catacumbas de elite',hp:1162,atk:59,xp:61,gold:8});
  const final=enemy(0,4,'dungeon',4);
  assert.equal(final.xp,41);
  assert.equal(final.gold,11);
+});
+
+test('existing encounters migrate early life proportions once without altering rewards',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);
+ g.create('a','Alda','war');
+ g.action('a',{action:'start',mode:'hunt',zone:0});
+ const save=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);
+ delete save.earlyBalanceApplied;save.hp=54;save.activity.index=0;
+ save.activity.enemy={name:'Teste',hp:100,atk:20,xp:12,gold:4};save.activity.enemyHp=40;
+ db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),'a');
+ const after=g.state('a').character;
+ assert.equal(after.hp,30);
+ assert.equal(after.activity.enemy.hp,56);
+ assert.equal(after.activity.enemyHp,22);
+ assert.equal(after.activity.enemy.atk,11);
+ assert.equal(after.activity.enemy.xp,12);
+ assert.equal(after.activity.enemy.gold,4);
+ assert.deepEqual(g.state('a').character.activity,after.activity);
+ db.close();
 });
