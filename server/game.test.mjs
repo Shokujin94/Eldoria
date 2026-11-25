@@ -216,3 +216,24 @@ test('legacy set bonuses unlock at two, three, four and five equipped pieces',as
  const set1=slots.slice(0,3).map(slot=>({slot,tier:1,rarity:3,data:{}}));
  assert.equal(equipment.setBonuses(set1).def,10);
 });
+
+test('each legacy rare event is identified and settles its original reward once',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('hero','hero','test',0);
+ g.create('hero','Alda','war');
+ const names=['Mercador itinerante','Baú amaldiçoado','Mini-boss errante','Portal secreto','Altar antigo','Criatura rara'];
+ for(const [k,name] of names.entries()){
+  const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('hero').data);
+  s.hp=20;s.materials={};s.rareEvent={k,z:2};
+  db.prepare('UPDATE characters SET data=?,gold=0 WHERE account=?').run(JSON.stringify(s),'hero');
+  assert.equal(g.state('hero').character.rareEventName,name);
+  const result=g.action('hero',{action:'resolveEvent'}).character;
+  assert.equal(result.rareEventName,null);
+  assert.equal(result.gold,k===0?15:k===1||k===4?36:0);
+  assert.equal(result.hp,k===1||k===4?result.stats.hp:20);
+  assert.equal(result.materials['mob:2:1']??0,[2,3,5].includes(k)?2:0);
+  assert.throws(()=>g.action('hero',{action:'resolveEvent'}));
+ }
+ db.close();
+});

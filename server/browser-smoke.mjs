@@ -77,6 +77,7 @@ try{
   const character=fixture.prepare('SELECT account,data FROM characters').get();
   const save=JSON.parse(character.data);
   save.potions.might=1;
+  save.rareEvent={z:0,k:0};
   fixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
   for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0}));
@@ -90,6 +91,13 @@ try{
  await effect.waitFor({state:'visible'});
  assert.match(await effect.innerText(),/\d+ s/);
  await page.locator('#win-cons [data-close65]').click();
+ await page.locator('[data-group65="3"]').click();
+ await page.locator('[data-tab=chronicles]').click();
+ const chronicles=page.locator('#win-chronicles');
+ await chronicles.getByText('Mercador itinerante').waitFor({state:'visible'});
+ await chronicles.locator('[data-act=resolveEvent]').click();
+ await chronicles.getByText(/0,3% de chance por vitória/).waitFor({state:'visible'});
+ await chronicles.locator('[data-close65]').click();
  await page.locator('[data-tab=character]').click();
  const mastery=page.locator('#win-character .mastery-progress');
  await mastery.waitFor({state:'visible'});

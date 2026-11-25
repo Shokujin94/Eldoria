@@ -10,6 +10,9 @@ export function xpNeed(level){
  const base=Math.round(62+22*level+11*level**2+14*level**1.55+excess**2*14);
  return Math.round(base*(1.55+Math.min(level,100)*.011+Math.log2(1+excess)*.08));
 }
+export const rareEvents=Object.freeze([
+ 'Mercador itinerante','Baú amaldiçoado','Mini-boss errante','Portal secreto','Altar antigo','Criatura rara'
+]);
 export const skillXpNeed=level=>Math.round((12+level*3)*1.2);
 export const dropRates=[.055,.07,.085,.105,.13];
 export const monsterOdds=[[86,12,1.85,.14,.01],[82,15,2.7,.28,.02],[77,18,4.4,.55,.05],[71,22,6.2,.72,.08],[66,25,7.8,1.08,.12]];
