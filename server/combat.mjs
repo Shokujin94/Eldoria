@@ -252,12 +252,65 @@ export function learnedSkills(cl,s){return tree(cl,s).flatMap(p=>p.nodes).filter
 export function turn(cl,s,st,a,random,boss,deferRanged=false){const has=k=>!!a.effects[k],all=learnedSkills(cl,s),learned=s.rotation===null?all:s.rotation.map(id=>all.find(k=>k.id===id)).filter(Boolean);if(a.heroEffects?.stun||a.heroEffects?.freeze)return 0;if(a.positions&&combatGap(a.positions)>heroReach[cl])return 0;let cast=s.rotation===null?learned.find(k=>k.buff13&&!s.buffs[k.id]&&!s.cooldowns[k.id]&&s.mana>=k.mana):null;if(!cast&&learned.length){for(let i=0;i<learned.length;i++){const j=s.rotation===null?(s.cursor+i)%learned.length:i,k=learned[j],cond=s.rotationConditions?.[k.id]||'always';if(s.rotation!==null&&(cond==='hp'&&s.hp/st.hp>=.5||cond==='mp'&&s.mana/st.mana>=.35||cond==='execute'&&a.enemyHp/a.enemy.hp>=.3||cond==='boss'&&!boss&&!a.affixes?.length&&a.mode!=='dungeon'||cond==='control'&&(has('stun')||has('freeze'))))continue;if((!k.buff13||s.rotation!==null&&!s.buffs[k.id])&&!s.cooldowns[k.id]&&s.mana>=k.mana){cast=k;s.cursor=(j+1)%learned.length;break;}}}
  if(cast){s.mana-=cast.mana;s.cooldowns[cast.id]=cast.cd;s.casts[cast.id]=(s.casts[cast.id]||0)+1;s.lastCast=cast.name;}
  if(deferRanged&&cl!=='war'&&!cast?.buff13){
-  a.pendingHeroShot={cast:cast??null};
-  return {element:heroAttackElement(cl,cast)};
+  const element=heroAttackElement(cl,cast);
+  const kind=cl==='ranger'?'arrow':element==='ice'?'ice':'magic';
+  a.pendingHeroShot={cast:cast??null,projectile:launchProjectile(a.positions,'enemy',kind,boss)};
+  return {element};
  }
  return resolveHeroAttack(cl,s,st,a,random,boss,cast);
 }
 const heroAttackElement=(cl,cast)=>cast?.element||({mage:'arcane',cleric:'holy',necro:'dark'}[cl]||'physical');
+// The combat stage uses normalized coordinates. Projectile velocities use the
+// reference stage's 800 × 600 pixels and follow a moving elliptical target.
+function projectileBody(p,side,boss){
+ const scale=side==='hero'&&p.heroY!==undefined?1.55:1;
+ return {x:p[side]*800,y:(p[side+'Y']??.84)*600-(side==='hero'?4*scale:boss?15:7),
+  rx:side==='hero'?12*scale:boss?33:14,ry:side==='hero'?20*scale:boss?40:20};
+}
+function launchProjectile(positions,side,kind,boss){
+ if(!positions)return null;
+ const source=side==='hero'?'enemy':'hero',target=projectileBody(positions,side,boss);
+ const x=positions[source]*800,y=(positions[source+'Y']??.84)*600-8;
+ const nominal=kind==='arrow'?650:kind==='ice'?780:930;
+ const speed=Math.max(.105,Math.min(.39,Math.hypot(target.x-x,target.y-y)/nominal));
+ return {x,y,speed,radius:kind==='arrow'?1:5};
+}
+function contactFraction(x,y,nextX,nextY,from,to,radius){
+ const rx=to.rx+radius,ry=to.ry+radius;
+ const ax=(x-from.x)/rx,ay=(y-from.y)/ry;
+ const dx=(nextX-to.x)/rx-ax,dy=(nextY-to.y)/ry-ay;
+ const c=ax*ax+ay*ay-1;
+ if(c<=0)return 0;
+ const a=dx*dx+dy*dy,b=ax*dx+ay*dy,disc=b*b-a*c;
+ if(!a||disc<0)return null;
+ const t=(-b-Math.sqrt(disc))/a;
+ return t>=0&&t<=1?t:null;
+}
+function advanceProjectile(projectile,side,boss,start,end){
+ if(!projectile||!start||!end)return 0;
+ const from=projectileBody(start,side,boss),to=projectileBody(end,side,boss);
+ let body=from;
+ for(let step=1;step<=20;step++){
+  const progress=step/20;
+  const target={...to,x:from.x+(to.x-from.x)*progress,y:from.y+(to.y-from.y)*progress};
+  const {x,y,speed,radius}=projectile,dx=target.x-x,dy=target.y-y;
+  const distance=Math.hypot(dx,dy),ratio=distance?Math.min(1,speed*50/distance):0;
+  const nextX=x+dx*ratio,nextY=y+dy*ratio;
+  const hit=contactFraction(x,y,nextX,nextY,body,target,radius);
+  if(hit!==null)return (step-1+hit)*50;
+  projectile.x=nextX;projectile.y=nextY;
+  body=target;
+ }
+ return Infinity;
+}
+export function advanceCombatProjectiles(cl,s,st,a,random,boss,start){
+ const hero=a.pendingHeroShot?advanceProjectile(a.pendingHeroShot.projectile,'enemy',boss,start,a.positions):Infinity;
+ const enemy=a.pendingEnemyShot?advanceProjectile(a.pendingEnemyShot.projectile,'hero',boss,start,a.positions):Infinity;
+ if(enemy<hero)landEnemyShot(s,st,a,random);
+ const landed=Number.isFinite(hero)&&landHeroShot(cl,s,st,a,random,boss);
+ if(enemy>=hero&&Number.isFinite(enemy))landEnemyShot(s,st,a,random);
+ return landed;
+}
 export function landHeroShot(cl,s,st,a,random,boss){
  const shot=a.pendingHeroShot;
  if(!shot)return false;
@@ -299,7 +352,7 @@ export function enemyStrike(cl,s,st,a,random,boss,deferRanged=false){
  const ranged=rangedEnemy(a,boss);
  const shot={element,kind:a.z===1&&a.index===3?'arrow':a.z===2&&a.index===4?'fire':'dark'};
  if(ranged&&deferRanged){
-  a.pendingEnemyShot={damage,element,energy:v.hurtEnergy||0};
+  a.pendingEnemyShot={damage,element,energy:v.hurtEnergy||0,projectile:launchProjectile(a.positions,'hero',shot.kind,boss)};
   return shot;
  }
  const dealt=incoming(s,st,a,damage,boss,random,element);

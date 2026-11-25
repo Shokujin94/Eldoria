@@ -235,3 +235,18 @@ test('hero projectile consumes mana at launch and resolves only once',()=>{
  assert.equal(a.enemyHp,remaining);
  assert.equal(s.casts.x,1);
 });
+
+test('a projectile follows a moving target across multiple combat steps',()=>{
+ const s=c.normalize({level:2,hp:100,mana:100});
+ const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:100,effects:{},positions:{hero:.2,enemy:.4}};
+ const st={hp:100,mana:100,damage:10,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ c.turn('mage',s,st,a,()=>.5,false,true);
+ const launch={...a.positions};
+ a.positions.enemy=.9;
+ assert.equal(c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,launch),false);
+ assert.equal(a.enemyHp,100);
+ assert(a.pendingHeroShot.projectile.x>launch.hero*800);
+ for(let i=0;i<4&&a.pendingHeroShot;i++)c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,a.positions);
+ assert(a.enemyHp<100);
+ assert.equal(a.pendingHeroShot,undefined);
+});

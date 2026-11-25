@@ -119,9 +119,18 @@ export function game(db,{clock=Date.now,random=rng}={}){
  function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],damage:0,received:0,procs:0}:null;}
  function finishAnalysis(s,reason){if(s.analyzer?.seconds){s.history.unshift({...s.analyzer,reason});s.history=s.history.slice(0,20);}s.analyzer=null;}
  function combatTick(id,r,s){const a=s.activity;if(!a.enemy||!Number.isFinite(a.enemyHp))newEncounter(s);const e=a.enemy,st=stats(id,r,s),boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4;
- if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;const heroLanded=combat.landHeroShot(r.cls,s,st,a,random,boss);combat.landEnemyShot(s,st,a,random);if(s.hp>0&&a.enemyHp>0){combat.tick(s,st,a);combat.autoPotion(s,st);}if(a.recovery&&s.hp>0){a.recovery--;if(s.analyzer)s.analyzer.seconds++;return;}a.turn++;if(boss&&s.hp>0&&a.enemyHp>0)combat.bossMechanic(s,st,a,random);if(s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);const heroAction=s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'hero',r.cls,boss)
+ if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;const projectiles=!!(a.pendingHeroShot||a.pendingEnemyShot);
+ const start=projectiles?{...a.positions}:null;
+ if(projectiles&&s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);
+ const heroLanded=combat.advanceCombatProjectiles(r.cls,s,st,a,random,boss,start);
+ if(s.hp>0&&a.enemyHp>0){combat.tick(s,st,a);combat.autoPotion(s,st);}
+ if(a.recovery&&s.hp>0){a.recovery--;if(s.analyzer)s.analyzer.seconds++;return;}
+ a.turn++;
+ if(boss&&s.hp>0&&a.enemyHp>0)combat.bossMechanic(s,st,a,random);
+ if(!projectiles&&s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);
+ const heroAction=!a.pendingHeroShot&&s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'hero',r.cls,boss)
   ?combat.turn(r.cls,s,st,a,random,boss,true):null;
- const heroShot=typeof heroAction==='object'?heroAction:null;const enemyShot=s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'enemy',r.cls,boss)?combat.enemyStrike(r.cls,s,st,a,random,boss,true):null;if(r.cls==='necro'&&a.enemyHp>0&&s.hp>0)combat.minionStrike(s,st,a,boss);const dealt=Math.max(0,enemy0-a.enemyHp),received=Math.max(0,h0-s.hp);
+ const heroShot=typeof heroAction==='object'?heroAction:null;const enemyShot=!a.pendingEnemyShot&&s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'enemy',r.cls,boss)?combat.enemyStrike(r.cls,s,st,a,random,boss,true):null;if(r.cls==='necro'&&a.enemyHp>0&&s.hp>0)combat.minionStrike(s,st,a,boss);const dealt=Math.max(0,enemy0-a.enemyHp),received=Math.max(0,h0-s.hp);
  const acted=a.hitSeq!==hit0,heroHit=acted&&a.lastHit>0,support=acted?a.lastSupportCast:null;
  if(dealt||received||support||enemyShot||heroShot){
   s.lastCombat={seq:(s.lastCombat?.seq||0)+1,encounter:a.encounter,mode:a.mode,zone:a.z,
