@@ -296,3 +296,13 @@ test('extra attacks add 65 percent of basic damage within the same boss cap',()=
   assert.equal(100-a.enemyHp,expected);
  }
 });
+
+test('direct damage rounds down after variance and retains the one-point minimum',()=>{
+ for(const [damage,roll,expected] of [[10.6,.5,10],[10.6,.01,9],[.2,.5,1]]){
+  const st={hp:100,mana:100,damage,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+  const s=c.normalize({level:20,hp:100,mana:100});
+  const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:100,effects:{}};
+  c.turn('war',s,st,a,()=>roll,false);
+  assert.equal(100-a.enemyHp,expected);
+ }
+});
