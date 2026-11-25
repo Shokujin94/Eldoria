@@ -146,12 +146,14 @@ test('base vocation attributes and secondary stat gains match the legacy coeffic
  const bases={war:[8,3,2,7,0],ranger:[3,9,2,6,0],mage:[2,3,10,5,0],cleric:[3,2,0,7,8],necro:[2,3,9,5,1]};
  const keys=['str','dex','int','vit','wis'];
  const mana={war:38,ranger:38,mage:61,cleric:44,necro:60};
- const special={war:1.637805,ranger:1.637805,mage:1.901864,cleric:1.666394,necro:1.755374};
+ const special={war:1.637805,ranger:1.637805,mage:1.951598,cleric:1.666394,necro:1.755374};
+ const hp={war:108,ranger:97,mage:95,cleric:103,necro:96};
+ const def={war:5.7,ranger:5.38,mage:5.06,cleric:3.7,necro:5.56};
  const regen={war:1.103081,ranger:1.103081,mage:1.497559,cleric:1.591872,necro:1.521295};
  for(const [cl,base] of Object.entries(bases)){
   db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(cl,cl,'test',0);
   const start=g.create(cl,cl,cl).character;
-  assert.deepEqual(keys.map(k=>start.stats.a[k]),base);assert.equal(start.stats.mana,mana[cl]);
+  assert.deepEqual(keys.map(k=>start.stats.a[k]),base);assert.equal(start.stats.mana,mana[cl]);assert.equal(start.stats.hp,hp[cl]);assert(Math.abs(start.stats.def-def[cl])<1e-9);
   assert(Math.abs(start.stats.special-special[cl])<1e-6);
   assert(Math.abs(start.stats.manaRegen-regen[cl])<1e-6);
  }
