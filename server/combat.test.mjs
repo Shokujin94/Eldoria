@@ -243,7 +243,7 @@ test('a projectile follows a moving target across multiple combat steps',()=>{
  c.turn('mage',s,st,a,()=>.5,false,true);
  const launch={...a.positions};
  a.positions.enemy=.9;
- assert.equal(c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,launch),false);
+ assert.equal(c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,launch).heroImpact,null);
  assert.equal(a.enemyHp,100);
  assert(a.pendingHeroShot.projectile.x>launch.hero*800);
  for(let i=0;i<4&&a.pendingHeroShot;i++)c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,a.positions);
@@ -257,7 +257,9 @@ test('a projectile contacts a wide creature before a narrow one at the same dist
   const s=c.normalize({level:2,hp:100,mana:100});
   const a={z:0,index,mode:'hunt',enemy:{hp:100,atk:4},enemyHp:100,effects:{},positions:{hero:.2,enemy:.5},
    pendingHeroShot:{cast:null,projectile:{x:378,y:502,speed:.001,radius:1}}};
-  assert.equal(c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,a.positions),landed);
+  const {heroImpact}=c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,a.positions);
+  assert.equal(!!heroImpact,landed);
+  if(heroImpact)assert.equal(heroImpact.x,.5);
   assert.equal(a.enemyHp<100,landed);
  }
 });

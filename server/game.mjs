@@ -122,7 +122,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;const projectiles=!!(a.pendingHeroShot||a.pendingEnemyShot);
  const start=projectiles?{...a.positions}:null;
  if(projectiles&&s.hp>0&&a.enemyHp>0)combat.move(r.cls,s,st,a,boss);
- const heroLanded=combat.advanceCombatProjectiles(r.cls,s,st,a,random,boss,start);
+ const {heroImpact,enemyImpact}=combat.advanceCombatProjectiles(r.cls,s,st,a,random,boss,start);
  if(s.hp>0&&a.enemyHp>0){combat.tick(s,st,a);combat.autoPotion(s,st);}
  if(a.recovery&&s.hp>0){a.recovery--;if(s.analyzer)s.analyzer.seconds++;return;}
  a.turn++;
@@ -132,9 +132,9 @@ export function game(db,{clock=Date.now,random=rng}={}){
   ?combat.turn(r.cls,s,st,a,random,boss,true):null;
  const heroShot=typeof heroAction==='object'?heroAction:null;const enemyShot=!a.pendingEnemyShot&&s.hp>0&&a.enemyHp>0&&combat.attackReady(a,'enemy',r.cls,boss)?combat.enemyStrike(r.cls,s,st,a,random,boss,true):null;if(r.cls==='necro'&&a.enemyHp>0&&s.hp>0)combat.minionStrike(s,st,a,boss);const dealt=Math.max(0,enemy0-a.enemyHp),received=Math.max(0,h0-s.hp);
  const acted=a.hitSeq!==hit0,heroHit=acted&&a.lastHit>0,support=acted?a.lastSupportCast:null;
- if(dealt||received||support||enemyShot||heroShot){
+ if(dealt||received||support||enemyShot||heroShot||enemyImpact){
   s.lastCombat={seq:(s.lastCombat?.seq||0)+1,encounter:a.encounter,mode:a.mode,zone:a.z,
-   dealt,received,heroHit,heroLanded,heroShot,support,enemyShot,critical:heroHit&&a.lastCritical,element:heroHit?a.lastAttackElement:null,skill:heroHit?a.lastAttackSkill:null,positions:{...a.positions}};
+   dealt,received,heroHit,heroLanded:!!heroImpact,heroImpact,heroShot,support,enemyShot,enemyImpact,critical:heroHit&&a.lastCritical,element:heroHit?a.lastAttackElement:null,skill:heroHit?a.lastAttackSkill:null,positions:{...a.positions}};
  }
  if(s.analyzer){s.analyzer.seconds++;s.analyzer.damage+=dealt;s.analyzer.received+=received;s.analyzer.procs+=s.energyProcs-proc0;}
  if(s.hp<=0){if(s.analyzer?.deaths!==undefined)s.analyzer.deaths++;s.deaths=(s.deaths||0)+1;s.hp=st.hp;s.mana=st.mana;s.activity=null;combat.clear(s);finishAnalysis(s,'Derrota');autoSell(id,s);s.lastEvent='Derrota · retorno a Vespera.';return;}
@@ -154,7 +154,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   combat.onVictory(r.cls,s,stats(id,r,s));if(a.mode==='boss'){s.bosses=(s.bosses||0)+1;s.zoneBosses[a.z]++;}else if(a.mode==='dungeon'){if(a.wave===4){s.dungeons=(s.dungeons||0)+1;s.zoneDungeons[a.z]++;if(a.tower){s.towerRecord=Math.max(s.towerRecord,a.floor||1);a.floor=(a.floor||1)+1;}a.wave=1;a.floorKills=0;s.lastEvent=(a.tower?'Torre · andar '+(a.floor-1)+' concluído':'Dungeon concluída')+' · '+s.lastEvent;}else if(++a.floorKills===3){a.wave++;a.floorKills=0;}}
   const finalHit=s.lastCombat?.encounter===a.encounter&&dealt>0?s.lastCombat:null;
   s.lastDefeat={encounter:a.encounter,mode:a.mode,zone:a.z,index:a.index,boss,
-   positions:{...a.positions},finalHit};
+   positions:{...a.positions,...(heroImpact&&{enemy:heroImpact.x,enemyY:heroImpact.y})},finalHit};
   newEncounter(s);a.recovery=1;
  }
  function migrateEarlyBalance(id,r,s){

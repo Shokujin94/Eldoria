@@ -298,7 +298,8 @@ function contactFraction(x,y,nextX,nextY,from,to,radius){
  return t>=0&&t<=1?t:null;
 }
 function advanceProjectile(projectile,side,a,boss,start){
- if(!projectile||!start||!a.positions)return 0;
+ if(!a.positions)return null;
+ if(!projectile||!start)return {time:0,x:a.positions[side],y:a.positions[side+'Y']??.84};
  const from=projectileBody(start,side,a,boss),to=projectileBody(a.positions,side,a,boss);
  let body=from;
  for(let step=1;step<=20;step++){
@@ -308,19 +309,25 @@ function advanceProjectile(projectile,side,a,boss,start){
   const distance=Math.hypot(dx,dy),ratio=distance?Math.min(1,speed*50/distance):0;
   const nextX=x+dx*ratio,nextY=y+dy*ratio;
   const hit=contactFraction(x,y,nextX,nextY,body,target,radius);
-  if(hit!==null)return (step-1+hit)*50;
+  if(hit!==null){
+   const substep=step-1+hit,t=substep/20;
+   const y0=start[side+'Y']??.84,y1=a.positions[side+'Y']??.84;
+   return {time:substep*50,x:start[side]+(a.positions[side]-start[side])*t,y:y0+(y1-y0)*t};
+  }
   projectile.x=nextX;projectile.y=nextY;
   body=target;
  }
- return Infinity;
+ return null;
 }
 export function advanceCombatProjectiles(cl,s,st,a,random,boss,start){
- const hero=a.pendingHeroShot?advanceProjectile(a.pendingHeroShot.projectile,'enemy',a,boss,start):Infinity;
- const enemy=a.pendingEnemyShot?advanceProjectile(a.pendingEnemyShot.projectile,'hero',a,boss,start):Infinity;
- if(enemy<hero)landEnemyShot(s,st,a,random);
- const landed=Number.isFinite(hero)&&landHeroShot(cl,s,st,a,random,boss);
- if(enemy>=hero&&Number.isFinite(enemy))landEnemyShot(s,st,a,random);
- return landed;
+ const hero=a.pendingHeroShot&&advanceProjectile(a.pendingHeroShot.projectile,'enemy',a,boss,start);
+ const enemy=a.pendingEnemyShot&&advanceProjectile(a.pendingEnemyShot.projectile,'hero',a,boss,start);
+ const enemyFirst=enemy&&(!hero||enemy.time<hero.time);
+ let heroImpact=null,damage;
+ if(enemyFirst)damage=landEnemyShot(s,st,a,random);
+ if(hero&&landHeroShot(cl,s,st,a,random,boss))heroImpact=hero;
+ if(enemy&&!enemyFirst)damage=landEnemyShot(s,st,a,random);
+ return {heroImpact,enemyImpact:damage?{...enemy,damage}:null};
 }
 export function landHeroShot(cl,s,st,a,random,boss){
  const shot=a.pendingHeroShot;
@@ -375,8 +382,9 @@ export function landEnemyShot(s,st,a,random){
  if(!shot)return;
  delete a.pendingEnemyShot;
  if(s.hp<=0||a.enemyHp<=0)return;
- incoming(s,st,a,shot.damage,false,random,shot.element);
+ const damage=incoming(s,st,a,shot.damage,false,random,shot.element);
  s.energy=Math.min(100,s.energy+shot.energy);
+ return damage;
 }
 export function onVictory(cl,s,st){const v=values(cl,s);s.hp=Math.min(st.hp,s.hp+Math.min(st.hp*.08,st.hp*((v.killHeal||0)+(st.powers?.harvest||0)+(st.recovery||0))));s.mana=Math.min(st.mana,s.mana+st.mana*(v.killMana||0));s.energy=Math.min(100,s.energy+(v.killEnergy||0));}
 

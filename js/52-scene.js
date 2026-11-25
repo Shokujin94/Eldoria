@@ -92,7 +92,7 @@ function combatProjectile(event,cls,incoming){
 }
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
- const {positions:p,dealt,received,critical,heroHit,heroLanded,heroShot,element,skill,support,enemyShot}=event;
+ const {positions:p,dealt,received,critical,heroHit,heroLanded,heroImpact,heroShot,element,skill,support,enemyShot,enemyImpact}=event;
  if(support){
   popup(support.skill,impactColors[support.element]??'#8ccfa3',now,p.hero,p.heroY??.84,true);
   tone('buff');
@@ -104,7 +104,7 @@ function showCombat(event,cls,now,currentEncounter){
  if(dealt){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
   const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=now+(shot?.flight||0);
-  const x=p.enemy,y=p.enemyY??.84;
+  const x=heroImpact?.x??p.enemy,y=heroImpact?.y??p.enemyY??.84;
   if(shot?.flight)fx.push({at:now,projectile:shot});
   if(heroHit){
    pulse=now;
@@ -119,7 +119,8 @@ function showCombat(event,cls,now,currentEncounter){
   if(shot.flight)fx.push({at:now,projectile:shot});
   if(enemyShot.damage)popup('-'+Math.ceil(enemyShot.damage),'#f38585',now+shot.flight,p.hero,shot.toY,true);
  }
- const otherDamage=Math.max(0,received-(enemyShot?.damage||0));
+ if(enemyImpact)popup('-'+Math.ceil(enemyImpact.damage),'#f38585',now,enemyImpact.x,enemyImpact.y,true);
+ const otherDamage=Math.max(0,received-(enemyImpact?.damage??enemyShot?.damage??0));
  if(otherDamage)popup('-'+Math.ceil(otherDamage),'#f38585',now,p.hero,p.heroY??.84,true);
 }
 function drawImpact(c,hit,w,h,hh,t){
