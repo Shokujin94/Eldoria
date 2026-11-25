@@ -276,3 +276,13 @@ test('recorded damage taken survives healing and excludes overkill',()=>{
  s.hp=100;
  assert.equal(s.analyzer.damageTaken,10+100-remaining);
 });
+
+test('elemental combo damage is credited separately without inflating overkill',()=>{
+ const s=c.normalize({level:20,hp:100,mana:100,analyzer:{damageSources:{}}});
+ const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:11,effects:{freeze:{left:2}}};
+ const st={hp:100,mana:100,damage:10,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ c.turn('war',s,st,a,()=>.5,false);
+ assert.equal(a.enemyHp,0);
+ assert.deepEqual(Object.values(s.analyzer.damageSources),[10,1]);
+ assert.equal(s.analyzer.damageSources[a.lastCombo],1);
+});
