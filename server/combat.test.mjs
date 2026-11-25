@@ -316,3 +316,14 @@ test('arena protection scales by vocation, level and dungeon difficulty',()=>{
   assert.equal(100-s.hp,expected);
  }
 });
+
+test('warrior dungeon room movement applies both legacy speed factors',()=>{
+ const s=c.normalize({level:20}),st={move:0};
+ const room={mode:'dungeon',z:0,index:0,positions:{hero:.2,enemy:.8,heroY:.65,enemyY:.65}};
+ const other={...room,positions:{...room.positions}};
+ c.move('war',s,st,room,false);
+ c.move('cleric',s,st,other,false);
+ const ratio=(room.positions.hero-.2)/(other.positions.hero-.2);
+ assert.ok(Math.abs(ratio-1.45*1.30)<1e-10);
+ assert.ok(Math.abs((.8-room.positions.enemy)/(.8-other.positions.enemy)-1.45*1.30)<1e-10);
+});

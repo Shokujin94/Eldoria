@@ -213,9 +213,10 @@ function moveMinions(minions,positions,mode){
 export function move(cl,s,st,a,boss){
  const p=a.positions??={hero:.25,enemy:.75,servant:.34};
  const v=values(cl,s),range=cl==='ranger'?.30:cl==='mage'?.27:cl==='cleric'||cl==='necro'?.21:.12;
- const step=.085*(1+Math.min(.3,(v.move||0)+(st.move||0)))*(a.heroEffects?.slow?.left>0?.7:1);
+ const roomTempo=cl==='war'&&a.mode==='dungeon'&&!boss?1.45*1.30:1;
+ const step=.085*roomTempo*(1+Math.min(.3,(v.move||0)+(st.move||0)))*(a.heroEffects?.slow?.left>0?.7:1);
  const stopped=a.effects?.stun||a.effects?.freeze;
- const speed=stopped?0:(a.effects?.slow?.left>0?.033:.065)*(boss?.75:1)*(trait(a,'fast')?1.18:1);
+ const speed=stopped?0:(a.effects?.slow?.left>0?.033:.065)*roomTempo*(boss?.75:1)*(trait(a,'fast')?1.18:1);
  const ranged=rangedEnemy(a,boss);
  if(arenaMode(a.mode))moveArena(p,cl,range,step,speed,a,ranged);
  else moveHunt(p,cl,range,step,speed,a,ranged);
