@@ -210,6 +210,17 @@ try{
  const expectedGatewayError=errors.indexOf('Failed to load resource: the server responded with a status of 502 (Bad Gateway)');
  if(expectedGatewayError>=0)errors.splice(expectedGatewayError,1);
  assert.equal(await page.locator('#target60').isVisible(),true);
+ const offlineFixture=new DatabaseSync(join(dir,'test.sqlite'));
+ try{
+  const character=offlineFixture.prepare('SELECT account,data FROM characters').get();
+  const save=JSON.parse(character.data);
+  save.last-=15000;
+  offlineFixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
+ }finally{offlineFixture.close();}
+ const offlineNotice=page.locator('#offlineReturn');
+ await offlineNotice.waitFor({state:'visible'});
+ assert.match(await offlineNotice.textContent(),/Retorno offline · 0 min 1[5-9] s/);
+ assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('eldoria-offline-return:'))),true);
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
  const expeditionFixture=new DatabaseSync(join(dir,'test.sqlite'));

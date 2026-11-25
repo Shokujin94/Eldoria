@@ -57,11 +57,16 @@ $('vocations').innerHTML=options(voc);const classDesc={war:'Corpo a corpo · res
 let offlineNoticeTimer;
 function showOfflineReturn(c){
  const el=$('offlineReturn'),summary=c.lastOffline;
- if(!summary?.seconds||c.activity?.offlineUntil)return;
- const key='eldoria-offline-return:'+c.name;
+ if(c.activity?.offlineUntil){
+  el.hidden=true;
+  clearTimeout(offlineNoticeTimer);
+  return;
+ }
+ if(!summary?.seconds)return;
+ const key='eldoria-offline-return:'+api+':'+c.name;
  try{
-  if(sessionStorage.getItem(key)===String(summary.seq))return;
-  sessionStorage.setItem(key,String(summary.seq));
+  if(localStorage.getItem(key)===String(summary.seq))return;
+  localStorage.setItem(key,String(summary.seq));
  }catch{
   if(el.dataset.notice===key+':'+summary.seq)return;
  }
