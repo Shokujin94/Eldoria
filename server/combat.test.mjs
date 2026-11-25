@@ -206,4 +206,14 @@ test('ranged strikes report projectile damage already resolved by the server',()
  assert.equal(hit.damage,100-s.hp);
  assert.equal(typeof hit.element,'string');
  assert.equal(c.enemyStrike('war',s,st,{...a,index:0},()=>.5,false),undefined);
+ s.hp=100;
+ const launch=c.enemyStrike('war',s,st,a,()=>.5,false,true);
+ assert.equal(launch.damage,undefined);
+ assert.equal(s.hp,100);
+ assert(a.pendingEnemyShot);
+ c.landEnemyShot(s,st,a,()=>.5);
+ assert.equal(s.hp,100-hit.damage);
+ assert.equal(a.pendingEnemyShot,undefined);
+ c.landEnemyShot(s,st,a,()=>.5);
+ assert.equal(s.hp,100-hit.damage);
 });

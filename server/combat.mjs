@@ -264,7 +264,7 @@ s.energy=Math.min(100,s.energy+(cast?12:8)+(cast?v.castEnergy||0:0)+(critical?v.
 if(dmg>0&&s.energy>=100&&(s.energyProfile==='auto'||s.energyProfile==='boss'&&boss||s.energyProfile==='hurt'&&s.hp/st.hp<.65)){s.energy=0;s.energyProcs++;const p=paths[cl]?.[s.subclass],bonus=(p?p[3]:({war:.22,ranger:.25,mage:.24,cleric:.12,necro:.08}[cl]))+(oath(s,1,0)?.10:0)+(oath(s,2,0)?.18:0)+(affinity(cl,s,a,critical,cast,st,far,boss)?.10:0);const extra=Math.round(dmg*bonus),applied=boss?Math.min(extra,Math.max(0,Math.round(a.enemy.hp*.29)-dmg)):extra;a.enemyHp=Math.max(0,a.enemyHp-applied);dmg+=applied;if(cl==='necro')summon(s,st,a,v);if(p?.[2]==='guard')s.guard=Math.max(s.guard,3);else if(p?.[2]&&a.enemyHp>0)effect(a,p[2],dmg*(oath(s,2,0)?1.15:.75),v,boss);heal(st.hp*((p?p[4]:cl==='cleric'?.05:0)+(oath(s,2,1)?.04:0)+(v.procHeal||0)));mana(st.mana*((p?p[5]:cl==='mage'?.05:0)+(oath(s,2,1)?.05:0)+(v.procMana||0)));}
 
 a.lastHit=dmg;a.lastSupportCast=cast?.buff13?{skill:cast.name,element:cast.element}:null;a.lastCritical=critical;a.hitSeq=(a.hitSeq||0)+1;return dmg;}
-export function enemyStrike(cl,s,st,a,random,boss){
+export function enemyStrike(cl,s,st,a,random,boss,deferRanged=false){
  if(a.enemyHp<=0||s.hp<=0||random()<st.dodge)return;
  const v=values(cl,s),effects=a.effects||{},pow=st.powers||{};
  const gap=a.positions?combatGap(a.positions):Infinity;
@@ -279,10 +279,23 @@ export function enemyStrike(cl,s,st,a,random,boss){
  const damage=a.enemy.atk*(1-balance.armor(st.def,a.z))*(1-Math.min(.63,st.reduction+reduction+synergy))
   *(cl==='war'&&s.subclass===0?1.10:1)*(oath(s,1,1)&&s.energy>=50?.93:1);
  const element=trait(a,'profane')?'dark':boss||a.index===4?affinities[a.z]:'physical';
- const before=s.hp;
- incoming(s,st,a,damage,boss,random,element);
+ const ranged=rangedEnemy(a,boss);
+ const shot={element,kind:a.z===1&&a.index===3?'arrow':a.z===2&&a.index===4?'fire':'dark'};
+ if(ranged&&deferRanged){
+  a.pendingEnemyShot={damage,element,energy:v.hurtEnergy||0};
+  return shot;
+ }
+ const dealt=incoming(s,st,a,damage,boss,random,element);
  s.energy=Math.min(100,s.energy+(v.hurtEnergy||0));
- if(rangedEnemy(a,boss))return {element,kind:a.z===1&&a.index===3?'arrow':a.z===2&&a.index===4?'fire':'dark',damage:Math.max(0,before-s.hp)};
+ if(ranged)return {...shot,damage:dealt};
+}
+export function landEnemyShot(s,st,a,random){
+ const shot=a.pendingEnemyShot;
+ if(!shot)return;
+ delete a.pendingEnemyShot;
+ if(s.hp<=0||a.enemyHp<=0)return;
+ incoming(s,st,a,shot.damage,false,random,shot.element);
+ s.energy=Math.min(100,s.energy+shot.energy);
 }
 export function onVictory(cl,s,st){const v=values(cl,s);s.hp=Math.min(st.hp,s.hp+Math.min(st.hp*.08,st.hp*((v.killHeal||0)+(st.powers?.harvest||0)+(st.recovery||0))));s.mana=Math.min(st.mana,s.mana+st.mana*(v.killMana||0));s.energy=Math.min(100,s.energy+(v.killEnergy||0));}
 
