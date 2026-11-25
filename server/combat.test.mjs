@@ -286,3 +286,13 @@ test('elemental combo damage is credited separately without inflating overkill',
  assert.deepEqual(Object.values(s.analyzer.damageSources),[10,1]);
  assert.equal(s.analyzer.damageSources[a.lastCombo],1);
 });
+
+test('extra attacks add 65 percent of basic damage within the same boss cap',()=>{
+ const st={hp:100,mana:100,damage:20,crit:0,critMult:1.6,haste:1,special:1.5,heal:0};
+ for(const [boss,expected] of [[false,33],[true,29]]){
+  const s=c.normalize({level:20,hp:100,mana:100});
+  const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:100,effects:{}};
+  c.turn('war',s,st,a,()=>.5,boss);
+  assert.equal(100-a.enemyHp,expected);
+ }
+});
