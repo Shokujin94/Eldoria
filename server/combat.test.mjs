@@ -250,3 +250,14 @@ test('a projectile follows a moving target across multiple combat steps',()=>{
  assert(a.enemyHp<100);
  assert.equal(a.pendingHeroShot,undefined);
 });
+
+test('a projectile contacts a wide creature before a narrow one at the same distance',()=>{
+ const st={hp:100,mana:100,damage:10,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ for(const [index,landed] of [[0,true],[4,false]]){
+  const s=c.normalize({level:2,hp:100,mana:100});
+  const a={z:0,index,mode:'hunt',enemy:{hp:100,atk:4},enemyHp:100,effects:{},positions:{hero:.2,enemy:.5},
+   pendingHeroShot:{cast:null,projectile:{x:378,y:502,speed:.001,radius:1}}};
+  assert.equal(c.advanceCombatProjectiles('mage',s,st,a,()=>.5,false,a.positions),landed);
+  assert.equal(a.enemyHp<100,landed);
+ }
+});
