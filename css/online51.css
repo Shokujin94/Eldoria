@@ -434,3 +434,20 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #game:not(.editing-hud) .hidden-hud{display:none!important}
 .hud-options{display:flex;flex-wrap:wrap;gap:8px 16px}
 .hud-options label{display:flex;align-items:center;gap:5px}
+
+.playing61 #buffbar11{
+ position:fixed;left:12px;top:150px;z-index:7;display:flex;flex-wrap:wrap;gap:4px;
+ max-width:min(365px,65vw);
+}
+.playing61 #buffbar11[hidden]{display:none}
+.buff11{
+ display:inline-flex;align-items:center;gap:5px;padding:3px 6px;border:1px solid #81745a;
+ border-radius:4px;background:#151418d9;color:#f0dfbb;font-size:11px;
+}
+.buff11.harmful{border-color:#a16570;color:#ffcbd0}
+.buff11 svg{width:14px;height:14px;flex:none}
+.buff11 b{font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:620px){
+ .playing61 #buffbar11{left:5px;top:110px;max-width:56vw}
+ .buff11{font-size:10px}
+}

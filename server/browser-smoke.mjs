@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
+import { DatabaseSync } from 'node:sqlite';
 import assert from 'node:assert/strict';
 const dir=await mkdtemp(join(tmpdir(),'eldoria-browser-'));
 const probe=createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');const chosenPort=probe.address().port;await new Promise((resolve,reject)=>probe.close(e=>e?reject(e):resolve()));
@@ -69,7 +70,23 @@ try{
  await page.locator('#win-vault [data-close65]').click();
  await page.locator('#scene52').focus();await page.keyboard.press('ArrowUp');
  await page.locator('[data-group65="0"]').click();await page.locator('[data-tab=achieve]').click();await page.locator('.achievement11').first().waitFor();assert.equal(await page.locator('.achievement11').count(),6);await page.locator('#win-achieve [data-close65]').click();
- await page.locator('[data-group65="0"]').click();await page.locator('[data-tab=cons]').click();await page.locator('#auto-hp').waitFor();assert.equal(await page.locator('.cons-item11').count(),12);await page.locator('#win-cons [data-close65]').click();
+ await page.locator('#buffbar11').waitFor({state:'hidden'});
+ const fixture=new DatabaseSync(join(dir,'test.sqlite'));
+ try{
+  const character=fixture.prepare('SELECT account,data FROM characters').get();
+  const save=JSON.parse(character.data);
+  save.potions.might=1;
+  fixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
+ }finally{fixture.close();}
+ await page.locator('[data-group65="0"]').click();
+ await page.locator('[data-tab=cons]').click();
+ await page.locator('#auto-hp').waitFor();
+ assert.equal(await page.locator('.cons-item11').count(),12);
+ await page.locator('#win-cons [data-act=usePotion][data-id=might]').click();
+ const effect=page.locator('#buffbar11 .buff11').filter({hasText:'Elixir da força'});
+ await effect.waitFor({state:'visible'});
+ assert.match(await effect.innerText(),/\d+ s/);
+ await page.locator('#win-cons [data-close65]').click();
  await page.locator('[data-tab=character]').click();
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();await page.locator('[data-gearslot66=weapon]').click();await page.locator('.gear-cell.chosen[data-gearslot66=weapon]').waitFor();
