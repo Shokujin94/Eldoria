@@ -131,6 +131,7 @@ test('support casts produce a scene event even when nobody takes damage',()=>{
  assert.equal(result.lastCombat.dealt,0);
  assert.equal(result.lastCombat.received,0);
  assert.deepEqual(result.lastCombat.support,{skill:'Brado de guerra',element:'physical'});
+ assert.deepEqual(result.recentCombat.at(-1),result.lastCombat);
  assert(result.buffs.s13c.left>0);
  db.close();
 });

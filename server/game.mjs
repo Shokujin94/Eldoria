@@ -171,6 +171,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  if(dealt||received||support||enemyShot||heroShot||enemyImpact||enemyMelee){
   s.lastCombat={seq:(s.lastCombat?.seq||0)+1,encounter:a.encounter,mode:a.mode,zone:a.z,
    dealt,received,heroHit,heroLanded:!!heroImpact,heroImpact,heroShot,support,enemyShot,enemyImpact,enemyMelee,critical:heroHit&&a.lastCritical,element:heroHit?a.lastAttackElement:null,skill:heroHit?a.lastAttackSkill:null,positions:{...a.positions}};
+  s.recentCombat=[...(s.recentCombat||[]).slice(-3),s.lastCombat];
  }
  if(s.analyzer){s.analyzer.seconds++;s.analyzer.damage+=dealt;s.analyzer.received+=received;s.analyzer.procs+=s.energyProcs-proc0;}
  if(s.hp<=0){if(s.analyzer?.deaths!==undefined)s.analyzer.deaths++;s.deaths=(s.deaths||0)+1;s.hp=st.hp;s.mana=st.mana;s.activity=null;combat.clear(s);finishAnalysis(s,'Derrota');autoSell(id,s);s.lastEvent='Derrota · retorno a Vespera.';return;}

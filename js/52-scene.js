@@ -12,7 +12,7 @@ const cityNPC=[
  {x:302,y:408,name:'Orven',role:'Depósito',mode:'vault'}
 ].map(n=>({...n,x:n.x/800,y:n.y/600}));
 const baseZoom=.55;
-let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],heroAction=null,enemyAction=null,heroStride=0,enemyStride=0,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
+let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],combatQueue=[],heroAction=null,enemyAction=null,heroStride=0,enemyStride=0,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 // The 0.45.0 gather points use the legacy 800 × 600 stage and its walkable floor.
 const gatherBounds=[[.09,.91],[.06,.94],[.11,.89],[.10,.90],[.11,.89],[.075,.925],[.07,.93],[.12,.88],[.075,.925],[.10,.90]];
@@ -172,7 +172,9 @@ function syncPendingProjectiles(a,old,cls,now){
   if(prev?.x===p.x&&prev?.y===p.y)continue;
   const sameShot=f=>f.projectile?.encounter===a.encounter&&f.projectile.incoming===incoming;
   // showCombat already started the visual if this snapshot contains a new launch.
-  if(!prev&&fx.some(sameShot))continue;
+  if(!prev&&(fx.some(sameShot)||combatQueue.some(({hit})=>
+   hit.encounter===a.encounter&&(incoming?hit.enemyShot:hit.heroShot)
+  )))continue;
   const element=pending.element??pending.cast?.element??({mage:'arcane',cleric:'holy',necro:'dark'}[cls]||'physical');
   const shot=combatProjectile({positions:a.positions,encounter:a.encounter,element,enemyShot:{element,kind:p.kind}},cls,incoming);
   shot.x=p.x/800;
@@ -365,7 +367,7 @@ function breakPixels(kind,z,index,now){
  fx=fx.filter(f=>!f.parts);
  fx.push({parts,index,at:now});
 }
-function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];heroAction=null;enemyAction=null;enemyStride=0;heroHitAt=-Infinity;
+function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];combatQueue=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];combatQueue=[];heroAction=null;enemyAction=null;enemyStride=0;heroHitAt=-Infinity;
  const keepHero=!areaChanged&&!motion.matches&&a?.enemy&&old?.enemy;
  if(!keepHero)heroStride=0;
  visual={
@@ -401,7 +403,14 @@ if(previous){const event=s.lastCombat;
   const delay=fallen.finalHit?.heroHit&&!fallen.finalHit.heroLanded&&s.cls!=='war'?combatProjectile(fallen.finalHit,s.cls,false).flight:0;
   defeated={next:a.encounter,at:now+delay,boss:fallen.boss,index:fallen.index,positions:fallen.positions};
  }
- if(a?.enemy&&event&&event.seq!==previous.lastCombat?.seq&&event.mode===a.mode&&event.zone===a.z)showCombat(event,s.cls,now,a.encounter);
+ if(a?.enemy&&event&&event.seq!==previous.lastCombat?.seq){
+  const current=(s.recentCombat||[event]).filter(hit=>hit.seq>(previous.lastCombat?.seq||0)&&hit.mode===a.mode&&hit.zone===a.z&&
+   (hit.encounter===a.encounter||defeated&&hit.seq===fallen?.finalHit?.seq));
+  const foreground=offline<=priorOffline&&!s.catchupSeconds&&!previous.catchupSeconds&&!document.hidden;
+  const events=foreground?current:current.slice(-1);
+  if(events.length)showCombat(events[0],s.cls,now,a.encounter);
+  for(const [index,hit] of events.slice(1).entries())combatQueue.push({hit,at:now+170*(index+1)});
+ }
 const g=s.lastGather,pg=previous.lastGather;if(a?.mode==='gather'&&g&&g.kind===a.prof&&g.zone===a.z&&g.total!==(pg?.total??previous.prof[a.prof].total)){const count=g.amount??Math.max(1,s.prof[a.prof].total-previous.prof[a.prof].total);popup('+'+count+' '+({mining:'Minério',wood:'Madeira',herb:'Erva'}[g.kind]),colors[g.rarity]||colors[0],now);breakPixels(g.kind,g.zone,g.node??previous.prof[g.kind].total%18,now);tone(g.kind);}if(s.lastLoot?.seq&&s.lastLoot.seq!==previous.lastLoot?.seq)popup(s.lastLoot.name,colors[s.lastLoot.rarity]||colors[0],now,.65,.25);if(s.lastRelic?.seq&&s.lastRelic.seq!==previous.lastRelic?.seq)popup(s.lastRelic.name,'#f0ca79',now,.62,.22);if(s.lastRune?.seq&&s.lastRune.seq!==previous.lastRune?.seq)popup('Runa encontrada!', '#caa0ef',now,.68,.26);if(s.kills>previous.kills)popup('+'+(s.kills-previous.kills)+' abate(s)','#e8c98c',now,.68,.32);}
 if(s.rareEventName&&(s.rareEvent?.k!==oldRare?.k||s.rareEvent?.z!==oldRare?.z)){
  popup(s.rareEventName+' · Crônicas','#e9cc82',now,.5,.26);
@@ -459,7 +468,10 @@ function drawAtmosphere(c,w,h,d,now,mode,z){
  }
  c.restore();
 }
-function frame(now){raf=requestAnimationFrame(frame);const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;const el=canvas();if(!el||!state||el.closest('[hidden]'))return;const r=el.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1),W=Math.round(r.width*d),H=Math.round(r.height*d);if(!W||!H)return;if(el.width!==W||el.height!==H){el.width=W;el.height=H;}const c=el.getContext('2d');c.setTransform(d,0,0,d,0,0);const w=W/d,h=H/d,s=state,a=s.activity,z=a?.z||0,key=!a||a.mode==='train'?'city':['boss','dungeon','trial'].includes(a.mode)?'crypt'+z:'zone'+z,full=image('assets/maps/'+key+'.webp'),preview=image('assets/maps/'+key+'-mini.webp'),im=full?.complete&&full.naturalWidth?full:preview;const focus=a?.mode==='gather'?(gatherHero??{x:.5,y:.64}):a?{x:visual.hero,y:visual.heroY??.84}:cityPos;const hunt=a?.mode==='hunt';
+function frame(now){raf=requestAnimationFrame(frame);const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;const el=canvas();if(!el||!state||el.closest('[hidden]'))return;const r=el.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1),W=Math.round(r.width*d),H=Math.round(r.height*d);if(!W||!H)return;if(el.width!==W||el.height!==H){el.width=W;el.height=H;}while(combatQueue.length&&combatQueue[0].at<=now){
+ const {hit,at}=combatQueue.shift();
+ if(now-at<500&&state.activity?.enemy)showCombat(hit,state.cls,now,state.activity.encounter);
+}const c=el.getContext('2d');c.setTransform(d,0,0,d,0,0);const w=W/d,h=H/d,s=state,a=s.activity,z=a?.z||0,key=!a||a.mode==='train'?'city':['boss','dungeon','trial'].includes(a.mode)?'crypt'+z:'zone'+z,full=image('assets/maps/'+key+'.webp'),preview=image('assets/maps/'+key+'-mini.webp'),im=full?.complete&&full.naturalWidth?full:preview;const focus=a?.mode==='gather'?(gatherHero??{x:.5,y:.64}):a?{x:visual.hero,y:visual.heroY??.84}:cityPos;const hunt=a?.mode==='hunt';
 const fixedScale=clamp(zoom61/baseZoom,1,1.8);
 let scale=fixedScale,scaleY=scale*.62,panorama=.5;
 let ox=clamp(w*.5-focus.x*w*scale,w*(1-scale),0);
