@@ -174,6 +174,7 @@ function showCombat(event,cls,now,currentEncounter){
   const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
   const shot=heroHit&&!heroLanded&&cls!=='war'?combatProjectile(event,cls,false):null,impactTime=(heroHit&&!heroLanded?release:heroContactAt)+(shot?.flight||0);
   const x=heroImpact?.x??p.enemy,y=heroImpact?.y??p.enemyY??.84;
+  if(defeated?.finalSeq===event.seq)defeated.at=impactTime;
   if(shot?.flight)fx.push({at:release,projectile:shot});
   if(heroHit){
    if(event.encounter===currentEncounter)flash=impactTime;
@@ -443,8 +444,7 @@ if(previous){const event=s.lastCombat;
  const fallen=s.lastDefeat;
  if(!motion.matches&&a?.enemy&&fallen&&s.kills===previous.kills+1&&fallen.encounter===old?.encounter
     &&fallen.encounter!==a.encounter&&fallen.mode===a.mode&&fallen.zone===a.z&&event?.encounter!==a.encounter){
-  const delay=fallen.finalHit?.heroHit&&!fallen.finalHit.heroLanded&&s.cls!=='war'?combatProjectile(fallen.finalHit,s.cls,false).flight:0;
-  defeated={next:a.encounter,at:now+delay,boss:fallen.boss,index:fallen.index,positions:fallen.positions};
+  defeated={next:a.encounter,at:now,boss:fallen.boss,index:fallen.index,positions:fallen.positions,finalSeq:fallen.finalHit?.seq};
  }
  if(a?.enemy&&event&&event.seq!==previous.lastCombat?.seq){
   const current=(s.recentCombat||[event]).filter(hit=>hit.seq>(previous.lastCombat?.seq||0)&&hit.mode===a.mode&&hit.zone===a.z&&
@@ -561,7 +561,9 @@ if(a.mode!=='gather'){
  const progress=action?(now-action.at)/heroAttackMotion[action.kind].duration:1;
  const striking=progress>=0&&progress<1;
  const [advance,rise,angle,stretch]=striking?heroAttackPose(action.kind,progress):neutralAttackPose;
- const enemyOnLeft=visual.enemy===visual.hero?target.enemy<target.hero:visual.enemy<visual.hero;
+ const falling=!motion.matches&&defeated&&now-defeated.at<1050;
+ const facingTarget=falling?defeated.positions.enemy:visual.enemy;
+ const enemyOnLeft=facingTarget===visual.hero?target.enemy<target.hero:facingTarget<visual.hero;
  const facing=!!a.enemy&&enemyOnLeft;
  const dx=(facing?-1:1)*hh*advance;
  const dy=striking&&action.kind==='melee'?clamp(action.vertical*h,-hh*.35,hh*.35)*advance:0;
@@ -581,12 +583,15 @@ if(a.mode!=='gather'){
   drawCombatLabel(c,x+dx,nameY,s.name,'#ede2c8','600 12px system-ui');
   if(s.activeTitle)drawCombatLabel(c,x+dx,nameY-15/scaleY,s.activeTitle.name,titleColors[s.activeTitle.rarity],'italic 600 11px Georgia');
  }
- if(a?.enemy){const boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4,eh=hh*(boss?1.30:.96),ex=w*visual.enemy;if(defeated&&!motion.matches&&now-defeated.at<1050){
+ if(a?.enemy){const boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4,eh=hh*(boss?1.30:.96),ex=w*visual.enemy;if(falling){
  const p=defeated.positions,px=w*p.enemy,py=h*(p.enemyY??.84),height=hh*(defeated.boss?1.30:.96);
  c.save();
- c.globalAlpha=1-clamp((now-defeated.at)/1050,0,1);
+ const fall=clamp((now-defeated.at)/1050,0,1);
+ const slump=Math.min(1,fall*2.8);
+ c.globalAlpha=1-fall;
  shadow(px,py,height);
- draw(c,defeated.boss?art.boss[z]:art.monsters[z]?.[defeated.index||0],px,py,height,monsterFlip(z,defeated.index,defeated.boss,p.hero>p.enemy));
+ draw(c,defeated.boss?art.boss[z]:art.monsters[z]?.[defeated.index||0],px,py+height*.07*slump,height,
+  monsterFlip(z,defeated.index,defeated.boss,p.hero>p.enemy),now>=defeated.at&&now-defeated.at<130,-.18*slump,1-.19*slump);
  c.restore();
 }else{
  let enemyX=ex,enemyFeet=enemyY,lean=0,stretch=1;
