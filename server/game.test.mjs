@@ -378,9 +378,14 @@ test('gathering elapses potion cooldown by the length of a collection cycle',()=
  db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(s),'gather');
  g.action('gather',{action:'start',mode:'gather',prof:'mining',zone:0});
  now+=6000;
- assert.equal(g.state('gather').character.potionCD.hp,6);
+ const first=g.state('gather').character;
+ assert.equal(first.potionCD.hp,6);
+ assert.equal(first.lastGather.node,0);
+ assert.equal(first.lastGather.amount,1);
  now+=6000;
- assert.equal(g.state('gather').character.potionCD.hp,0);
+ const second=g.state('gather').character;
+ assert.equal(second.potionCD.hp,0);
+ assert.equal(second.lastGather.node,1);
  db.close();
 });
 
