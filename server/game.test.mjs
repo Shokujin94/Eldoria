@@ -379,6 +379,12 @@ test('combat cadence and rewards agree across foreground polls and offline batch
     for(let i=0;i<200&&result.character.activity;i++){now+=1500;result=g.state('cadence');}
    }
    const c=result.character;
+   if(offline){
+    assert.equal(c.lastOffline.seconds,(c.analyzer||c.history[0]).offlineSeconds);
+    assert.equal(c.lastOffline.kills,c.kills);
+    assert.equal(c.lastOffline.gold,c.gold);
+    assert.deepEqual(g.state('cadence').character.lastOffline,c.lastOffline);
+   }
    const summary=c.analyzer||c.history[0];
    const {offlineSeconds,...session}=summary;
    db.close();

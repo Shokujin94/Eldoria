@@ -236,13 +236,33 @@ export function game(db,{clock=Date.now,random=rng}={}){
     return s;
    }
    s.activity.offlineUntil=now;
+   s.lastOffline={seq:(s.lastOffline?.seq||0)+1,mode,seconds:0,gold:0,kills:0,items:0,levels:0,mastery:0,resources:0,defeated:false};
   }
   if(elapsed>7_200_000)s.last=now-7_200_000-(elapsed%interval);
   const n=Math.min(120,Math.floor(Math.max(0,now-s.last)/interval));if(n<1)return s;
+  const offlineSummary=s.activity.offlineUntil?s.lastOffline:null;
+  const results=()=>({
+   gold:row(id).gold,kills:s.kills,levels:s.level,mastery:s.skill,
+   items:(s.analyzer||(!s.activity&&s.history[0]))?.items||0,resources:prof?s.prof[prof].total:0
+  });
+  const beforeOffline=offlineSummary?results():null;
+  let simulated=0;
+  const finishOfflineBatch=()=>{
+   if(!simulated)return;
+   const after=results();
+   for(const k of Object.keys(beforeOffline))offlineSummary[k]+=Math.max(0,after[k]-beforeOffline[k]);
+   offlineSummary.seconds+=simulated;
+   offlineSummary.defeated=!s.activity&&!['gather','train','trial'].includes(mode);
+   simulated=0;
+  };
   // Retain unprocessed time; do not award or discard it twice.
   for(let j=0;j<n&&s.activity;j++){
    s.last+=interval;
    const offline=s.last<=s.activity.offlineUntil;
+   if(offlineSummary){
+    if(offline)simulated+=interval/1000;
+    else finishOfflineBatch();
+   }
    if(mode==='gather'){const p=s.prof[prof],roll=content.gatherRoll(p,random),rar=roll.rarity;mat(s,prof+':'+z+':'+rar,roll.amount);if(roll.common)mat(s,prof+':'+z+':0',roll.common);const node=p.total%18,amount=roll.amount+roll.common;p.total+=amount;s.lastGather={kind:prof,zone:z,rarity:rar,total:p.total,node,amount};p.xp+=craft.gatherXP(p.level,z);const bonus=Math.min(.10,(s.legacy.craft||0)*.005);if(p.level<100&&bonus>0&&random()<bonus)p.xp++;while(p.level<100&&p.xp>=20+p.level*12){p.xp-=20+p.level*12;p.level++;}if(p.level===100)p.xp=0;s.lastEvent='+'+(roll.amount+roll.common)+' recurso(s) · '+profs[prof];}
    else if(mode==='train'){if(s.skill<100){s.skillXp++;if(s.skillXp>=content.skillXpNeed(s.skill)){s.skillXp-=content.skillXpNeed(s.skill);s.skill++;}}if(s.skill>=100){s.skillXp=0;s.activity=null;s.lastEvent='Maestria de combate dominada.';}else s.lastEvent='Treinamento · maestria '+s.skill;}else combatTick(id,r,s);
    if(mode==='gather'||mode==='train')combat.elapsePotionCooldowns(s,interval/1000);
@@ -250,6 +270,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
    const analyzer=s.analyzer||(!s.activity&&s.history[0]);
    if(offline&&analyzer)analyzer.offlineSeconds=(analyzer.offlineSeconds||0)+interval/1000;
   }
+  finishOfflineBatch();
   if(s.activity?.offlineUntil&&s.last+interval>s.activity.offlineUntil)delete s.activity.offlineUntil;
   if(!s.activity)s.last=Math.max(s.last,now);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);persist(id,s);return s;
  }
