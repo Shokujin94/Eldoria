@@ -61,6 +61,7 @@ export function tick(s,st,a){for(const k of Object.keys(s.potionCD||{}))s.potion
 function effect(a,k,p,v,boss){if(!EFFECTS[k])return;if(['stun','freeze'].includes(k)){if(a.control||boss)return;a.control=4;}const old=a.effects[k];a.effects[k]={left:EFFECTS[k][3]+(k==='expose'?(v.exposeDuration||0):0),power:Math.min(a.enemy.hp*.30,Math.max(1,p)*(1+(v[k]||0))),stacks:k==='poison'?Math.min(3,(old?.stacks||0)+1):1};}
 const arenaMode=mode=>mode==='dungeon'||mode==='boss'||mode==='trial';
 const arenaFloor={left:88/800,right:712/800,top:224/600,bottom:515/600};
+const huntBounds=[[.09,.91],[.06,.94],[.11,.89],[.10,.90],[.11,.89],[.075,.925],[.07,.93],[.12,.88],[.075,.925],[.10,.90]];
 const combatGap=p=>Math.hypot(p.enemy-p.hero,((p.enemyY??0)-(p.heroY??0))*.75);
 // Corresponds to rangedIds in the 0.45.0 catalogue, indexed by region and species.
 const rangedSpecies=[[4],[3],[2,4],[4],[4],[2,4],[2,4],[2,4],[2,4],[4]];
@@ -131,6 +132,39 @@ function enemyMovement(ranged,gap,speed){
  if(gap<.156)return -Math.min(pace*.45,.156-gap);
  return 0;
 }
+function moveHunt(p,cl,range,step,speed,a,ranged){
+ const [left,right]=a.mode==='hunt'?(huntBounds[a.z]??huntBounds[0]):[.08,.79];
+ const clampX=x=>Math.max(left,Math.min(right,x));
+ const direction=Math.sign(p.enemy-p.hero)||a.huntEscape?.direction||1;
+ const gap=Math.abs(p.enemy-p.hero);
+ if(!a.heroEffects?.stun&&!a.heroEffects?.freeze){
+  if(a.escapeWait>0)a.escapeWait--;
+  const movement=heroMovement(cl,gap,range,step),next=clampX(p.hero+direction*movement);
+  if(a.mode==='hunt'&&movement<0&&Math.abs(next-p.hero)<1e-9&&!a.huntEscape&&!a.escapeWait){
+   const edge=direction>0?right:left;
+   if(Math.abs(edge-p.enemy)>=.12)a.huntEscape={direction,edge,left:8};
+  }
+  if(a.huntEscape){
+   const route=a.huntEscape;
+   p.hero+=route.direction*Math.min(step,Math.abs(route.edge-p.hero));
+   const crossed=(p.hero-p.enemy)*route.direction>0;
+   if(crossed&&p.hero===route.edge&&Math.abs(p.enemy-p.hero)<.12)p.enemy=p.hero-route.direction*.12;
+   const distance=Math.abs(p.enemy-p.hero);
+   const blend=Math.max(0,1-distance/.18);
+   p.enemyY=.84;
+   p.heroY=.84+blend*blend*(3-2*blend)*52/1200;
+   if((crossed&&(distance>=range*.84||p.hero===route.edge)||--route.left<=0)&&distance>=.12-1e-9){
+    delete a.huntEscape;
+    delete p.heroY;delete p.enemyY;
+    a.escapeWait=5;
+   }
+  }else p.hero=next;
+ }
+ const side=Math.sign(p.enemy-p.hero)||direction;
+ const separation=Math.abs(p.enemy-p.hero),motion=enemyMovement(ranged,separation,speed);
+ const distance=a.huntEscape?separation-motion:Math.max(.12,separation-motion);
+ p.enemy=clampX(p.hero+side*distance);
+}
 function moveArena(p,cl,range,step,speed,a,ranged){
  p.heroY??=.72;p.enemyY??=.51;
  const gap=combatGap(p);
@@ -167,13 +201,7 @@ export function move(cl,s,st,a,boss){
  const speed=stopped?0:(a.effects?.slow?.left>0?.033:.065)*(boss?.75:1)*(trait(a,'fast')?1.18:1);
  const ranged=rangedEnemy(a,boss);
  if(arenaMode(a.mode))moveArena(p,cl,range,step,speed,a,ranged);
- else{
-  const gap=p.enemy-p.hero;
-  if(!a.heroEffects?.stun&&!a.heroEffects?.freeze){
-   p.hero=Math.max(.08,p.hero+heroMovement(cl,gap,range,step));
-  }
-  p.enemy=Math.min(.79,Math.max(p.hero+.12,p.enemy-enemyMovement(ranged,p.enemy-p.hero,speed)));
- }
+ else moveHunt(p,cl,range,step,speed,a,ranged);
  if(s.servant>0){
   const target=Math.min(.92,p.enemy+.13);
   p.servant=Math.max(.08,Math.min(.92,p.servant+Math.sign(target-p.servant)*Math.min(Math.abs(target-p.servant),.14)));

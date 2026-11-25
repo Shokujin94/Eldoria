@@ -120,3 +120,19 @@ test('servants retry every tick while out of range and wait two ticks after land
  assert.equal(c.minionStrike(s,st,a),0);
  assert(c.minionStrike(s,st,a)>0);
 });
+
+test('ranged hunt escape crosses both ways and returns to the lane',()=>{
+ const s=c.normalize({level:30});
+ for(const [hero,enemy,direction] of [[.09,.21,1],[.91,.79,-1]]){
+  const a={mode:'hunt',z:0,index:0,positions:{hero,enemy,servant:.34},effects:{stun:{left:20}}};
+  const p=a.positions;
+  c.move('mage',s,{move:0},a,false);
+  assert.equal(a.huntEscape.direction,direction);
+  assert(p.heroY>.84);
+  for(let tick=0;tick<8;tick++)c.move('mage',s,{move:0},a,false);
+  assert((p.hero-p.enemy)*direction>=.12-1e-9);
+  assert(p.hero>=.09&&p.hero<=.91);
+  assert.equal(a.huntEscape,undefined);
+  assert.equal(p.heroY,undefined);
+ }
+});
