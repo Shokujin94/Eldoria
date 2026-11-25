@@ -160,3 +160,12 @@ test('Voraz advances the enemy attack clock without striking through control',()
  assert.equal(c.attackReady(a,'enemy','war',false),false);
  assert.equal(a.attackClock.enemy,0);
 });
+
+test('boss special applies resistance at preparation and impact and keeps the prepared status power',()=>{
+ const s=c.normalize({level:20,hp:100});
+ const st={hp:100,advanced:{resist:{poison:.20}}};
+ const a={mode:'boss',z:0,enemy:{hp:1000,atk:100},enemyHp:1000,warning:'Raízes'};
+ c.bossMechanic(s,st,a,()=>.5);
+ assert.equal(s.hp,58);
+ assert.equal(a.heroEffects.slow.power,52);
+});
