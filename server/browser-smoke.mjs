@@ -158,8 +158,10 @@ try{
  for(const id of ['ranking','market','talent','bag','character'])await page.locator('#win-'+id+' [data-close65]').evaluate(b=>b.click());
  await page.locator('[data-group65="3"]').click();await page.locator('[data-tab=security]').click();await page.locator('#security54-dialog[open]').waitFor();await page.locator('#security54-close').click();
  await page.locator('[data-tab=dungeon]').click();await page.locator('#content-dungeon .dungeon11').waitFor();await page.locator('#win-dungeon [data-close65]').click();
- await page.locator('[data-tab=play]').click();
- await page.locator('[data-mode61=gather]').click();
+ await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=prof]').click();
+ const gatherForm=page.locator('#gatherTravel');
+ await gatherForm.locator('[name=prof]').selectOption('wood');
+ assert.equal(await gatherForm.locator('[name=zone] option[value="1"]').evaluate(option=>option.disabled),true);
  const drawnNodes=await page.evaluateHandle(()=>{
   const indices=new Set(),art=window.eldoria52Art,draw=art.drawGatherNode;
   art.drawGatherNode=(ctx,x,y,kind,zone,index,scale)=>{
@@ -168,7 +170,9 @@ try{
   };
   return indices;
  });
- await page.locator('#start61').click();
+ await gatherForm.locator('button').click();
+ await page.locator('#gatheringStatus h3').filter({hasText:'Lenhador'}).waitFor();
+ await page.locator('#win-prof [data-close65]').click();
  await page.waitForFunction(()=>document.getElementById('world52-location').textContent.includes('Bosque'));
  await page.waitForFunction(indices=>indices.size===18,drawnNodes);
  await drawnNodes.dispose();
