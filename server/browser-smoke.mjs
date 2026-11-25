@@ -67,6 +67,11 @@ try{
  finally{await page.keyboard.up('ArrowDown');}
  await page.locator('#zoomOut61').click();
  await page.waitForFunction(()=>Math.abs(window.eldoria52Scene.view()?.scale-1)<.0001);
+ await page.waitForFunction(()=>{
+  const npcs=Object.values(window.eldoria52Art.npcs);
+  const loaded=new Set(performance.getEntriesByType('resource').map(entry=>new URL(entry.name).pathname));
+  return npcs.length===7&&npcs.every(src=>loaded.has('/'+src));
+ });
  const cityCanvas=await page.locator('#scene52').boundingBox();
  await page.mouse.click(cityCanvas.x+cityCanvas.width*302/800,cityCanvas.y+cityCanvas.height*(.33+.62*408/600)-6);
  await page.locator('#win-vault').waitFor({state:'visible'});
@@ -90,6 +95,8 @@ try{
  await page.locator('[data-tab=cons]').click();
  await page.locator('#auto-hp').waitFor();
  assert.equal(await page.locator('.cons-item11').count(),12);
+ const flaskMarkup=await page.locator('#win-cons .flask-icon').evaluateAll(icons=>icons.map(icon=>icon.innerHTML));
+ assert.equal(new Set(flaskMarkup).size,12);
  await page.locator('#win-cons [data-potion-tip=might]').scrollIntoViewIfNeeded();
  await page.locator('#win-cons [data-potion-tip=might]').hover();
  await page.locator('#tal47-tip').getByText('Duração',{exact:true}).waitFor();

@@ -33,3 +33,5 @@ window.eldoria52Art.drawGatherNode=function(c,x,y,kind,z,i,scale){
  }finally{c.restore();}
 };
 })();
+
+window.eldoria52Art.npcs={"forge":"assets/images/067e7db8a6c6682544a1.png","merchant":"assets/images/19f807441c9b4684d90a.png","zones":"assets/images/6b73ce1b7db22ada6f17.png","prof":"assets/images/632db470308b81822c33.png","vault":"assets/images/f49d6fd72c0b98c90790.png","sub":"assets/images/8e81a61c789f35802ef3.png","train":"assets/images/a0839bb929efff647213.png"};

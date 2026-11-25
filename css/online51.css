@@ -523,3 +523,5 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #tal47-tip .item-tooltip-socket{display:block;width:13px;height:13px;transform:rotate(45deg);border:1px solid #a9a7a1;border-radius:2px;background:#0c1015;box-shadow:inset 0 1px 3px #000}
 #tal47-tip .item-tooltip-socket.filled{border-color:var(--rar61);background:var(--rar61);box-shadow:inset 0 0 0 2px #0005,0 0 8px var(--rar61)}
 #tal47-tip .item-tooltip-rune+.item-tooltip-rune{margin-top:4px}
+
+#quick61 .flask-icon{width:17px;height:17px;margin-right:4px;vertical-align:middle}
