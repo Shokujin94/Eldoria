@@ -139,7 +139,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   a.materialDrops[key]=(a.materialDrops[key]||0)+1;
   a.itemValue+=content.materialSale(key);
  }
- function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],materialDrops:{},runeDrops:{},damage:0,received:0,procs:0}:null;}
+ function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],materialDrops:{},runeDrops:{},damageSources:{},damage:0,received:0,procs:0}:null;}
  function finishAnalysis(s,reason){if(s.analyzer?.seconds){s.history.unshift({...s.analyzer,reason});s.history=s.history.slice(0,20);}s.analyzer=null;}
  function combatTick(id,r,s){const a=s.activity;if(!a.enemy||!Number.isFinite(a.enemyHp))newEncounter(s);const e=a.enemy,st=stats(id,r,s),boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4;
  if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;const projectiles=!!(a.pendingHeroShot||a.pendingEnemyShot);

@@ -381,6 +381,7 @@ test('combat cadence and rewards agree across foreground polls and offline batch
   assert.equal(foregroundOffline,undefined,cls+' '+mode);
   assert.equal(offlineSeconds,offline.session.seconds,cls+' '+mode);
   assert.deepEqual(offline,foreground,cls+' '+mode);
+  assert.ok(Object.values(offline.session.damageSources).some(damage=>damage>0),cls+' '+mode);
  }
 });
 
