@@ -28,3 +28,14 @@ test('two legacy servants reach separate lanes and stay in attack range',()=>{
  assert(c.minionStrike(s,st,a)>0);
  assert(a.enemyHp<1000);
 });
+
+test('arena movement uses two axes and keeps melee outside overlap',()=>{
+ const s=c.normalize({level:30});
+ const a={mode:'dungeon',positions:{hero:.25,enemy:.75,servant:.34},effects:{}};
+ const p=c.move('war',s,{move:0},a,false);
+ assert(p.hero>.25&&p.heroY<.72);
+ assert(p.enemy<.75&&p.enemyY>.51);
+ for(let i=0;i<10;i++)c.move('war',s,{move:0},a,false);
+ assert(Math.abs(Math.hypot(p.enemy-p.hero,(p.enemyY-p.heroY)*.75)-.12)<1e-6);
+ assert(p.heroY>=224/600&&p.enemyY<=515/600);
+});
