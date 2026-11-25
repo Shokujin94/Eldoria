@@ -2,6 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {schema,game,quote} from './game.mjs';
+test('returning voluntarily restores current maximum health from an active or paused hunt',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('town','town','test',0);
+ g.create('town','Alda','war');
+ for(const paused of [false,true]){
+  g.action('town',{action:'start',mode:'hunt',zone:0});
+  if(paused)g.action('town',{action:'pauseActivity'});
+  const save=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('town').data);
+  save.hp=1;save.mana=1;
+  db.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),'town');
+  g.action('town',{action:'stop'});
+  const c=g.state('town').character;
+  assert.equal(c.activity,null);
+  assert.equal(c.hp,c.stats.hp);
+  assert.equal(c.mana,1);
+ }
+ db.close();
+});
 test('server-only state, elapsed time, ranking, custody and gold burn',()=>{
  const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.05});
  for(const id of ['a','b','c'])db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(id,id,'test',0);
