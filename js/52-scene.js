@@ -230,10 +230,23 @@ function combatGlyph(c,shape,r,t){
   c.stroke();c.restore();
  }
 }
+const titleColors=['#b9bec6','#88c88f','#7aaff0','#c29ae5','#efc36e'];
+function drawCombatLabel(c,x,y,text,color,font){
+ if(!text)return;
+ c.save();
+ c.translate(x,y);c.scale(1/projection.scale,1/projection.scaleY);
+ c.font=font;c.textAlign='center';c.lineJoin='round';
+ c.lineWidth=3;c.strokeStyle='#0b0c10';c.strokeText(text,0,0);
+ c.fillStyle=color;c.fillText(text,0,0);
+ c.restore();
+}
 function drawCombatHealth(c,x,y,ratio,color){
  if(!Number.isFinite(ratio))return;
- c.fillStyle='#101013';c.fillRect(x-22,y+5,44,5);
- c.fillStyle=color;c.fillRect(x-21,y+6,42*clamp(ratio,0,1),3);
+ c.save();
+ c.translate(x,y);c.scale(1/projection.scale,1/projection.scaleY);
+ c.fillStyle='#101013';c.fillRect(-22,5,44,5);
+ c.fillStyle=color;c.fillRect(-21,6,42*clamp(ratio,0,1),3);
+ c.restore();
 }
 function drawConditions(c,effects,x,y,height){
  const active=Object.entries(effects||{}).filter(([key,status])=>status.left>0&&combatConditions[key]);
@@ -475,7 +488,13 @@ if(a.mode!=='gather'){
  shadow(x+dx,heroY+dy,hh);
  draw(c,art.hero[s.cls][sprite],x+dx,heroY+dy-lift,hh,facing,!motion.matches&&now-heroHitAt<130,lean,1+effort*.045);
  drawConditions(c,a.heroEffects,x+dx,heroY+dy,hh);
- if(a.enemy)drawCombatHealth(c,x+dx,heroY+dy,s.hp/s.stats.hp,'#83ac75');
+ if(a.enemy){
+  drawCombatHealth(c,x+dx,heroY+dy,s.hp/s.stats.hp,'#83ac75');
+  const close=Math.abs((visual.hero-visual.enemy)*w*scale)<105;
+  const nameY=heroY+dy-hh*scale/scaleY-(close?44:22)/scaleY;
+  drawCombatLabel(c,x+dx,nameY,s.name,'#ede2c8','600 12px system-ui');
+  if(s.activeTitle)drawCombatLabel(c,x+dx,nameY-15/scaleY,s.activeTitle.name,titleColors[s.activeTitle.rarity],'italic 600 11px Georgia');
+ }
  if(a?.enemy){const boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4,eh=hh*(boss?1.30:.96),ex=w*visual.enemy;if(defeated&&!motion.matches&&now-defeated.at<1050){
  const p=defeated.positions,px=w*p.enemy,py=h*(p.enemyY??.84),height=hh*(defeated.boss?1.30:.96);
  c.save();
@@ -501,6 +520,10 @@ if(a.mode!=='gather'){
  draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift,eh,visual.enemy>=visual.hero,!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055);
  drawConditions(c,a.effects,enemyX,enemyFeet,eh);
  drawCombatHealth(c,enemyX,enemyFeet,a.enemyHp/a.enemy.hp,'#ac4b47');
+ const nameY=enemyFeet-eh*scale/scaleY-22/scaleY;
+ drawCombatLabel(c,enemyX,nameY,a.enemy.name,'#e4d6bd','600 12px system-ui');
+ const rank=a.mode==='trial'?'Provação':boss?'Chefe':a.mode==='dungeon'?'Elite':null;
+ if(rank)drawCombatLabel(c,enemyX,nameY-14/scaleY,rank,'#edb477','600 10px system-ui');
 }minionVisual.length=Math.min(minionVisual.length,(s.minions||[]).length);if(s.cls==='necro')for(const [i,m] of (s.minions||[]).entries()){const slot=minionVisual[i]??={x:m.x,y:m.y??0},step=motion.matches?1:1-Math.exp(-dt/172);slot.x+=(m.x-slot.x)*step;slot.y+=((m.y??0)-slot.y)*step;const mx=w*slot.x,my=enemyY+h*slot.y;shadow(mx,my,hh*.55);c.save();if(m.role!=='bone')c.filter=({sentinel:'saturate(.45) brightness(1.12)',archer:'sepia(.35) hue-rotate(65deg)',herald:'sepia(.6) hue-rotate(220deg)'})[m.role]||'none';draw(c,art.monsters[1][0],mx,my,hh*.55);c.restore();c.font='10px system-ui';c.textAlign='center';c.fillStyle='#d4e1d2';c.fillText(({bone:'Servo',sentinel:'Sentinela',archer:'Arqueiro',herald:'Arauto'})[m.role]||'Servo',mx,my-hh*.58);} }}
 if(a.mode==='gather'){
  const field=gatherFields[z],active=s.prof[a.prof].total%18,targetNode=field.find(node=>node.index===active);
