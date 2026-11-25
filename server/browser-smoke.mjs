@@ -117,16 +117,20 @@ try{
  await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=hunt]').click();
  const impact=await page.evaluateHandle(()=>{
-  const seen={projectile:false,damage:false};
+  const seen={projectile:false,damage:false,impact:false};
   const ctx=document.getElementById('scene52').getContext('2d');
   const ellipse=ctx.ellipse.bind(ctx),strokeText=ctx.strokeText.bind(ctx);
-  ctx.ellipse=(...args)=>{if(ctx.fillStyle==='#c5a4e8')seen.projectile=true;ellipse(...args);};
+  ctx.ellipse=(...args)=>{
+   if(ctx.fillStyle==='#b17ba6'&&args[2]===7&&args[3]===3)seen.projectile=true;
+   if(ctx.strokeStyle==='#b17ba6'&&args[2]>=8)seen.impact=true;
+   ellipse(...args);
+  };
   ctx.strokeText=(...args)=>{if(/^\d+$|^CRÍTICO \d+$/.test(args[0]))seen.damage=true;strokeText(...args);};
   return seen;
  });
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
- await page.waitForFunction(seen=>seen.projectile&&seen.damage,impact,{timeout:15000});
+ await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact,impact,{timeout:15000});
  await impact.dispose();
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});

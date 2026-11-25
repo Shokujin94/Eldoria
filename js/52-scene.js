@@ -74,22 +74,46 @@ const image=src=>{if(!src)return null;if(!cache.has(src)){const im=new Image();i
 function draw(c,src,x,y,h,flip=false,bright=false){const im=image(src);if(!im?.complete||!im.naturalWidth)return;c.save();c.translate(x,y);if(flip)c.scale(-1,1);if(bright)c.filter='brightness(1.5)';c.imageSmoothingEnabled=false;const w=h*im.naturalWidth/im.naturalHeight;c.drawImage(im,-w/2,-h,w,h);c.restore();}
 function tone(kind){if(!sound||!audio||audio.state!=='running')return;const at=audio.currentTime,osc=audio.createOscillator(),g=audio.createGain(),f={mining:[720,130,'triangle'],wood:[140,44,'triangle'],herb:[340,180,'sine'],hit:[120,48,'triangle']}[kind]||[120,48,'triangle'];osc.type=f[2];osc.frequency.setValueAtTime(f[0],at);osc.frequency.exponentialRampToValueAtTime(f[1],at+.13);g.gain.setValueAtTime(.055,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);osc.connect(g);g.connect(audio.destination);osc.start();osc.stop(at+.17);}
 function popup(text,color,now,x=.68,y=.44,actor=false){if(motion.matches)return;fx.push({text,color,at:now,x,y,actor});if(fx.length>12)fx.shift();}
+const impactColors={physical:'#d6d0c4',bleed:'#cf5969',fire:'#ff9b51',ice:'#91d8f4',arcane:'#bb9bea',
+ holy:'#e9cc82',poison:'#87bd63',shock:'#aaa4ff',dark:'#b17ba6',heal:'#8ccfa3'};
 function showCombat(event,cls,now,currentEncounter){
  if(motion.matches)return;
- const {positions:p,dealt,received,critical,heroHit}=event;
+ const {positions:p,dealt,received,critical,heroHit,element,skill}=event;
  if(dealt){
-  const color=critical?'#f4cf79':'#fff1cf';
-  const ranged=heroHit&&cls!=='war';
-  if(ranged){
-   const shade={ranger:'#d8c49d',mage:'#9bbfff',cleric:'#f2dd91',necro:'#c5a4e8'}[cls];
-   fx.push({at:now,projectile:{x:p.hero,y:p.heroY??.84,toX:p.enemy,toY:p.enemyY??.84,color:shade}});
+  const color=impactColors[element]??(critical?'#f4cf79':'#fff1cf');
+  const ranged=heroHit&&cls!=='war',impactTime=now+(ranged?125:0);
+  const x=p.enemy,y=p.enemyY??.84;
+  if(ranged)fx.push({at:now,projectile:{x:p.hero,y:p.heroY??.84,toX:x,toY:y,color}});
+  if(heroHit){
+   pulse=now;
+   if(event.encounter===currentEncounter)flash=impactTime;
+   fx.push({at:impactTime,impact:{x,y,color,element,skill,melee:!ranged,side:Math.sign(p.enemy-p.hero)||1}});
+   tone('hit');
   }
-  if(heroHit){pulse=now;if(event.encounter===currentEncounter)flash=now+(ranged?125:0);tone('hit');}
-  popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,now+(ranged?125:0),p.enemy,p.enemyY??.84,true);
+  popup((critical?'CRÍTICO ':'')+Math.ceil(dealt),color,impactTime,x,y,true);
  }
- if(received){
-  popup('-'+Math.ceil(received),'#f38585',now,p.hero,p.heroY??.84,true);
+ if(received)popup('-'+Math.ceil(received),'#f38585',now,p.hero,p.heroY??.84,true);
+}
+function drawImpact(c,hit,w,h,hh,t){
+ if(t>.55)return;
+ const progress=t/.55,x=hit.x*w,y=hit.y*h-hh*.43;
+ c.globalAlpha*=1-progress;
+ c.strokeStyle=c.fillStyle=hit.color;
+ c.lineWidth=hit.skill?3:2;
+ c.beginPath();
+ if(hit.melee){
+  const angle=hit.side>0?0:Math.PI;
+  c.arc(x,y,15+progress*8,angle-2.4,angle+.9);
+ }else c.ellipse(x,y,8+progress*24,5+progress*15,0,0,Math.PI*2);
+ c.stroke();
+ if(!hit.skill)return;
+ for(let i=0;i<12;i++){
+  const angle=i*Math.PI/6+progress*.4,radius=5+progress*30;
+  c.fillRect(x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,hit.element==='fire'?3:2,hit.element==='fire'?6:3);
  }
+ c.font='bold 11px monospace';
+ c.textAlign='center';
+ c.fillText(hit.skill,x,y-47);
 }
 function drawProjectile(c,shot,w,h,hh,t){
  if(t<0||t>.2)return;
@@ -182,7 +206,7 @@ if(a.mode==='gather'){
   c.restore();
  }
 }
-fx=fx.filter(f=>now-f.at<1250);for(const f of fx){const t=(now-f.at)/1000;if(t<0)continue;c.save();c.globalAlpha=Math.max(0,1-t/1.25);if(f.parts){const node=gatherFields[z].find(n=>n.index===f.index),scale=hh/125;for(const p of f.parts){c.fillStyle=p.color;c.fillRect(node.x*w+p.x*scale+p.vx*t,node.y*h+p.y*scale+p.vy*t+100*t*t,4*scale,4*scale);}}else if(f.projectile){drawProjectile(c,f.projectile,w,h,hh,t);}else{const labelY=h*f.y-(f.actor?hh*.82:0)-t*30;c.font='bold 17px system-ui';c.textAlign='center';c.lineWidth=4;c.strokeStyle='#08080b';c.strokeText(f.text,w*f.x,labelY);c.fillStyle=f.color;c.fillText(f.text,w*f.x,labelY);}c.restore();}c.restore();mini(c,key,w,h,gatherHero??{x:visual.hero,y:visual.heroY},a?.enemy?[{x:visual.enemy,y:visual.enemyY,enemy:true}]:[]);}
+fx=fx.filter(f=>now-f.at<1250);for(const f of fx){const t=(now-f.at)/1000;if(t<0)continue;c.save();c.globalAlpha=Math.max(0,1-t/1.25);if(f.parts){const node=gatherFields[z].find(n=>n.index===f.index),scale=hh/125;for(const p of f.parts){c.fillStyle=p.color;c.fillRect(node.x*w+p.x*scale+p.vx*t,node.y*h+p.y*scale+p.vy*t+100*t*t,4*scale,4*scale);}}else if(f.projectile){drawProjectile(c,f.projectile,w,h,hh,t);}else if(f.impact){drawImpact(c,f.impact,w,h,hh,t);}else{const labelY=h*f.y-(f.actor?hh*.82:0)-t*30;c.font='bold 17px system-ui';c.textAlign='center';c.lineWidth=4;c.strokeStyle='#08080b';c.strokeText(f.text,w*f.x,labelY);c.fillStyle=f.color;c.fillText(f.text,w*f.x,labelY);}c.restore();}c.restore();mini(c,key,w,h,gatherHero??{x:visual.hero,y:visual.heroY},a?.enemy?[{x:visual.enemy,y:visual.enemyY,enemy:true}]:[]);}
 function mini(c,key,w,h,hero,others){const r=Math.min(48,w*.105,h*.16),cx=w-r-9,cy=h-r-9,im=image('assets/maps/'+key+'-mini.webp');c.save();c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.clip();c.fillStyle='#151719';c.fillRect(cx-r,cy-r,2*r,2*r);if(im?.complete&&im.naturalWidth){const sc=Math.max(2*r/im.naturalWidth,2*r/im.naturalHeight),iw=im.naturalWidth*sc,ih=im.naturalHeight*sc;c.drawImage(im,cx-iw/2,cy-ih/2,iw,ih);}c.fillStyle='#09090b44';c.fillRect(cx-r,cy-r,2*r,2*r);const dot=(p,color)=>{c.beginPath();c.arc(cx-r+2*r*p.x,cy-r+2*r*p.y,3,0,Math.PI*2);c.fillStyle=color;c.fill();};for(const n of others)dot(n,n.enemy?'#f08080':'#e0bb73');dot(hero,'#fff7df');c.restore();c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.strokeStyle='#bd9b68';c.lineWidth=2;c.stroke();}
 function toggle(){sound=!sound;if(sound){try{audio??=new AudioContext();audio.resume().catch(()=>{});}catch{sound=false;}}const b=document.getElementById('sound52');if(b){b.textContent=sound?'Som ligado':'Som desligado';b.setAttribute('aria-pressed',String(sound));}}
 function interact(){if(!state||state.activity||!cityNear)return;window.eldoria61CityService?.(cityNear.mode);}

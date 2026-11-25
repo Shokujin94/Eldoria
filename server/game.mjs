@@ -76,7 +76,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const heroHit=a.hitSeq!==hit0&&a.lastHit>0;
  if(dealt||received){
   s.lastCombat={seq:(s.lastCombat?.seq||0)+1,encounter:a.encounter,mode:a.mode,zone:a.z,
-   dealt,received,heroHit,critical:heroHit&&a.lastCritical,positions:{...a.positions}};
+   dealt,received,heroHit,critical:heroHit&&a.lastCritical,element:heroHit?a.lastAttackElement:null,skill:heroHit?a.lastAttackSkill:null,positions:{...a.positions}};
  }
  if(s.analyzer){s.analyzer.seconds++;s.analyzer.damage+=dealt;s.analyzer.received+=received;s.analyzer.procs+=s.energyProcs-proc0;}
  if(s.hp<=0){s.deaths=(s.deaths||0)+1;s.hp=st.hp;s.mana=st.mana;s.activity=null;combat.clear(s);finishAnalysis(s,'Derrota');autoSell(id,s);s.lastEvent='Derrota · retorno a Vespera.';return;}
