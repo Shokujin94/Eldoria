@@ -356,3 +356,12 @@ test('low-mana talent discounts a spell only below the 35 percent threshold',()=
  s.mana=35;
  assert.equal(c.learnedSkills('mage',s,100).find(k=>k.id==='x').mana,normal);
 });
+
+test('funerary command extends only the shortest-lived servant',()=>{
+ const s=c.normalize({level:40,hp:100,mana:100,talents:{x:1,t33_necro_0_0:1},rotation:['x'],
+  minions:[{left:8},{left:4}],servant:8});
+ const a={z:0,index:0,enemy:{hp:100,atk:4},enemyHp:100,effects:{}};
+ const st={hp:100,mana:100,damage:10,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ c.turn('necro',s,st,a,()=>.5,false);
+ assert.deepEqual(s.minions.map(m=>m.left),[8,5]);
+});

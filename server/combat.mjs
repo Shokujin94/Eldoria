@@ -359,7 +359,7 @@ export function landHeroShot(cl,s,st,a,random,boss){
 }
 function resolveHeroAttack(cl,s,st,a,random,boss,cast){
 const before=a.enemyHp;
-const v=values(cl,s),has=k=>!!a.effects[k];
+const v=values(cl,s),has=k=>!!a.effects[k],poisoned=has('poison');
 const heal=n=>{s.hp=Math.min(st.hp,s.hp+n*(trait(a,'curse')?.7:1));},mana=n=>{s.mana=Math.min(st.mana,s.mana+n);};
 const gap=a.positions?combatGap(a.positions):null,range=cl==='ranger'?.30:cl==='mage'?.27:cl==='cleric'||cl==='necro'?.21:.12,far=gap===null?cl==='ranger'&&a.turn<=Math.max(4,6+Math.round((v.move||0)*10)):gap>=range*.75,near=gap===null?!far:gap<range*.55;
 const cond={far,near,bleedHit:has('bleed'),burnHit:!!cast&&has('burn'),exposeHit:has('expose'),curseHit:has('poison')||has('expose'),slowHit:has('slow'),iceHit:has('slow')||has('freeze'),shockHit:has('shock'),execute:a.enemyHp<a.enemy.hp*.3,lowHit:s.hp<st.hp*.5,highManaHit:s.mana>=st.mana*.6,servantHit:s.servant>0,bossHit:boss,basic:!cast,holy:cast?.element==='holy'};
@@ -373,7 +373,18 @@ if(boss)dmg=Math.min(dmg,Math.max(1,Math.round(a.enemy.hp*.29)));
 const applied=Math.min(a.enemyHp,dmg);
 comboCredit=Math.min(comboDamage,Math.max(0,applied-basicDamage));
 relicCredit=Math.min(relicDamage,Math.max(0,applied-basicDamage-comboCredit));
-a.enemyHp=Math.max(0,a.enemyHp-dmg);if(cast){if(cast.guard)s.guard=3;if(cast.heal)heal(Math.min(st.hp*.2,st.hp*cast.heal*(1+st.heal)));for(const k of cast.effects||[])effect(a,k,dmg,v,boss);}heal(dmg*Math.min(.12,(v.drain||0)+(cl==='necro'&&path===1&&rank&&low60?.015+.008*rank:0)));if(cast&&rank){if(cl==='war'&&path===2&&has('expose'))mana(st.mana*(.012+.008*rank));if(cl==='ranger'&&path===2&&has('poison'))mana(st.mana*(.015+.008*rank));if(cl==='mage'&&path===2&&a.lastElement&&a.lastElement!==cast.element)mana(st.mana*(.025+.01*rank));if(cl==='cleric'&&path===1&&low60&&cast.heal)heal(st.hp*(.01+.006*rank));if(cl==='necro'&&path===0&&s.minions.length){for(const m of s.minions)m.left=Math.min(12+rank,m.left+1);s.servant=Math.max(...s.minions.map(m=>m.left));}}if(cast)a.lastElement=cast.element;for(const [k,chance] of Object.entries(st.runeProcs||{}))if(a.enemyHp>0&&random()<chance)effect(a,k,dmg,v,boss);}
+a.enemyHp=Math.max(0,a.enemyHp-dmg);if(cast){if(cast.guard)s.guard=3;if(cast.heal)heal(Math.min(st.hp*.2,st.hp*cast.heal*(1+st.heal)));for(const k of cast.effects||[])effect(a,k,dmg,v,boss);}heal(dmg*Math.min(.12,v.drain||0));if(cl==='necro'&&path===1&&rank&&low60)heal(Math.round((before-a.enemyHp)*(.015+.008*rank)));if(cast&&rank&&before>a.enemyHp){
+ const restore=ratio=>mana(Math.max(1,Math.round(st.mana*ratio)));
+ if(cl==='war'&&path===2&&cond.exposeHit)restore(.012+.008*rank);
+ if(cl==='ranger'&&path===2&&poisoned)restore(.015+.008*rank);
+ if(cl==='mage'&&path===2&&a.lastElement&&a.lastElement!==cast.element)restore(.025+.01*rank);
+ if(cl==='cleric'&&path===1&&low60&&cast.heal)heal(Math.max(1,Math.round(st.hp*(.01+.006*rank))));
+ if(cl==='necro'&&path===0&&s.minions.length){
+  const shortest=s.minions.reduce((best,m)=>m.left<best.left?m:best);
+  if(shortest.left<12+rank)shortest.left++;
+  s.servant=Math.max(...s.minions.map(m=>m.left));
+ }
+}if(cast)a.lastElement=cast.element;for(const [k,chance] of Object.entries(st.runeProcs||{}))if(a.enemyHp>0&&random()<chance)effect(a,k,dmg,v,boss);}
 if(rider){const [kind,raw]=rider,n=typeof raw==='number'?raw*(1+.1*Math.max(0,(s.talents[cast.id]||1)-1)):raw;if(kind==='energy'||kind==='buffEnergy')s.energy+=n;else if(kind==='mana'||kind==='buffMana')mana(st.mana*n);else if(kind==='heal'||kind==='buffHeal')heal(st.hp*n);else if(kind==='guard')s.guard=Math.min(6,s.guard+Math.round(n));else if(kind==='status')effect(a,n,Math.max(1,dmg*.65),v,boss);}
 s.energy=Math.min(100,s.energy+(cast?12:8)+(cast?v.castEnergy||0:0)+(critical?v.critEnergy||0:0)+(far?v.farEnergy||0:0)+(cl==='necro'&&!s.servant?v.noServantEnergy||0:0)+(cast&&oath(s,0,0)?8:0));
 if(dmg>0&&s.energy>=100&&(s.energyProfile==='auto'||s.energyProfile==='boss'&&boss||s.energyProfile==='hurt'&&s.hp/st.hp<.65)){s.energy=0;s.energyProcs++;const p=paths[cl]?.[s.subclass],bonus=(p?p[3]:({war:.22,ranger:.25,mage:.24,cleric:.12,necro:.08}[cl]))+(oath(s,1,0)?.10:0)+(oath(s,2,0)?.18:0)+(affinity(cl,s,a,critical,cast,st,far,boss)?.10:0);const extra=Math.round(dmg*bonus),applied=boss?Math.min(extra,Math.max(0,Math.round(a.enemy.hp*.29)-dmg)):extra;a.enemyHp=Math.max(0,a.enemyHp-applied);dmg+=applied;if(cl==='necro')summon(s,st,a,v);if(p?.[2]==='guard')s.guard=Math.max(s.guard,3);else if(p?.[2]&&a.enemyHp>0)effect(a,p[2],dmg*(oath(s,2,0)?1.15:.75),v,boss);heal(st.hp*((p?p[4]:cl==='cleric'?.05:0)+(oath(s,2,1)?.04:0)+(v.procHeal||0)));mana(st.mana*((p?p[5]:cl==='mage'?.05:0)+(oath(s,2,1)?.05:0)+(v.procMana||0)));}
