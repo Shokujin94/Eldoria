@@ -263,3 +263,16 @@ test('a projectile contacts a wide creature before a narrow one at the same dist
   assert.equal(a.enemyHp<100,landed);
  }
 });
+
+test('recorded damage taken survives healing and excludes overkill',()=>{
+ const s=c.normalize({level:1,hp:10,analyzer:{damageTaken:0}});
+ const a={z:0,index:0,enemy:{atk:50},enemyHp:40,positions:{hero:.4,enemy:.52}};
+ const st={hp:100,def:0,reduction:0,dodge:0};
+ c.enemyStrike('war',s,st,a,()=>.5,false);
+ assert.equal(s.analyzer.damageTaken,10);
+ s.hp=100;
+ c.enemyStrike('war',s,st,a,()=>.5,false);
+ const remaining=s.hp;
+ s.hp=100;
+ assert.equal(s.analyzer.damageTaken,10+100-remaining);
+});
