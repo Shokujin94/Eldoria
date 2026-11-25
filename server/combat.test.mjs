@@ -377,3 +377,14 @@ test('defensive path synergy reduces damage after the basic mitigation cap',()=>
  c.enemyStrike('ranger',s,st,a,()=>.5,false);
  assert.equal(s.hp,66);
 });
+
+test('offensive synergy multiplies a prepared hit even at the ordinary bonus cap',()=>{
+ const st={hp:100,mana:100,damage:50,crit:0,critMult:1.6,haste:0,special:1.5,heal:0,powers:{resonance:.6}};
+ function strike(rank){
+  const s=c.normalize({level:40,hp:100,mana:100,talents:{x:1,t33_war_0_0:rank},rotation:['x']});
+  const a={z:0,index:0,enemy:{hp:1000,atk:4},enemyHp:1000,effects:{bleed:{left:2,power:1}}};
+  c.turn('war',s,st,a,()=>.5,false);
+  return 1000-a.enemyHp;
+ }
+ assert.equal(strike(1),Math.round(strike(0)*1.07));
+});
