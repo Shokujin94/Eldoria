@@ -263,22 +263,29 @@ function drawAtmosphere(c,w,h,d,now,mode,z){
 }
 function frame(now){raf=requestAnimationFrame(frame);if(now-lastFrame<30)return;lastFrame=now;const el=canvas();if(!el||!state||el.closest('[hidden]'))return;const r=el.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1),W=Math.round(r.width*d),H=Math.round(r.height*d);if(!W||!H)return;if(el.width!==W||el.height!==H){el.width=W;el.height=H;}const c=el.getContext('2d');c.setTransform(d,0,0,d,0,0);const w=W/d,h=H/d,s=state,a=s.activity,z=a?.z||0,key=!a||a.mode==='train'?'city':['boss','dungeon','trial'].includes(a.mode)?'crypt'+z:'zone'+z,full=image('assets/maps/'+key+'.webp'),preview=image('assets/maps/'+key+'-mini.webp'),im=full?.complete&&full.naturalWidth?full:preview;const focus=a?.mode==='gather'?(gatherHero??{x:.5,y:.64}):a?{x:visual.hero,y:visual.heroY??.84}:cityPos;const scale=clamp(zoom61/baseZoom,1,1.8),hunt=a?.mode==='hunt';
 const desiredX=clamp(w*(hunt?.45:.5)-(hunt?a.positions?.hero??focus.x:focus.x)*w*scale,w*(1-scale),0);
-let ox=desiredX;
+let ox=desiredX,panorama=.5;
 if(hunt){
  const same=huntCamera?.zone===a.z&&huntCamera.w===w&&huntCamera.h===h&&huntCamera.scale===scale;
  if(same&&Math.abs(huntCamera.x-desiredX)<=w*.8)ox=huntCamera.x+(desiredX-huntCamera.x)*.18;
- huntCamera={zone:a.z,w,h,scale,x:ox};
+ const width=clamp(w/(2.45*zoom61),440,1600),span=1600-width;
+ const hero=(a.positions?.hero??focus.x)*1600;
+ const desiredPan=clamp(hero-width*.45,0,span);
+ const pan=same&&Math.abs(huntCamera.pan-desiredPan)<=width*.8
+  ?huntCamera.pan+(desiredPan-huntCamera.pan)*.18:desiredPan;
+ panorama=span?pan/span:.5;
+ huntCamera={zone:a.z,w,h,scale,x:ox,pan};
 }else huntCamera=null;
-const oy=clamp(h*(hunt?.73:.62)-focus.y*h*scale,h*(1-scale),0);projection={scale,ox,oy,w,h};c.fillStyle='#151719';c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);c.scale(scale,scale);if(im?.complete&&im.naturalWidth){
+const oy=clamp(h*(hunt?.73:.62)-focus.y*h*scale,h*(1-scale),0);projection={scale,ox,oy,w,h};c.fillStyle='#151719';c.fillRect(0,0,w,h);
+if(hunt&&im?.complete&&im.naturalWidth){
  c.imageSmoothingEnabled=true;
- if(hunt){
-  const cover=Math.max(w/im.naturalWidth,h/im.naturalHeight);
-  const iw=im.naturalWidth*cover,ih=im.naturalHeight*cover;
-  c.drawImage(im,(w-iw)/2,(h-ih)/2,iw,ih);
- }else{
-  // Fixed stages and their actors share the same normalized rectangle.
-  c.drawImage(im,0,0,w,h);
- }
+ const iw=im.naturalWidth,ih=im.naturalHeight;
+ c.drawImage(im,iw*.26*panorama,0,iw*.74,ih,0,0,w,h);
+}
+c.save();c.translate(ox,oy);c.scale(scale,scale);
+if(!hunt&&im?.complete&&im.naturalWidth){
+ // Fixed stages and their actors share the same normalized rectangle.
+ c.imageSmoothingEnabled=true;
+ c.drawImage(im,0,0,w,h);
 }drawAtmosphere(c,w,h,d,now,a?.mode??'city',z);const hh=Math.min(h*.43,w*.19,150),y=h*.84,anim=motion.matches?0:Math.max(0,1-(now-pulse)/400),target=a?.positions||{hero:.32,enemy:.68,servant:.46};for(const k of ['hero','enemy','servant'])visual[k]+=(target[k]-visual[k])*(motion.matches?1:.12);for(const axis of ['heroY','enemyY']){visual[axis]??=.84;visual[axis]+=((target[axis]??.84)-visual[axis])*(motion.matches?1:.12);}const x=w*visual.hero+anim*5,heroY=h*visual.heroY,enemyY=h*visual.enemyY;
 function shadow(x,y,h){c.fillStyle='#0008';c.beginPath();c.ellipse(x,y,Math.max(10,h*.22),h*.055,0,0,Math.PI*2);c.fill();}
 if(!a){const dt=Math.min(.06,Math.max(0,(now-lastCityFrame)/1000));lastCityFrame=now;const keys=cityKeys;let dx=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft')),dy=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));if(dx||dy){cityDest=null;cityRoute=[];cityClickNPC=null;}else if(cityDest){const waypoint=cityRoute[0];if(waypoint){dx=waypoint.x-cityPos.x;dy=waypoint.y-cityPos.y;}else cityDest=null;}const distance=Math.hypot(dx,dy);if(distance){const step=Math.min(.21*dt,distance),nx=cityPos.x+dx/distance*step,ny=cityPos.y+dy/distance*step;if(cityWalkable(nx,ny))cityPos={x:nx,y:ny};else if(!cityDest){if(cityWalkable(nx,cityPos.y))cityPos.x=nx;if(cityWalkable(cityPos.x,ny))cityPos.y=ny;}}if(cityRoute[0]&&Math.hypot(cityRoute[0].x-cityPos.x,cityRoute[0].y-cityPos.y)<.001)cityRoute.shift();const actorH=Math.min(h*.20,w*.10,84),actors=cityNPC.map(n=>({...n,npc:true})).concat([{...cityPos,cls:s.cls,npc:false}]).sort((a,b)=>a.y-b.y);for(const n of actors){const px=n.x*w,py=n.y*h;shadow(px,py,actorH);draw(c,art.hero[n.cls][!n.npc&&distance?1+Math.floor(now/180)%3:0],px,py,actorH);if(n.npc){c.font='bold 11px system-ui';c.textAlign='center';c.lineWidth=3;c.strokeStyle='#08080b';c.strokeText(n.name,px,py-actorH-5);c.fillStyle='#f0d59c';c.fillText(n.name,px,py-actorH-5);}}cityNear=cityNPC.map(n=>({n,d:Math.hypot((n.x-cityPos.x)*w,(n.y-cityPos.y)*h)})).sort((a,b)=>a.d-b.d).find(x=>x.d<=Math.max(35,actorH*.8))?.n||null;const hint=document.getElementById('city61-hint'),button=document.getElementById('interact61');if(hint)hint.textContent=cityNear?cityNear.name+' · '+cityNear.role:'WASD / setas · clique para andar';if(button)button.disabled=!cityNear;if(cityClickNPC&&cityNear===cityClickNPC){cityDest=null;cityRoute=[];cityClickNPC=null;interact();}c.restore();mini(c,key,w,h,cityPos,cityNPC);return;}

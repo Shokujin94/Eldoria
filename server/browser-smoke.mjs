@@ -155,9 +155,15 @@ try{
  await page.locator('[data-tab=play]').click();
  await page.locator('[data-mode61=hunt]').click();
  const impact=await page.evaluateHandle(()=>{
-  const seen={projectile:false,damage:false,impact:false};
+  const seen={projectile:false,damage:false,impact:false,panorama:false};
   const ctx=document.getElementById('scene52').getContext('2d');
-  const ellipse=ctx.ellipse.bind(ctx),strokeText=ctx.strokeText.bind(ctx);
+  const ellipse=ctx.ellipse.bind(ctx),strokeText=ctx.strokeText.bind(ctx),drawImage=ctx.drawImage.bind(ctx);
+  ctx.drawImage=(...args)=>{
+   const [im,x,y,w,h]=args;
+   if(args.length===9&&/\/zone0(?:-mini)?\.webp$/.test(im.src||'')
+      &&Math.abs(w-im.naturalWidth*.74)<.01&&x>=0&&x+w<=im.naturalWidth+.01&&y===0&&h===im.naturalHeight)seen.panorama=true;
+   drawImage(...args);
+  };
   ctx.ellipse=(...args)=>{
    if(ctx.fillStyle==='#b17ba6'&&args[2]===6&&args[3]===4)seen.projectile=true;
    if(ctx.strokeStyle==='#b17ba6'&&args[2]>=8)seen.impact=true;
@@ -168,7 +174,7 @@ try{
  });
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
- await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact,impact,{timeout:15000});
+ await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama,impact,{timeout:15000});
  await impact.dispose();
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
