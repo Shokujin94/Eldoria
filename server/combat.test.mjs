@@ -327,3 +327,13 @@ test('warrior dungeon room movement applies both legacy speed factors',()=>{
  assert.ok(Math.abs(ratio-1.45*1.30)<1e-10);
  assert.ok(Math.abs((.8-room.positions.enemy)/(.8-other.positions.enemy)-1.45*1.30)<1e-10);
 });
+
+test('boss-only rotation skips ordinary dungeon enemies and admits affixed enemies',()=>{
+ const st={hp:100,mana:100,damage:20,crit:0,critMult:1.6,haste:0,special:1.5,heal:0};
+ for(const [mode,affixes,boss,casts] of [['dungeon',[],false,0],['dungeon',['fast'],false,1],['hunt',['fast'],false,1],['trial',[],true,1]]){
+  const s=c.normalize({level:20,hp:100,mana:100,talents:{x:1},rotation:['x'],rotationConditions:{x:'boss'}});
+  const a={z:0,index:0,mode,affixes,enemy:{hp:100,atk:4},enemyHp:100,effects:{}};
+  c.turn('war',s,st,a,()=>.5,boss);
+  assert.equal(s.casts.x||0,casts,mode);
+ }
+});
