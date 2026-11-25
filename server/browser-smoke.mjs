@@ -58,6 +58,7 @@ try{
  await page.locator('#zoomIn61').click();
  await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale>1);
  const camera=await page.evaluate(()=>window.eldoria52Scene.view());
+ assert.ok(Math.abs(camera.scale-.70/.55)<1e-6);
  assert.ok(camera.ox<=0&&camera.oy<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.oy>=camera.h*(1-camera.scale)-.01);
  await page.locator('#scene52').focus();
  await page.keyboard.down('ArrowDown');
@@ -187,6 +188,12 @@ try{
  await page.locator('#city61').waitFor({state:'visible'});
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'mobile overflow');
+ await page.evaluate(()=>window.eldoria52Scene.zoom(1));
+ await page.waitForFunction(()=>window.eldoria52Scene.view()?.scale===1.8);
+ const narrowCamera=await page.evaluate(()=>window.eldoria52Scene.view());
+ assert.ok(narrowCamera.ox<=0&&narrowCamera.oy<=0);
+ assert.ok(narrowCamera.ox>=narrowCamera.w*(1-narrowCamera.scale)-.01);
+ assert.ok(narrowCamera.oy>=narrowCamera.h*(1-narrowCamera.scale)-.01);
  assert.deepEqual(errors,[]);
  console.log('Browser smoke: registration, vocation, character, bag, talents, market, ranking, gathering, hunt, return, mobile passed');
 }finally{await browser?.close();if(child.exitCode===null){child.kill('SIGTERM');await once(child,'exit');}await rm(dir,{recursive:true,force:true});}
