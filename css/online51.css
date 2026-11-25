@@ -468,3 +468,8 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 .detail-tooltip-rows{margin:8px 0 2px}
 .detail-tooltip-rows div{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 0;border-top:1px solid #c8b5a023}
 .detail-tooltip-rows dt{color:#b9c2cd}.detail-tooltip-rows dd{margin:0;text-align:right;color:#f4e7ce;font-weight:600}
+#content-bag .stock19-grid:has(.material-slot){grid-template-columns:repeat(auto-fill,minmax(106px,1fr))!important}
+#content-bag .stock19-grid .material-slot{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:6px!important;min-height:100px;height:auto!important;text-align:center;border-color:var(--rar)!important}
+#content-bag .stock19-grid .material-slot .stock19-name{display:block;overflow:visible;max-height:none;overflow-wrap:anywhere}
+#content-bag .material-slot img,#tal47-tip .material-tooltip-icon{width:42px;height:42px;object-fit:contain;filter:drop-shadow(0 0 6px var(--rar,var(--path)))}
+[data-material-tip]:focus-visible{outline:2px solid #e8d1a0;outline-offset:2px}

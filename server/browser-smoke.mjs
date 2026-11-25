@@ -174,6 +174,13 @@ try{
  await gatherForm.locator('[data-gather-resources]').getByText('+5 XP por coleta base',{exact:true}).waitFor();
  assert.equal(await page.locator('#professionMastery progress').count(),3);
  await gatherForm.locator('[data-gather-resources]').getByText('Comum · 72% · 0 em estoque',{exact:true}).waitFor();
+ const commonWood=gatherForm.locator('[data-material-tip="wood:0:0"]');
+ await commonWood.focus();
+ const materialTip=page.locator('#tal47-tip');
+ await materialTip.getByRole('heading',{name:'Madeira ancestral',exact:true}).waitFor();
+ await materialTip.getByText('Usada em receitas de equipamento conforme o tipo de peça.',{exact:true}).waitFor();
+ await page.keyboard.press('Escape');
+ await materialTip.waitFor({state:'hidden'});
  assert.equal(await gatherForm.locator('[name=zone] option[value="1"]').evaluate(option=>option.disabled),true);
  const drawnNodes=await page.evaluateHandle(()=>{
   const indices=new Set(),art=window.eldoria52Art,draw=art.drawGatherNode;

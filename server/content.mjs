@@ -133,6 +133,11 @@ export const professionResources={
  wood:['Madeira ancestral','Madeira espectral','Madeira carbonizada','Madeira de mangue','Pinho branco','Cipreste fúnebre','Carvalho de guerra','Lenho ígneo','Ébano lunar','Raiz do vazio'],
  herb:['Erva lunar','Erva sepulcral','Flor de cinzas','Lótus fúnebre','Flor de geada','Mandrágora pálida','Erva da vigília','Rosa de brasa','Flor do eclipse','Lírio negro']
 };
+export const materialResources={
+ ...professionResources,
+ mob:['Fragmento do Bosque','Ossada de Valdren','Escória de Cinza','Muco do lamento','Estilhaço glacial','Osso consagrado','Estilhaço de armadura','Escória rubra','Pó de sombra','Fragmento do vazio'],
+ boss:['Núcleo da Raiz Morta','Essência Sepulcral','Coração de Cinza','Pérola da Matriarca','Cristal do Arauto','Dente do Cardeal','Insígnia partida','Núcleo do Titã','Selo do Prelado','Essência do Soberano']
+};
 export const professionTalents={speed:{max:3,level:1,name:'Eficiência',desc:'−1 s por ponto'},yield:{max:3,level:4,name:'Rendimento',desc:'+15 p.p. chance de recurso extra por ponto'},quality:{max:5,level:7,name:'Perícia',desc:'Melhora a chance de raridades'}};
 export const professionXpNeed=p=>20+p.level*12;
 export const professionInterval=p=>1000*(6-Math.min(3,p.talents?.speed||0));
