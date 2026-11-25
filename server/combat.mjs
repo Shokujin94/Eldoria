@@ -282,7 +282,7 @@ export function enemyStrike(cl,s,st,a,random,boss){
  const before=s.hp;
  incoming(s,st,a,damage,boss,random,element);
  s.energy=Math.min(100,s.energy+(v.hurtEnergy||0));
- if(rangedEnemy(a,boss))return {element,damage:Math.max(0,before-s.hp)};
+ if(rangedEnemy(a,boss))return {element,kind:a.z===1&&a.index===3?'arrow':a.z===2&&a.index===4?'fire':'dark',damage:Math.max(0,before-s.hp)};
 }
 export function onVictory(cl,s,st){const v=values(cl,s);s.hp=Math.min(st.hp,s.hp+Math.min(st.hp*.08,st.hp*((v.killHeal||0)+(st.powers?.harvest||0)+(st.recovery||0))));s.mana=Math.min(st.mana,s.mana+st.mana*(v.killMana||0));s.energy=Math.min(100,s.energy+(v.killEnergy||0));}
 
