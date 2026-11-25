@@ -20,7 +20,8 @@ export const materialOdds=[[65,27,7,.9,.1],[55,30,12,2.7,.3],[47,32,16,4.5,.5],[
 export const dungeonOdds=[38,38,20,3.8,.2],bossOdds=[48,34,15,2.85,.15];
 export function rollOdds(odds,rng){let n=rng()*100;for(let i=0;i<odds.length;i++){n-=odds[i];if(n<0)return i;}return odds.length-1;}
 function baseEnemy(z,i){const l=1+10*z;return {name:names[z][i],hp:Math.round((36+8.5*(l-1)+1.40*(l-1)**1.38)*[1,1.23,1.48,1.82,2.10][i]*(1+z*.045)),atk:Math.round((7+1.83*(l-1)+.025*(l-1)**1.5)*[1,1.14,1.29,1.52,1.75][i]),xp:Math.round((12+3.7*(l-1)+.19*(l-1)**1.5)*[1,1.16,1.35,1.56,1.83][i]),gold:Math.round((5+.52*(l-1))*[1,1.15,1.3,1.5,1.75][i])};}
-export function enemy(z,i,mode='hunt',wave=1,level=1){const boss=mode==='boss'||mode==='dungeon'&&wave===4,a=baseEnemy(z,boss?1:i);
+export function enemy(z,i,mode='hunt',wave=1,level=1,{difficulty=0,floor=1,affixes=0}={}){
+ const boss=mode==='boss'||mode==='dungeon'&&wave===4,a=baseEnemy(z,boss?1:i);
  if(boss){
   const last=baseEnemy(z,4);
   a.hp=Math.round(Math.round(last.hp*(z===0?4.1:3.2))*balance.regionHP[z]);
@@ -32,7 +33,20 @@ export function enemy(z,i,mode='hunt',wave=1,level=1){const boss=mode==='boss'||
   if(mode==='dungeon'){a.hp=Math.floor(a.hp*(1.05+wave*.12));a.atk=Math.floor(a.atk*(1+wave*.06));}
  }
  if(boss)a.name=bossNames[z];else if(mode==='dungeon')a.name+=' de elite';
- const over=Math.max(0,level-(10+10*z));a.xp=Math.max(1,Math.round(a.xp*Math.max(.12,1/(1+over*.085))));a.gold=Math.max(1,Math.round(a.gold*Math.max(.35,1/(1+over*.035))));return a;}
+ if(mode==='trial')return a;
+ const d=mode==='dungeon'?difficulty:0,t=mode==='dungeon'?Math.max(0,floor-1):0;
+ a.hp=Math.round(a.hp*(1+d*.35)*(1+t*.09)*(1+affixes*.32));
+ a.atk=Math.round(a.atk*(1+d*.17+t*.055)*(1+affixes*.10));
+ a.xp=Math.round(a.xp*(1+d*.24+t*.045+affixes*.20));
+ a.gold=Math.round(a.gold*(1+d*.15+t*.03+affixes*.12));
+ const over=Math.max(0,level-(10+10*z));
+ a.xp=Math.max(1,Math.round(a.xp*Math.max(.12,1/(1+over*.085))));
+ a.gold=Math.max(1,Math.round(a.gold*Math.max(.35,1/(1+over*.035))));
+ if(boss){a.hp=Math.round(a.hp*1.28);a.xp=Math.round(a.xp*1.13);a.gold=Math.round(a.gold*1.10);}
+ const goldScale=(z===0?.85:.64-z*.019)/(1+.012*over);
+ a.gold=Math.max(1,Math.round(a.gold*goldScale*(1+.035*d)));
+ return a;
+}
 const qFactor=[.85,1,1.12,1.25],rarFactor=[1,1.19,1.43,1.73,2.10],affixCount=[0,1,2,3,4];
 const slotBase={
  weapon:{damage:7.5},offhand:{def:2.0,damage:1.3},armor:{def:3.1,hp:12},head:{def:1.3,hp:5},legs:{def:1.7,hp:4.5},hands:{damage:1.2,crit:1},feet:{def:1.1,dex:1},ring:{crit:1,skill:1.5},accessory:{crit:1.7,mana:3}

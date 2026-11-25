@@ -243,7 +243,7 @@ test('dungeons advance after three elites per floor and tower bosses advance the
  const regional=content.enemy(0,4,'boss'),final=content.enemy(0,4,'dungeon',4);
  assert.equal(final.hp,Math.round(regional.hp*1.1));
  assert.equal(final.atk,Math.round(regional.atk*1.03));
- assert.equal(final.xp,Math.round(content.enemy(0,1).xp*2*1.3));
+ assert.equal(final.xp,41);
  const db=new DatabaseSync(':memory:');schema(db);
  let now=100000;
  const g=game(db,{clock:()=>now,random:()=>.5});
@@ -269,4 +269,13 @@ test('dungeons advance after three elites per floor and tower bosses advance the
   g.action('a',{action:'stop'});
  }
  db.close();
+});
+
+test('encounter layers combine before overlevel and regional reward rounding',async()=>{
+ const {enemy}=await import('./content.mjs');
+ const encounter=enemy(1,2,'dungeon',2,40,{difficulty:3,floor:3,affixes:2});
+ assert.deepEqual(encounter,{name:'Voraz das Catacumbas de elite',hp:1504,atk:76,xp:61,gold:8});
+ const final=enemy(0,4,'dungeon',4);
+ assert.equal(final.xp,41);
+ assert.equal(final.gold,11);
 });
