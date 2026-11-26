@@ -1,4 +1,4 @@
-# Eldoria Online — prévia técnica (0.46.0)
+# Nethar · Última Vigília — servidor online
 **Não mesclar/publicar como substituto do jogo atual ainda.** Este é um protótipo autoritativo com interface própria e ciclo simplificado de caçada, coleta, forja e equipamentos. O motor completo anterior (mapa, talentos, subclasses, dungeons, bosses, runas, efeitos e demais mecânicas) ainda precisa ser portado para o servidor. O HTML anterior foi preservado em docs/legacy-client.html, não publicado pelo exportador. O novo index não carrega os scripts do motor antigo.
 
 ## Executar

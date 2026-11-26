@@ -1,4 +1,8 @@
-# Crônicas de Eldoria — GitHub Pages
+# Nethar · Última Vigília
+
+O MMORPG online usa o nome Nethar · Última Vigília. A referência original continua disponível como Crônicas de Eldoria no GitHub Pages.
+
+## Crônicas de Eldoria — GitHub Pages
 
 Projeto de RPG idle em HTML, CSS e JavaScript. Base 0.38, preparada para publicação automática.
 

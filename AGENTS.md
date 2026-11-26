@@ -1,8 +1,8 @@
-# AGENTS.md — Eldoria
+# AGENTS.md — Nethar · Última Vigília
 
 ## 1. Missão
 
-Eldoria é um Idle MMORPG. Evolua o jogo preservando a experiência original e integrando os sistemas online. A referência visual e funcional é https://shokujin94.github.io/Eldoria/ e, quando disponível, a última revisão estável anterior à migração online. A referência não deve substituir os sistemas multiplayer já implementados.
+Nethar · Última Vigília é um Idle MMORPG. Evolua o jogo preservando a experiência original e integrando os sistemas online. A referência visual e funcional é https://shokujin94.github.io/Eldoria/ e, quando disponível, a última revisão estável anterior à migração online. A referência não deve substituir os sistemas multiplayer já implementados.
 
 ## 2. Regras de trabalho
 

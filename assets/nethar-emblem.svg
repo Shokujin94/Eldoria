@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="nethar-title">
+ <title id="nethar-title">Nethar · Última Vigília</title>
+ <defs>
+  <linearGradient id="bronze" x2=".8" y2="1">
+   <stop stop-color="#ffeac0"/>
+   <stop offset=".45" stop-color="#dbab69"/>
+   <stop offset="1" stop-color="#96613a"/>
+  </linearGradient>
+  <radialGradient id="eclipse" cx=".5" cy=".36" r=".7">
+   <stop stop-color="#48282d"/>
+   <stop offset="1" stop-color="#131217"/>
+  </radialGradient>
+ </defs>
+ <path d="M64 4 117 27v45c0 21-22 41-53 52C33 113 11 93 11 72V27Z" fill="#100e12" stroke="url(#bronze)" stroke-width="5"/>
+ <path d="M64 15 106 34v37c0 17-17 33-42 44-25-11-42-27-42-44V34Z" fill="url(#eclipse)" stroke="#8b5d49" stroke-width="2"/>
+ <circle cx="64" cy="49" r="21" fill="#140f15" stroke="#e4b16c" stroke-width="4"/>
+ <path d="M32 94V62h10v9h9V60l13-10 13 10v11h9v-9h10v32H73V81c0-7-3-12-9-16-6 4-9 9-9 16v13Z" fill="url(#bronze)"/>
+ <path d="m64 22 4 7-4 6-4-6Z" fill="#fff0c5"/>
+</svg>
