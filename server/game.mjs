@@ -13,6 +13,18 @@ export const regions=['Bosque do Alvorecer','Ruínas de Valdren','Montes de Cinz
 export const profs={mining:'Mineração',wood:'Lenhador',herb:'Herbalismo'};
 export const slots={weapon:'Arma',head:'Cabeça',armor:'Peitoral',offhand:'Mão secundária',hands:'Luvas',legs:'Calças',feet:'Botas',ring:'Anel',accessory:'Amuleto'};
 export const gates=[1,8,18,28,38,48,58,68,78,88];
+const weaponNames={war:'Espada',ranger:'Arco',mage:'Cajado',cleric:'Maça',necro:'Foice'};
+const gearNames={head:'Elmo',armor:'Couraça',offhand:'Relicário',hands:'Manoplas',legs:'Grevas',feet:'Botas',ring:'Sinete',accessory:'Amuleto'};
+const rarityEpithets=['',' · Vigília',' · Juramento',' · Ruína',' · Eclipse'];
+function equipmentName(slot,tier,source,rarity,vocation,creatureIndex){
+ const base=slot==='weapon'?(weaponNames[vocation]||'Lâmina'):gearNames[slot];
+ const region=regions[tier];
+ const origin=source==='craft'?(slot==='ring'||slot==='accessory'?'Joalheria de ':'Forja de ')+region:
+  source==='dungeon'?'Cripta de '+region:
+  source==='boss'?content.creatureCatalog.find(m=>m.z===tier&&m.boss)?.name:
+  content.creatureCatalog.find(m=>m.z===tier&&!m.boss&&m.index===creatureIndex)?.name;
+ return base+' · '+(origin||'Caçada em '+region)+rarityEpithets[rarity];
+}
 const sourceTax={hunt:0,craft:50,dungeon:100,boss:200},rarityMult=[1,1.25,1.65,2.15,2.85];
 const mains={war:'str',ranger:'dex',mage:'int',cleric:'wis',necro:'int'};
 const subclassBonuses={
@@ -51,6 +63,12 @@ CREATE TABLE IF NOT EXISTS ledger(id TEXT PRIMARY KEY,listing TEXT UNIQUE NOT NU
  if(!db.prepare('PRAGMA table_info(listings)').all().some(column=>column.name==='listing_fee')){
   db.exec('ALTER TABLE listings ADD COLUMN listing_fee INTEGER NOT NULL DEFAULT 0 CHECK(listing_fee BETWEEN 0 AND 100)');
  }
+ const legacy=db.prepare("SELECT id,name,slot,tier,source,rarity,json_extract(data,'$.vocation') vocation FROM items WHERE starter=0 AND instr(name,' · ')>0").all()
+  .filter(i=>i.name===slots[i.slot]+' · '+regions[i.tier]);
+ if(legacy.length)tx(db,()=>{
+  const rename=db.prepare('UPDATE items SET name=? WHERE id=? AND name=?');
+  for(const i of legacy)rename.run(equipmentName(i.slot,i.tier,i.source,i.rarity,i.vocation),i.id,i.name);
+ });
 }
 const tx=(db,fn)=>{db.exec('BEGIN IMMEDIATE');try{const r=fn();db.exec('COMMIT');return r;}catch(e){db.exec('ROLLBACK');throw e;}};
 export const rankingColumns=Object.freeze({level:'level',power:'power',professions:'(mining+wood+herb+craft)',mining:'mining',wood:'wood',herb:'herb',craft:'craft',collected:'collected',mined:'mined',logged:'logged',herbs:'herbs'});
@@ -64,7 +82,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const credit=(id,n)=>db.prepare('UPDATE characters SET gold=min(?,gold+?) WHERE account=?').run(MAX,n,id);
  const debit=(id,n)=>{if(db.prepare('UPDATE characters SET gold=gold-? WHERE account=? AND gold>=?').run(n,id,n).changes!==1)fail('Ouro insuficiente.',409);};
  function issue(id,slot,z,index,rarity,source,starter=false,equipped=false,chosenLevel=null,materialQuality=null){
-  const r=row(id),quality=Math.floor(random()*4),name=starter?'Arma de aprendiz':slots[slot]+' · '+regions[z],uid=randomUUID();
+  const r=row(id),quality=Math.floor(random()*4),name=starter?'Arma de aprendiz':equipmentName(slot,z,source,rarity,r.cls,index),uid=randomUUID();
   const meta=starter?{level:1,baseMods:{damage:3},affixes:[],power:null}:content.generate({tier:z,rarity,quality,vocation:r.cls,slot},source,index,random,chosenLevel);
   const mods=Object.fromEntries(Object.entries(meta.baseMods).map(([k,v])=>[k,balance.itemMod(k,v,starter)]));const sockets=starter?0:equipment.newSockets(rarity,random);
   const power=content.itemPower45({name,slot,baseMods:meta.baseMods});
