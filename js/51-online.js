@@ -436,6 +436,17 @@ function merchant(){
 function bestiary(){const c=data.character,known=c.creatureCatalog.filter(m=>c.bestiary[m.key]>0).length;return '<h2>Maestria de criaturas</h2><p>'+known+'/60 registradas · +0,5% dano por 1.000 abates, até +3,5% por espécie.</p>'+regions.map((name,z)=>'<details class="talentpath" '+(z===0?'open':'')+'><summary>'+esc(name)+'</summary>'+c.creatureCatalog.filter(m=>m.z===z).map(m=>{const n=c.bestiary[m.key]||0,goal=[1,50,250,1000,5000,20000].find(x=>x>n)||20000,src=m.boss?window.eldoria52Art.boss[z]:window.eldoria52Art.monsters[z][m.index];return '<article class="item"><img class="mat52" src="'+esc(src)+'" alt=""><div><b>'+esc(n?m.name:'Criatura não registrada')+'</b><p>'+nf(n)+' / '+nf(goal)+' · +'+Math.min(3.5,Math.floor(n/1000)*.5).toLocaleString('pt-BR')+'% dano</p><progress max="'+goal+'" value="'+Math.min(n,goal)+'"></progress></div><button data-act="trackCreature" data-id="'+esc(m.key)+'">'+(c.trackCreature===m.key?'Fixado':'Fixar')+'</button></article>';}).join('')+'</details>').join('');}
 function rotation(){const c=data.character,learned=c.talentTree.flatMap(p=>p.nodes).filter(n=>n.active&&n.rank);return '<section><h3>Rotação de combate</h3><p>Automática ou até seis habilidades em ordem, ignorando as que estão em recarga ou sem mana.</p><form id="rotation56"><label>Modo<select name="mode"><option value="auto" '+(c.rotation===null?'selected':'')+'>Automática</option><option value="custom" '+(c.rotation!==null?'selected':'')+'>Personalizada</option></select></label>'+Array.from({length:6},(_,i)=>'<label>Prioridade '+(i+1)+'<select name="slot'+i+'"><option value="">Vazio</option>'+options(Object.fromEntries(learned.map(n=>[n.id,n.name])),c.rotation?.[i])+'</select></label><label>Condição<select name="cond'+i+'">'+options({always:'Sempre',hp:'PV abaixo de 50%',mp:'Mana abaixo de 35%',execute:'Alvo abaixo de 30%',boss:'Chefes e inimigos com afixo',control:'Sem controle ativo'},c.rotationConditions[c.rotation?.[i]])+'</select></label>').join('')+'<button '+(c.activity?'disabled':'')+'>Salvar rotação</button></form></section>';}
 function character(){const c=data.character;const old=characterBody61(),t=document.createElement('template');t.innerHTML=old;const parts=[...t.content.children];const nav='<div class="filter61 character48-tabs">'+[['sheet','Ficha'],['gear','Equipamentos']].map(([k,n])=>'<button type="button" data-character61="'+k+'" aria-pressed="'+(characterTab61===k)+'">'+n+'</button>').join('')+'</div>';if(characterTab61==='gear')return nav+gear66(c);return nav+sheet65(c)+parts[0].outerHTML;}
+const attributeGlyphs={
+ str:'M3 6l4-2 2 3h6l2-3 4 2v12l-4 2-2-3H9l-2 3-4-2Zm6 3v6m6-6v6M9 12h6',
+ dex:'M4 17l15-12m-4 0h4v4M4 17h5l-4 4H2Zm5 1l3 3M5 12l2 2',
+ int:'M4 5h6l2 2 2-2h6v14h-6l-2 2-2-2H4Zm8 2v14M7 9h2m-2 4h2m6-4h2m-2 4h2',
+ vit:'M12 20l-8-8a5 5 0 0 1 8-6 5 5 0 0 1 8 6ZM5 13h4l2-4 2 7 2-3h4',
+ wis:'M12 3v5m0 8v5M3 12h5m8 0h5m-9-4 4 4-4 4-4-4Zm-6-2 2 2m8 8 2 2m0-12-2 2m-8 8-2 2'
+};
+function attributeIcon(key,color){
+ const path=attributeGlyphs[key];
+ return path?'<svg class="attribute-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>':'';
+}
 const attributeDescriptions={
  str:'Aumenta o dano e o multiplicador de dano crítico.',
  dex:'Aumenta o dano, a chance de crítico, de ataque extra e de esquiva.',
@@ -444,7 +455,7 @@ const attributeDescriptions={
  wis:'Aumenta o dano, a mana, a regeneração, a potência das habilidades e a cura.'
 };
 const vocationPrimaryAttribute={war:'str',ranger:'dex',mage:'int',cleric:'wis',necro:'int'};
-function characterBody61(){const c=data.character;return '<section><h3>Atributos · '+(c.freeAttrs||0)+' pontos</h3>'+Object.entries(c.stats.a||{}).map(([k,n])=>'<article class="attribute-sheet-row"><div><b>'+esc(attrNames67[k]||k)+' · '+nf(Math.round(n))+'</b>'+
+function characterBody61(){const c=data.character;return '<section><h3>Atributos · '+(c.freeAttrs||0)+' pontos</h3>'+Object.entries(c.stats.a||{}).map(([k,n])=>'<article class="attribute-sheet-row" data-attribute="'+k+'"><div><b>'+attributeIcon(k,themes64[c.cls].accent)+esc(attrNames67[k]||k)+' · '+nf(Math.round(n))+'</b>'+
  (vocationPrimaryAttribute[c.cls]===k?'<small>Atributo principal</small>':'')+'<p>'+esc(attributeDescriptions[k]||'')+'</p></div><div class="row"><button data-act="attribute" data-id="'+k+'" data-points61="1" '+(!c.freeAttrs||c.activity?'disabled':'')+'>+1</button><button data-act="attribute" data-id="'+k+'" data-points61="5" '+(c.freeAttrs<5||c.activity?'disabled':'')+'>+5</button><button data-act="attribute" data-id="'+k+'" data-points61="'+c.freeAttrs+'" '+(!c.freeAttrs||c.activity?'disabled':'')+'>Todos</button></div></article>').join('')+'<button data-act="resetAttrs" '+(c.activity?'disabled':'')+'>Redistribuir · '+nf(100+25*(c.level-1))+' ◈</button></section><section><h3>Equipamentos equipados</h3><p class="muted">Conjuntos ativos: '+c.stats.sets.counts.map((n,i)=>n>=2?'T'+(i+1)+' ('+n+'/5)':'').filter(Boolean).join(' · ')+'</p>' +data.items.filter(i=>i.equipped).map(i=>'<article class="item"><span>'+label(i)+(i.escrow?' · Anunciado':i.equipped?' · Equipado':'')+itemDetails(i)+'</span><button data-act="'+(i.equipped?'unequip':'equip')+'" data-id="'+esc(i.id)+'" '+(i.escrow||i.level>c.level||i.equipped&&c.activity?'disabled':'')+'>'+(i.equipped?'Desequipar':'Equipar')+'</button></article>').join('')+'</section><section><h3>Consumíveis</h3><form id="potions"><div class="grid"><label>Poção<select name="key">'+Object.entries(c.potionsCatalog).map(([k,p])=>'<option value="'+k+'">'+esc(p.name)+' · '+p.price+' ◈</option>').join('')+'</select></label><label>Quantidade<input name="count" type="number" min="1" max="99" value="1" required></label></div><button>Comprar na cidade</button></form>'+Object.entries(c.potionsCatalog).map(([k,p])=>'<div class="row"><span>'+esc(p.name)+' ×'+(c.potions[k]||0)+'</span><button data-act="usePotion" data-id="'+k+'" '+(!(c.potions[k]>0)||c.potionCD[p.kind]>0?'disabled':'')+'>Usar</button></div>').join('')+'<form id="auto52"><label>Tipo<select name="key"><option value="hp">Vida</option><option value="mp">Mana</option></select></label><label>Usar automaticamente abaixo de % (0 desativa)<input name="threshold" type="number" min="0" max="90" value="0" required></label><button>Configurar</button></form></section>';}
 function talentText61(n){const k=n.skill,s=n.synergy;
  const synergy=s?s.name+' · '+s.condition+' · '+s.effect+' · '+s.requirement+(s.rank?' · Grau '+s.rank:' · Prévia do grau 1'):null;
@@ -616,6 +627,17 @@ function masteryProgress(c){
  const label=c.skill>=100?'Máximo':nf(c.skillXp)+' / '+nf(c.skillXpNeed)+' XP de maestria';
  return '<p class="mastery-progress"><b>'+name+' · Nv. '+c.skill+'/100</b> · '+label+'</p>';
 }
+const vocationCrests={
+ war:'M9 24L21 9l2-2-1 4-11 15m-4-7 8 7M11 14 7 10m14 14-4-4',
+ ranger:'M9 7q23 9 0 18V7Zm0 9h16m-3-3 3 3-3 3',
+ mage:'M16 6l8 17H8Zm0 3v10m-3-3h6m-7 8 4 4 4-4',
+ cleric:'M16 6v17M9 13h14m-13 9q6 7 12 0M8 9l2 2m14-2-2 2',
+ necro:'M10 10a6 6 0 0 1 12 0v7l-3 2v4h-6v-4l-3-2Zm3 3h1m4 0h1m-5 8v2m4-2v2'
+};
+function vocationCrest(cls,color){
+ return '<svg class="vocation-crest" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 5v13L16 30 4 20V7Z" fill="'+color+'24" stroke="'+color+'"/>'+
+  '<path d="'+vocationCrests[cls]+'" fill="none" stroke="'+color+'" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
 function sheet65(c){
  const s=c.stats;
  const seal=({war:'blade',ranger:'bow',mage:'arcane',cleric:'holy',necro:'dark'})[c.cls];
@@ -626,7 +648,7 @@ function sheet65(c){
   ['Tenacidade',s.tenacity*100,'%'],['Esquiva',s.dodge*100,'%'],['Bônus de cura',s.heal*100,'%'],
   ['Regeneração de mana',s.manaRegen,' PM/s'],['Maestria de combate',c.skill]
  ];
- const portrait='<div class="identity13 sheet65"><img src="'+esc(window.eldoria52Art.hero[c.cls][0])+'" alt=""><div><small class="sheet-vocation">'+skillIcon63(seal,accent)+esc(voc[c.cls])+'</small><h3>'+esc(c.name)+'</h3><small>'+esc(c.activeTitle?.name||'Sem título')+'</small><p class="sheet-vocation-role">'+esc(classDesc[c.cls])+'</p><p>Nível '+c.level+' · '+nf(c.xp)+' / '+nf(c.xpNeed)+' XP</p>'+masteryProgress(c)+'</div><div class="sheet-power"><small>Poder de combate</small><b>'+nf(c.power)+'</b></div></div>';
+ const portrait='<div class="identity13 sheet65"><span class="sheet-atmosphere" aria-hidden="true"></span><img src="'+esc(window.eldoria52Art.hero[c.cls][0])+'" alt=""><div><small class="sheet-vocation">'+vocationCrest(c.cls,accent)+esc(voc[c.cls])+'</small><h3>'+esc(c.name)+'</h3><small>'+esc(c.activeTitle?.name||'Sem título')+'</small><p class="sheet-vocation-role">'+esc(classDesc[c.cls])+'</p><p>Nível '+c.level+' · '+nf(c.xp)+' / '+nf(c.xpNeed)+' XP</p>'+masteryProgress(c)+'</div><div class="sheet-power"><small>Poder de combate</small><b>'+nf(c.power)+'</b></div></div>';
  const exact=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2});
  const icons=['hp','mp','blade','guard','bow','blade','shock','guard','slow','holy','mp',seal];
  return '<section class="vocation-sheet" data-vocation-theme="'+esc(c.cls)+'">'+portrait+'<div class="stats65">'+stats.map(([name,value,unit=''],index)=>

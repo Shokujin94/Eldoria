@@ -156,7 +156,8 @@ try{
  const mastery=page.locator('#win-character .mastery-progress');
  await mastery.waitFor({state:'visible'});
  const vocationSheet=page.locator('#win-character [data-vocation-theme=necro]');
- assert.equal(await vocationSheet.locator('.sheet-vocation svg').count(),1);
+ assert.equal(await vocationSheet.locator('.sheet-vocation .vocation-crest').count(),1);
+ assert.equal(await page.locator('#win-character .attribute-glyph').count(),5);
  assert.equal(await vocationSheet.locator('.sheet-stat-icon svg').count(),12);
  assert.match(await vocationSheet.locator('.sheet65').evaluate(el=>getComputedStyle(el).backgroundImage),/rgb\(36, 65, 62\)/);
  assert.match(await mastery.innerText(),/Domínio dos mortos.*0 \/ 18 XP de maestria/);
