@@ -875,7 +875,11 @@ function confirmGame(message){
  $('game-confirmation-message').textContent=message;
  gameConfirmation.returnValue='cancel';
  return new Promise(resolve=>{
-  gameConfirmation.addEventListener('close',()=>resolve(gameConfirmation.returnValue==='confirm'),{once:true});
+  gameConfirmation.addEventListener('close',async()=>{
+   const confirmed=gameConfirmation.returnValue==='confirm';
+   if(confirmed&&polling)await polling;
+   resolve(confirmed);
+  },{once:true});
   gameConfirmation.showModal();
  });
 }
@@ -904,7 +908,7 @@ $('windowLayer65').addEventListener('input',e=>{const f=e.target.closest('#listi
 let lastStateRequest=0;
 setInterval(()=>{
  const character=data?.character;
- if(!token||!character||busy||polling||document.hidden)return;
+ if(!token||!character||(busy&&!gameConfirmation.open)||polling||document.hidden)return;
  const activeCombat=character.activity?.enemy&&!character.activity.paused;
  const now=performance.now();
  if(now-lastStateRequest<(activeCombat?950:1450))return;

@@ -367,6 +367,15 @@ try{
  assert.ok(Math.abs(huntView.scale-1600/huntWidth)<1e-6);
  assert.ok(Math.abs(huntView.scaleY-1200/(huntView.h*huntWidth/huntView.w))<1e-6);
  await impact.dispose();
+ await page.locator('[data-tab=analyzer]').click();
+ await page.locator('#win-analyzer [data-act=resetAnalyzer]').click();
+ const huntConfirmation=page.locator('#game-confirmation[open]');
+ await huntConfirmation.waitFor();
+ const duringConfirmation=await page.waitForResponse(response=>response.url().includes('/state?compact=1')&&response.ok());
+ assert.ok((await duringConfirmation.json()).character.analyzer.seconds>0);
+ assert.equal(await huntConfirmation.isVisible(),true);
+ await huntConfirmation.getByRole('button',{name:'Cancelar',exact:true}).click();
+ await page.locator('#win-analyzer [data-close65]').click();
  await page.locator('[data-quick61=pauseActivity]').click();
  await page.locator('[data-quick61=resumeActivity]').waitFor();
  assert.equal(await page.locator('#target60').isVisible(),true);
