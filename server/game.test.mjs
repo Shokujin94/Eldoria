@@ -163,7 +163,7 @@ test('profession talents, tools and oath gates are authoritative',async()=>{cons
 
 test('loot rules, presets, rare crafting and bounded history',()=>{const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.01});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Artesao','war');const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);s.level=5;s.craft.level=5;s.recipes={0:true};s.materials={'boss:0':1,'mining:0:2':4};db.prepare('UPDATE characters SET data=?,gold=1000,level=5 WHERE account=?').run(JSON.stringify(s),'a');assert.throws(()=>g.action('a',{action:'lootRules',protect:2,sell:3,notify:0}));g.action('a',{action:'lootRules',protect:3,sell:0,notify:0});assert.throws(()=>g.action('a',{action:'rareCraft',zone:0,level:6}),/Nível da receita inválido/);let d=g.action('a',{action:'rareCraft',zone:0,level:4});const jewel=d.items.find(i=>i.slot==='accessory');assert.equal(jewel.rarity,3);assert.match(jewel.name,/^Amuleto · Joalheria de Bosque do Alvorecer · Ruína$/);assert.equal(jewel.level,4);assert.equal(jewel.data.quality,0);assert.equal(jewel.data.materialQuality,2);assert.equal(jewel.data.materialGrade,2);assert.equal(jewel.data.locked,true);assert.equal(d.character.gold,850);assert.throws(()=>g.action('a',{action:'rareCraft',zone:0}));g.action('a',{action:'equip',itemId:jewel.id});g.action('a',{action:'presetSave',index:1});g.action('a',{action:'unequip',itemId:jewel.id});g.action('a',{action:'lockItem',itemId:jewel.id,locked:false});assert.throws(()=>g.action('a',{action:'sellItem',itemId:jewel.id,confirm:true}));assert.throws(()=>g.trade('a',{action:'list',itemId:jewel.id,price:100}));d=g.action('a',{action:'presetLoad',index:1});assert(d.items.find(i=>i.id===jewel.id).equipped);db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run('junk','a','Sucata','head',0,1,0,'hunt',1,JSON.stringify({baseMods:{hp:1},mods:{hp:1},quality:0,sockets:0}));g.action('a',{action:'start',mode:'hunt',zone:0});now+=4000;d=g.action('a',{action:'stop'});assert(!d.items.some(i=>i.id==='junk'));assert(d.items.some(i=>i.id===jewel.id));assert.equal(d.character.history.length,1);assert.equal(d.character.history[0].seconds,4);assert(d.character.history[0].damage>0);assert(d.character.lastCombat.seq>0);assert.equal(d.character.lastCombat.mode,'hunt');assert(Number.isFinite(d.character.lastCombat.positions.enemy));assert(d.character.lastAutoSale.items>=1);db.close();});
 
-test('artisan XP and crafted supplies are server-owned',()=>{const db=new DatabaseSync(':memory:');schema(db);const g=game(db,{clock:()=>100000,random:()=>.5});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Artesao','war');const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);s.materials={'herb:0:0':9,'mining:0:0':3};db.prepare('UPDATE characters SET gold=100,data=? WHERE account=?').run(JSON.stringify(s),'a');assert.throws(()=>g.action('a',{action:'brew',key:'mp3',count:1}));let d=g.action('a',{action:'brew',key:'hp1',count:2});assert.equal(d.character.potions.hp1,2);assert.equal(d.character.tradeXP.alch,20);assert.equal(d.character.gold,84);d=g.action('a',{action:'basicJewel'});assert.equal(d.character.gold,54);assert.equal(d.character.tradeXP.jewel,10);assert(d.items.some(i=>i.slot==='ring'&&i.rarity===1));assert.throws(()=>g.action('a',{action:'basicJewel'}));db.close();});
+test('artisan XP and crafted supplies are server-owned',()=>{const db=new DatabaseSync(':memory:');schema(db);const g=game(db,{clock:()=>100000,random:()=>.5});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Artesao','war');const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);s.materials={'herb:0:0':9,'mining:0:0':3};db.prepare('UPDATE characters SET gold=100,data=? WHERE account=?').run(JSON.stringify(s),'a');assert.throws(()=>g.action('a',{action:'brew',key:'fortune',count:1}));let d=g.action('a',{action:'brew',key:'hp1',count:2});assert.equal(d.character.potions.hp1,2);assert.equal(d.character.tradeXP.alch,20);assert.equal(d.character.gold,94);d=g.action('a',{action:'basicJewel'});assert.equal(d.character.gold,64);assert.equal(d.character.tradeXP.jewel,10);assert(d.items.some(i=>i.slot==='ring'&&i.rarity===1));assert.throws(()=>g.action('a',{action:'basicJewel'}));db.close();});
 
 test('batch talent allocation is atomic and respects rank and free points',()=>{const db=new DatabaseSync(':memory:');schema(db);const g=game(db,{clock:()=>100000});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('batch','batch','test',0);g.create('batch','Batch Mage','mage');const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('batch').data);s.level=3;db.prepare('UPDATE characters SET data=?,level=3 WHERE account=?').run(JSON.stringify(s),'batch');const key='t33_mage_0_0';assert.throws(()=>g.action('batch',{action:'talent',key,points:3}));assert.equal(g.state('batch').character.talents[key]||0,0);assert.throws(()=>g.action('batch',{action:'talent',key,points:4}));assert.equal(g.action('batch',{action:'talent',key,points:2}).character.talents[key],2);assert.equal(g.state('batch').character.freeTalents,0);assert.throws(()=>g.action('batch',{action:'talent',key,points:1}));db.close();});
 
@@ -540,29 +540,29 @@ test('gathering elapses potion cooldown by the length of a collection cycle',()=
  db.close();
 });
 
-test('alchemy brews the legacy life potion grades at the shared recipe cost',()=>{
+test('alchemy uses grade-specific recipes for life and mana and preserves legacy XP bonuses',()=>{
  const db=new DatabaseSync(':memory:');schema(db);
  const g=game(db,{clock:()=>100000});
  db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('alch','alch','test',0);
  g.create('alch','Alquimista','war');
  const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('alch').data);
  s.materials['herb:0:0']=12;
- db.prepare('UPDATE characters SET data=?,gold=40 WHERE account=?').run(JSON.stringify(s),'alch');
- for(const key of ['hp2','hp3','mp1']){
+ db.prepare('UPDATE characters SET data=?,gold=60 WHERE account=?').run(JSON.stringify(s),'alch');
+ for(const key of ['hp2','hp3','mp1','mp2']){
   const before=g.state('alch').character.potions[key]||0;
   assert.equal(g.action('alch',{action:'brew',key,count:1}).character.potions[key],before+1);
  }
- assert.throws(()=>g.action('alch',{action:'brew',key:'mp2',count:1}));
+ assert.throws(()=>g.action('alch',{action:'brew',key:'mp3',count:1}));
  const result=g.state('alch').character;
- assert.equal(result.gold,16);
+ assert.equal(result.gold,15);
  assert.equal(result.materials['herb:0:0'],3);
- assert.equal(result.tradeXP.alch,30);
+ assert.equal(result.tradeXP.alch,65);
  const veteran=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('alch').data);
  Object.assign(veteran,{level:100,legacyXP:160000,legacy:{craft:19,fortune:19}});
  db.prepare('UPDATE characters SET data=?,level=100 WHERE account=?').run(JSON.stringify(veteran),'alch');
  assert.equal(g.action('alch',{action:'legacy',key:'craft'}).character.legacy.craft,20);
  assert.equal(g.action('alch',{action:'legacy',key:'fortune'}).character.legacy.fortune,20);
- assert.equal(g.action('alch',{action:'brew',key:'hp1',count:1}).character.tradeXP.alch,41);
+ assert.equal(g.action('alch',{action:'brew',key:'hp1',count:1}).character.tradeXP.alch,76);
  db.close();
 });
 

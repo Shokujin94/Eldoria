@@ -85,6 +85,12 @@ export function clear(s){s.buffs={};s.guard=0;s.servant=0;s.minions=[];s.energy=
 export const potions=Object.freeze(Object.fromEntries([['hp1','Poção de vida menor','hp',.25,8,4],['hp2','Poção de vida','hp',.45,19,7],['hp3','Poção de vida superior','hp',.7,45,12],['mp1','Poção de mana menor','mp',.25,8,4],['mp2','Poção de mana','mp',.45,19,7],['mp3','Poção de mana superior','mp',.7,45,12]].map(([id,name,kind,fraction,price,cd])=>[id,{name,kind,fraction,price,cd}])));
 export const elixirs=Object.freeze(Object.fromEntries([{"id":"might","name":"Elixir da força","kind":"attr","attribute":"str","fraction":0,"price":45,"cd":180},{"id":"focus","name":"Elixir da precisão","kind":"attr","attribute":"dex","fraction":0,"price":45,"cd":180},{"id":"mind","name":"Elixir do arcano","kind":"attr","attribute":"int","fraction":0,"price":45,"cd":180},{"id":"faith","name":"Elixir da fé","kind":"attr","attribute":"wis","fraction":0,"price":45,"cd":180},{"id":"guard","name":"Elixir da vigília","kind":"attr","attribute":"vit","fraction":0,"price":45,"cd":180},{"id":"fortune","name":"Elixir da fortuna","kind":"loot","attribute":null,"fraction":0.15,"price":90,"cd":180}].map(({id,...p})=>[id,p])));
 export const consumables=Object.freeze({...potions,...elixirs});
+const recipeGrades=[
+ {herbs:1,gold:3,xp:10},
+ {herbs:2,gold:9,xp:15},
+ {herbs:4,gold:24,xp:25}
+];
+export const potionRecipes=Object.freeze(Object.fromEntries(Object.keys(potions).map(id=>[id,Object.freeze(recipeGrades[Number(id[2])-1])])));
 function spendConsumable(s,key){
  s.potions[key]--;
  if(s.analyzer?.consumableCost!==undefined){
@@ -94,7 +100,7 @@ function spendConsumable(s,key){
 }
 export function elapseElixirs(s,seconds){for(const k of Object.keys(s.elixirs||{})){s.elixirs[k]=Math.max(0,s.elixirs[k]-seconds);if(!s.elixirs[k])delete s.elixirs[k];}}
 export function usePotion(s,st,key){if(Object.hasOwn(elixirs,key)){if(!(s.potions[key]>0)||s.elixirs[key]>0)return false;spendConsumable(s,key);s.elixirs[key]=elixirs[key].cd;return true;}const p=Object.hasOwn(potions,key)?potions[key]:null;if(!p||!(s.potions[key]>0)||s.potionCD[p.kind]>0)return false;const stat=p.kind==='hp'?'hp':'mana',max=st[stat];if(s[stat]>=max)return false;s[stat]=Math.min(max,s[stat]+Math.ceil(max*p.fraction));spendConsumable(s,key);s.potionCD[p.kind]=p.cd;(s.potionCDMax??={})[p.kind]=p.cd;return true;}
-export function autoPotion(s,st){for(const k of ['hp','mp']){const stat=k==='hp'?'hp':'mana';if(s.autoPotion[k]>0&&s[stat]/st[stat]*100<=s.autoPotion[k]){const preferred=s.autoPotion[k+'Key'],key=preferred&&Object.hasOwn(potions,preferred)&&potions[preferred].kind===k?preferred:[1,2,3].map(n=>k+n).find(id=>s.potions[id]>0);if(key)usePotion(s,st,key);}}}
+export function autoPotion(s,st){for(const k of ['hp','mp']){const stat=k==='hp'?'hp':'mana';if(s.autoPotion[k]>0&&s[stat]/st[stat]*100<=s.autoPotion[k]){const preferred=s.autoPotion[k+'Key'],key=preferred&&Object.hasOwn(potions,preferred)&&potions[preferred].kind===k&&(s.potions[preferred]>0||!s.autoPotion[k+'Fallback'])?preferred:[1,2,3].map(n=>k+n).find(id=>s.potions[id]>0);if(key)usePotion(s,st,key);}}}
 export function elapsePotionCooldowns(s,seconds){for(const k of Object.keys(s.potionCD||{}))s.potionCD[k]=Math.max(0,s.potionCD[k]-seconds);}
 function damageHero(s,amount){
  const actual=Math.max(0,Math.min(s.hp,amount));

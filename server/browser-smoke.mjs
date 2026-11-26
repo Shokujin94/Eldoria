@@ -147,12 +147,12 @@ try{
  assert.equal(new Set(flaskMarkup).size,12);
  const autoLife=page.locator('#auto-hp');
  await autoLife.locator('..').locator('summary').click();
- await autoLife.getByRole('checkbox').check();
+ await autoLife.locator('[name=enabled]').check();
  await autoLife.locator('[name=threshold]').fill('42');
  await autoLife.getByRole('button',{name:'Salvar'}).click();
  await page.locator('#quick61 .potion-auto').getByText('Auto 42%').waitFor();
  await autoLife.locator('..').locator('summary').click();
- await autoLife.getByRole('checkbox').uncheck();
+ await autoLife.locator('[name=enabled]').uncheck();
  await autoLife.getByRole('button',{name:'Salvar'}).click();
  await page.locator('#quick61 .potion-auto').getByText('Auto 42%').waitFor({state:'detached'});
  const buyPotions=page.locator('#win-cons [data-buy-potion=hp1]');
