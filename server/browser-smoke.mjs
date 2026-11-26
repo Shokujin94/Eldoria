@@ -459,7 +459,7 @@ try{
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
    .run('common-merchant',character.account,'Anel comum','ring','hunt',1,JSON.stringify({mods:{mana:1}}));
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,1,?,?,?)')
-   .run('receipt-gear',character.account,'Anel para desmantelar','ring','hunt',1,JSON.stringify({mods:{mana:1}}));
+   .run('receipt-gear',character.account,'Anel para desmantelar','ring','hunt',1,JSON.stringify({mods:{mana:1},locked:true}));
  }finally{expeditionFixture.close();}
  await page.waitForFunction(()=>document.getElementById('character63').textContent==='Nível 5');
  await page.locator('[data-tab=dungeon]').click();
@@ -506,6 +506,11 @@ try{
  await equipWeapon.click();
  await trader.locator('[data-merchant-item=expedition-weapon]').waitFor({state:'hidden'});
  await expeditionBag.locator('[data-close65]').click();
+ const restrictedGear=trader.locator('.merchant-protected');
+ await restrictedGear.locator('summary').click();
+ await restrictedGear.getByText('Anel para desmantelar',{exact:true}).waitFor();
+ await restrictedGear.locator('[data-id=receipt-gear][data-act=lockItem]').click();
+ await trader.locator('[data-batch-item=receipt-gear]').waitFor({state:'attached'});
  const common=trader.locator('[data-batch-rarity="0"]');
  const uncommon=trader.locator('[data-batch-rarity="1"]');
  await common.check();

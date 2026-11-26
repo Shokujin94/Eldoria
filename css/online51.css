@@ -835,3 +835,5 @@ body.play14 #windowLayer65 .window-body :is(.service-card,.stat13,.region-card){
 .floating65 .vocation-sheet .paper61-hero{max-height:125px}
 :is(#security54-dialog,#recovery54-dialog,#game-confirmation){width:min(360px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto}
 #content-bag .bag-action-popup{overflow:auto;overscroll-behavior:contain}
+#win-merchant .merchant-protected{margin-top:9px;padding:8px;border:1px solid #63513b;border-radius:6px}
+#win-merchant .merchant-protected .merchant-grid{margin-top:7px}

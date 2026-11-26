@@ -72,7 +72,12 @@ CREATE TABLE IF NOT EXISTS ledger(id TEXT PRIMARY KEY,listing TEXT UNIQUE NOT NU
 }
 const tx=(db,fn)=>{db.exec('BEGIN IMMEDIATE');try{const r=fn();db.exec('COMMIT');return r;}catch(e){db.exec('ROLLBACK');throw e;}};
 export const rankingColumns=Object.freeze({level:'level',power:'power',professions:'(mining+wood+herb+craft)',mining:'mining',wood:'wood',herb:'herb',craft:'craft',collected:'collected',mined:'mined',logged:'logged',herbs:'herbs'});
-const merchantEligible=(item,refs)=>item&&!item.equipped&&!item.escrow&&!item.data.locked&&!refs.has(item.id);
+function merchantRestriction(item,refs){
+ if(!item||item.equipped||item.escrow)return 'unavailable';
+ if(refs.has(item.id))return 'preset';
+ return item.data.locked?'protected':null;
+}
+const merchantEligible=(item,refs)=>merchantRestriction(item,refs)===null;
 export function game(db,{clock=Date.now,random=rng}={}){
  const row=id=>db.prepare('SELECT * FROM characters WHERE account=?').get(id);
  const get=id=>{const r=row(id);if(!r)fail('Crie seu personagem.',409);return {r,s:combat.normalize(JSON.parse(r.data))};};
@@ -325,7 +330,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  function view(id,compact=false){const r=row(id);if(!r)return {character:null};const s=combat.normalize(JSON.parse(r.data)),refs=compact?null:presetRefs(s);return {character:{name:r.name,cls:r.cls,gold:r.gold,power:r.power,...s,enemyAppearance:combat.enemyAppearance(s.activity),gatherXpNeed:Object.fromEntries(Object.entries(s.prof).map(([kind,p])=>[kind,content.professionXpNeed(p)])),gatherCycle:s.activity?.mode==='gather'?gatherCycle(s):null,catchupSeconds:pending(s)?Math.floor(Math.max(0,clock()-s.last)/1000):0,freeAttrs:freeAttrs(s),freeTalents:combat.freeTalents(s),activeTitle:earnedTitle(s),rareEventName:content.rareEvents[s.rareEvent?.k]??null,...(compact?{}:{titles:titles.map(t=>({...t,progress:titleProgress(s,t),earned:titleProgress(s,t)>=t.goal})),potionsCatalog:combat.consumables,runeCatalog:equipment.runes,relicCatalog:equipment.relics,creatureCatalog:content.creatureCatalog,affixCatalog:combat.affixCatalog,servantRoles:combat.servantRoles,oathCatalog:combat.oathCatalog(r.cls,s),gatherGates:gates,gatherXP:Object.fromEntries(Object.entries(s.prof).map(([kind,p])=>[kind,gates.map((_,zone)=>craft.gatherXP(p.level,zone))])),professionResources:content.professionResources,materialResources:content.materialResources,professionTalents:content.professionTalents,professionOdds:Object.fromEntries(Object.entries(s.prof).map(([k,p])=>[k,content.professionOdds(p)])),materialQuotes:Object.fromEntries(Object.keys(s.materials).map(k=>[k,content.materialSale(k)])),talentTree:combat.catalog(r.cls,s),subclasses:combat.subclassNames(r.cls),statsWithoutGear:stats(id,r,s,[])}),trialReady:combat.eligibleTrial(s),craftXpNeed:craft.need(s.craft.level),xpNeed:content.xpNeed(s.level),skillXpNeed:content.skillXpNeed(s.skill),stats:stats(id,r,s)},...(compact?{}:{merchantSales:(s.merchant?.sales||[]).flatMap(sale=>{
   const item=db.prepare('SELECT * FROM items WHERE id=? AND owner=? AND spent=1 AND escrow=0').get(sale.id,id);
   return item?[{...item,data:equipment.itemData({...item,data:JSON.parse(item.data)}),npcValue:sale.price}]:[];
- }),vault:vault(id).map(({owner,...i})=>i),items:items(id).map(({owner,...i})=>({...i,craftBaseAvailable:craftBaseAvailable(i,r.cls,refs),merchantSaleAvailable:!!merchantEligible(i,refs),data:equipment.itemData(i),npcValue:equipment.npcValue(i),upgradeQuote:equipment.upgradeQuote(i),refineQuote:equipment.refineQuote(i),advancedQuotes:Object.fromEntries(['enchant','corrupt','awaken','addSocket','reroll'].map(k=>[k,equipment.advancedQuote(i,k)]))}))})};}
+ }),vault:vault(id).map(({owner,...i})=>i),items:items(id).map(({owner,...i})=>({...i,craftBaseAvailable:craftBaseAvailable(i,r.cls,refs),merchantSaleAvailable:merchantEligible(i,refs),merchantRestriction:merchantRestriction(i,refs),data:equipment.itemData(i),npcValue:equipment.npcValue(i),upgradeQuote:equipment.upgradeQuote(i),refineQuote:equipment.refineQuote(i),advancedQuotes:Object.fromEntries(['enchant','corrupt','awaken','addSocket','reroll'].map(k=>[k,equipment.advancedQuote(i,k)]))}))})};}
  function state(id,compact=false){return tx(db,()=>{if(row(id))settle(id);return view(id,compact);});}
  function salvageItems(s,selected){
   const materials={},before=s.tradeXP.smith||0;
