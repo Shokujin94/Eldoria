@@ -407,7 +407,8 @@ function merchantQuantity(action,key,price,max,label,disabled){
 function merchant(){
  const c=data.character,rebuy=merchantTab==='buyback';
  const items=rebuy?(merchantId?data.merchantSales||[]:[]):data.items.filter(i=>i.merchantSaleAvailable);
- const batch=merchantTab==='sell'&&items.length&&!c.activity?'<section class="merchant-batch"><label>Selecionar por raridade<select data-batch-rarity><option value="">Nenhuma selecionada</option>'+options(rar)+'</select></label>'+
+ const batch=merchantTab==='sell'&&items.length&&!c.activity?'<section class="merchant-batch"><fieldset><legend>Selecionar por raridade</legend>'+
+  rar.map((name,rank)=>'<label class="merchant-select"><input type="checkbox" data-batch-rarity="'+rank+'" '+(items.some(item=>item.rarity===rank)?'':'disabled')+'> '+esc(name)+'</label>').join('')+'</fieldset>'+
   '<div class="row"><button type="button" data-merchant-batch="sell" disabled>Vender selecionados</button><button type="button" class="secondary" data-merchant-batch="salvage" disabled>Desmantelar selecionados</button></div></section>':'';
  const list=items.map(i=>'<article class="merchant-stock rarity61-'+i.rarity+'">'+
   (batch?'<label class="merchant-select"><input type="checkbox" data-batch-item="'+esc(i.id)+'" data-rarity="'+i.rarity+'"> Selecionar</label>':'')+
@@ -959,7 +960,16 @@ function syncMerchantBatch(win){
 $('windowLayer65').addEventListener('change',e=>{
  if(!e.target.matches('[data-batch-item],[data-batch-rarity]'))return;
  const win=e.target.closest('#win-merchant');
- if(e.target.matches('[data-batch-rarity]'))for(const input of win.querySelectorAll('[data-batch-item]'))input.checked=input.dataset.rarity===e.target.value;
+ const items=[...win.querySelectorAll('[data-batch-item]')];
+ if(e.target.matches('[data-batch-rarity]')){
+  for(const item of items)if(item.dataset.rarity===e.target.dataset.batchRarity)item.checked=e.target.checked;
+ }
+ for(const group of win.querySelectorAll('[data-batch-rarity]:enabled')){
+  const matching=items.filter(item=>item.dataset.rarity===group.dataset.batchRarity);
+  const checked=matching.filter(item=>item.checked).length;
+  group.checked=checked===matching.length;
+  group.indeterminate=checked>0&&!group.checked;
+ }
  syncMerchantBatch(win);
 });
 const gameConfirmation=document.createElement('dialog');

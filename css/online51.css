@@ -799,3 +799,5 @@ body.play14 #tabs{box-shadow:0 6px 18px #000b,inset 0 1px #d9ac702c}
 .potion-recharge:not([hidden]){display:flex;align-items:center;gap:5px;min-width:0}
 .potion-recharge progress{width:3rem;height:5px;accent-color:#e9b473}
 .potion-recharge small{white-space:nowrap;color:#f6d6a2}
+#win-merchant .merchant-batch fieldset{display:flex;flex-wrap:wrap;gap:4px 12px;min-width:0;border:0;padding:0;margin:0}
+#win-merchant .merchant-batch legend{padding:0 0 5px;color:#e8c992}

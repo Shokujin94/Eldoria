@@ -432,7 +432,7 @@ try{
   expeditionFixture.prepare('UPDATE characters SET level=5,data=? WHERE account=?').run(JSON.stringify(save),character.account);
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
    .run('expedition-weapon',character.account,'Arma de teste','weapon','hunt',100,JSON.stringify({mods:{damage:50}}));
-  expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
+  expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,1,?,?,?)')
    .run('receipt-gear',character.account,'Anel para desmantelar','ring','hunt',1,JSON.stringify({mods:{mana:1}}));
  }finally{expeditionFixture.close();}
  await page.waitForFunction(()=>document.getElementById('character63').textContent==='Nível 5');
@@ -468,10 +468,18 @@ try{
  await page.locator('[data-group65="2"]').click();
  await page.locator('[data-tab=merchant]').click();
  const trader=page.locator('#win-merchant');
- await trader.locator('[data-batch-rarity]').selectOption('0');
- assert.ok(await trader.locator('[data-batch-item]:checked').count()>0);
+ const common=trader.locator('[data-batch-rarity="0"]');
+ const uncommon=trader.locator('[data-batch-rarity="1"]');
+ await common.check();
+ await uncommon.check();
+ assert.ok(await trader.locator('[data-batch-item][data-rarity="0"]:checked').count()>0);
+ assert.ok(await trader.locator('[data-batch-item][data-rarity="1"]:checked').count()>0);
+ assert.equal(await trader.locator('[data-batch-item]:checked:not([data-rarity="0"],[data-rarity="1"])').count(),0);
  assert.equal(await trader.locator('[data-merchant-batch=sell]').isEnabled(),true);
- await trader.locator('[data-batch-rarity]').selectOption('');
+ await common.uncheck();
+ assert.equal(await trader.locator('[data-batch-item][data-rarity="0"]:checked').count(),0);
+ assert.ok(await trader.locator('[data-batch-item][data-rarity="1"]:checked').count()>0);
+ await uncommon.uncheck();
  assert.equal(await trader.locator('[data-merchant-batch=sell]').isDisabled(),true);
  const sale=trader.locator('[data-act=sellItem]').first();
  const soldId=await sale.getAttribute('data-id');
@@ -495,7 +503,7 @@ try{
  await page.locator('#game-confirmation[open]').getByRole('button',{name:'Confirmar',exact:true}).click();
  const receipt=trader.locator('.salvage-receipt');
  await receipt.getByText(/XP de Ferraria/).waitFor();
- await receipt.locator('[data-material-tip="mob:0:0"]').hover();
+ await receipt.locator('[data-material-tip="mob:0:1"]').hover();
  await page.locator('#tal47-tip').getByText('Uso',{exact:true}).waitFor();
  await receipt.getByRole('button',{name:'Fechar resultado'}).click();
  await trader.locator('[data-merchant-tab=materials]').click();
