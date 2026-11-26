@@ -205,6 +205,14 @@ try{
  await page.locator('[data-node62]').first().click();
  await page.locator('.codex62-detail h3').waitFor();await page.locator('.tal47-grid').waitFor();
  assert.ok(await page.locator('.tal47-tier').count()>0);
+ await page.locator('[data-tfilter62=active]').click();
+ const masteryHelp=page.locator('#win-talent [data-mastery-tip]');
+ await masteryHelp.hover();
+ const masteryTip=page.locator('#tal47-tip');
+ await masteryTip.getByText('30 conjurações · grátis',{exact:true}).waitFor();
+ await masteryTip.getByText('Potência',{exact:true}).waitFor();
+ await masteryTip.getByText('Fluidez',{exact:true}).waitFor();
+ await page.keyboard.press('Escape');
  assert.match(await page.locator('.codex62-detail').innerText(),/Requisitos/);
  await page.locator('[data-tfilter62=all]').click();await page.locator('[data-tfilter62=all][aria-pressed=true]').waitFor();
  await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=craft]').click();
