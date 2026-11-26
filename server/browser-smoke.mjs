@@ -265,10 +265,16 @@ try{
  await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=market]').click();
  await page.locator('[data-market65=sell]').click();
  await page.locator('#listing').waitFor();
- await page.locator('#listing [name=itemId]').selectOption('market-fixture');
+ await page.locator('#market-slot').selectOption('weapon');
+ await page.locator('[data-market-pick=market-fixture]').waitFor({state:'hidden'});
+ await page.locator('#market-slot').selectOption('accessory');
+ await page.locator('#listing [data-market-item=market-fixture]').hover();
+ await page.locator('#tal47-tip').getByText('Amuleto de teste',{exact:true}).waitFor();
+ await page.locator('[data-market-pick=market-fixture]').click();
+ assert.equal(await page.locator('#listing [name=itemId]').inputValue(),'market-fixture');
  await page.locator('#listing [name=price]').fill('100');
  const listingResponse=page.waitForResponse(response=>response.url().endsWith('/market')&&response.request().method()==='POST');
- await page.locator('#listing button').click();
+ await page.locator('#listing button[type=submit]').click();
  const listingResult=await listingResponse;
  assert.equal(listingResult.status(),200,await listingResult.text());
  try{await page.locator('#win-market').getByText('Amuleto de teste',{exact:true}).waitFor({timeout:5000});}
