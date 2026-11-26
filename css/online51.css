@@ -588,3 +588,16 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 .potion-buy-batch{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:5px;margin:0}
 .potion-buy-batch input{width:5em}
 .potion-buy-batch small{grid-column:1/-1}
+
+#offlineReturn{top:clamp(68px,12vh,110px);width:min(405px,calc(100vw - 20px));padding:13px;border:1px solid #c2a16b;border-radius:9px;background:linear-gradient(145deg,#29252a,#12161d 70%);box-shadow:0 12px 34px #000b,inset 0 0 16px #cc9b4b20;color:#f1e6d0}
+#offlineReturn header{display:flex;align-items:center;gap:9px}
+#offlineReturn h2{margin:0;font:400 22px "DM Serif Text",Georgia,serif;color:#f0d49d}
+#offlineReturn p{margin:3px 0;font:400 12px/1.45 Inter,system-ui,sans-serif}
+#offlineReturn .offline-report-icon{width:34px;flex-shrink:0}
+#offlineReturn .offline-report-icon svg{width:100%;height:auto}
+#offlineReturn header button{margin-left:auto}
+#offlineReturn dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(93px,1fr));gap:6px;margin:12px 0 0}
+#offlineReturn dl div{padding:6px;border:1px solid #af93634d;border-radius:5px;background:#0c1019;text-align:center}
+#offlineReturn dt{font-size:11px;color:#cabfae}
+#offlineReturn dd{margin:1px 0 0;font-size:17px;color:#e8cd95;font-variant-numeric:tabular-nums}
+#offlineReturn .offline-defeat{margin-top:10px;color:#f1a997}

@@ -364,7 +364,11 @@ try{
  }finally{offlineFixture.close();}
  const offlineNotice=page.locator('#offlineReturn');
  await offlineNotice.waitFor({state:'visible'});
- assert.match(await offlineNotice.textContent(),/Retorno offline · 0 min [1-9][0-9]? s/);
+  await offlineNotice.getByRole('heading',{name:'Caçada offline'}).waitFor();
+ assert.match(await offlineNotice.locator('header p').innerText(),/0 min [1-9][0-9]? s/);
+ assert.equal(await offlineNotice.locator('dl div').count()>=3,true);
+ await offlineNotice.getByRole('button',{name:'Fechar resumo'}).click();
+ await offlineNotice.waitFor({state:'hidden'});
  assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.startsWith('eldoria-offline-return:'))),true);
  await page.locator('[data-quick61=stop]').evaluate(button=>{if(!button.disabled)button.click();});
  await page.locator('#city61').waitFor({state:'visible'});
