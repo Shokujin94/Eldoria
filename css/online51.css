@@ -688,7 +688,9 @@ body.play14 .floating65 .window-body .vocation-sheet .stat13{
 
 #drop-notice{
  position:fixed;z-index:17;top:55px;left:50%;transform:translateX(-50%);width:min(330px,calc(100vw - 20px));pointer-events:none;
- display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--rar61);border-radius:8px;
+ display:grid;gap:6px;
+}
+#drop-notice .drop-card{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--rar61);border-radius:8px;
  background:linear-gradient(145deg,color-mix(in srgb,var(--rar61) 24%,#20212d),#11141b 75%);box-shadow:0 8px 20px #000b,inset 0 0 12px color-mix(in srgb,var(--rar61) 23%,transparent)
 }
 #drop-notice[hidden]{display:none}
