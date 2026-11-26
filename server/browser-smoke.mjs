@@ -22,6 +22,12 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('http://127.0.0.1:'+port);
+ await page.getByRole('link',{name:'Wiki',exact:true}).click();
+ assert.match(page.url(),/\/wiki\.html$/);
+ await page.locator('nav a[href="#combate"]').click();
+ assert.equal(new URL(page.url()).hash,'#combate');
+ await page.locator('#combate img').evaluate(img=>img.decode());
+ await page.getByRole('link',{name:/Voltar ao jogo/}).click();
  await page.bringToFront();
  await page.locator('#auth input[name=username]').fill('browser_test');
  await page.locator('#auth input[name=password]').fill('Senha teste browser 123!');

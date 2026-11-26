@@ -13,6 +13,8 @@ for(const font of ['dm-serif-text','inter']){
  const path='/assets/fonts/'+font+'.woff2';
  staticFiles.set(path,['..'+path,'font/woff2']);
 }
+staticFiles.set('/wiki.html',['../wiki.html','text/html; charset=utf-8']);
+staticFiles.set('/css/wiki.css',['../css/wiki.css','text/css; charset=utf-8']);
 const staticEnabled=process.env.SERVE_PREVIEW==='1';
 const hash=s=>createHash('sha256').update(s).digest('hex'),age=7*86400000,buckets=new Map();
 function fail(status,message){throw new Fault(status,message);}
