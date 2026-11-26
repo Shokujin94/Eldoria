@@ -6,6 +6,12 @@ test('potions consume stock, enforce cooldown and auto thresholds',()=>{const s=
 test('movement approaches target without overlap; slowed enemy and servant',()=>{const s=c.normalize({level:2,servant:10}),a={positions:{hero:.25,enemy:.75,servant:.34},effects:{slow:{left:3}}};const st={move:0};c.move('necro',s,st,a,false);assert(a.positions.hero>.25);assert(a.positions.enemy<.75);assert(a.positions.servant>.34);for(let i=0;i<20;i++)c.move('necro',s,st,a,false);assert(a.positions.enemy-a.positions.hero>=.1199);assert(a.positions.enemy-a.positions.servant<=.16);});
 
 test('affixes, elemental combo and boss warnings follow server rules',()=>{const a={mode:'dungeon',difficulty:4,wave:1,z:0,enemy:{hp:100,atk:20,xp:10,gold:10}};c.encounterTraits(a,()=>.5);assert.equal(a.affixes.length,3);assert.equal(new Set(a.affixes).size,3);a.effects={poison:{left:4}};assert.equal(c.combo(a,'fire',100),25);assert.equal(a.lastComboElement,'fire');assert.equal(a.effects.poison,undefined);assert.equal(c.enemyResistance({mode:'hunt',z:0,affixes:['armor','ghost']},'physical',false),.60);const b={mode:'boss',z:0,enemy:{hp:100,atk:20},enemyHp:30,bossClock:6};const s=c.normalize({hp:25,defensive:true});const st={hp:100,reduction:0};c.bossMechanic(s,st,b,()=>.5);assert.equal(b.phase,2);assert.equal(b.warning,'Raízes');c.bossMechanic(s,st,b,()=>.5);assert.equal(s.hp,25);assert.equal(b.lastMechanic,'Recuo defensivo');assert.equal(b.mechanicEvent.kind,'retreat');s.defensive=false;b.warning='Raízes';c.bossMechanic(s,st,b,()=>.5);assert(s.hp<25);assert(b.heroEffects.slow);assert.equal(b.mechanicEvent.kind,'impact');assert.equal(b.mechanicEvent.element,'poison');});
+test('rarer affixes scale rewards and difficulty within a cap',()=>{
+ assert.equal(c.affixStrength([]),0);
+ assert.ok(c.affixStrength(['profane'])>c.affixStrength(['armor']));
+ assert.ok(c.affixDropMultiplier(['profane'])>c.affixDropMultiplier(['armor']));
+ assert.equal(c.affixStrength(['vamp','ghost','profane']),3.5);
+});
 test('affixed enemies get composed names, visible bonuses and capped rarity',()=>{
  const activity={enemy:{name:'Aranha'},index:3,affixes:['venom','fast']};
  const appearance=c.enemyAppearance(activity);
