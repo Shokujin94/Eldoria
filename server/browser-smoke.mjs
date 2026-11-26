@@ -442,6 +442,12 @@ try{
  await trader.getByText('Nenhum item vendido nesta visita.').waitFor();
  await trader.locator('[data-merchant-tab=sell]').click();
  await trader.locator('[data-act=sellItem][data-id="'+soldId+'"]').waitFor();
+ await trader.locator('[data-merchant-tab=materials]').click();
+ const materialSale=trader.locator('[data-merchant-trade=sellMaterial]').first();
+ await materialSale.waitFor();
+ assert.ok(Number(await materialSale.locator('[data-merchant-total]').innerText())>0);
+ await trader.locator('[data-merchant-tab=runes]').click();
+ await trader.locator('details[open] [data-rune-tip="r30_weapon_might_2"] .rune-icon').waitFor();
  await trader.locator('[data-close65]').click();
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'mobile overflow');

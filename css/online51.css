@@ -713,3 +713,11 @@ body.play14 .floating65 .window-body .vocation-sheet .stat13{
 
 #content-bag .rune-icon{width:38px;height:38px;flex-shrink:0}
 #tal47-tip .item-tooltip-rune .rune-icon{display:inline-block;width:18px;height:18px;margin-right:5px;vertical-align:middle}
+
+#win-merchant .merchant-tabs{position:sticky;top:0;z-index:2;background:#171922}
+#win-merchant .merchant-item .rune-icon{width:36px;height:36px;flex-shrink:0}
+#win-merchant .merchant-quantity{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:4px;margin:0}
+#win-merchant .merchant-quantity input[type=number]{width:4.75em}
+#win-merchant .merchant-quantity small{grid-column:1/-1}
+#win-merchant .merchant-rune-group{margin-top:7px;padding:8px;border:1px solid #8b725966;border-radius:6px;background:#121721}
+#win-merchant .merchant-rune-group summary{cursor:pointer;color:#e4cb9d}
