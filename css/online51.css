@@ -662,3 +662,26 @@ body.play14 #combatHUD22 .c22-slot,body.play14 #quick61 button{
   animation:eldoria-icon-ember 2.1s ease-in-out infinite!important;
  }
 }
+
+.vocation-sheet[data-vocation-theme="war"]{--sheet-wash:#50282b;--sheet-accent:#dc9b82}
+.vocation-sheet[data-vocation-theme="ranger"]{--sheet-wash:#2c4234;--sheet-accent:#a4cf91}
+.vocation-sheet[data-vocation-theme="mage"]{--sheet-wash:#3f2d58;--sheet-accent:#b9a9ef}
+.vocation-sheet[data-vocation-theme="cleric"]{--sheet-wash:#544224;--sheet-accent:#efd296}
+.vocation-sheet[data-vocation-theme="necro"]{--sheet-wash:#24413e;--sheet-accent:#a3d5bc}
+body.play14 .floating65 .window-body .vocation-sheet .sheet65{
+ padding:12px;
+ background:radial-gradient(ellipse at 14% 28%,var(--sheet-wash),transparent 72%),linear-gradient(135deg,#262431,#10131b)!important;
+ border-color:color-mix(in srgb,var(--sheet-accent) 60%,#242430)!important;
+}
+.vocation-sheet .sheet65 h3{font-family:"DM Serif Text",Georgia,serif!important;font-weight:400!important;font-size:23px}
+.vocation-sheet .sheet-vocation{display:inline-flex;align-items:center;gap:5px;color:var(--sheet-accent)}
+.vocation-sheet .sheet-vocation svg,.vocation-sheet .sheet-stat-icon svg{width:17px;height:17px}
+.vocation-sheet .sheet-vocation-role{color:#d2c9d2}
+.vocation-sheet .sheet-power{padding:8px;border:1px solid color-mix(in srgb,var(--sheet-accent) 58%,#202530);border-radius:6px;background:#11141c}
+.vocation-sheet .sheet-power b{display:block;color:var(--sheet-accent);font-size:20px}
+body.play14 .floating65 .window-body .vocation-sheet .stat13{
+ border-color:color-mix(in srgb,var(--sheet-accent) 29%,#3b3944)!important;
+ background:linear-gradient(145deg,color-mix(in srgb,var(--sheet-wash) 48%,#212632),#11151d)!important;
+}
+.vocation-sheet .sheet-stat-icon{display:inline-flex;align-items:center;margin-right:4px;vertical-align:middle}
+.vocation-sheet .stat13 b{color:var(--sheet-accent)}
