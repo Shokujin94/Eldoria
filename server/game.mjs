@@ -341,6 +341,34 @@ export function game(db,{clock=Date.now,random=rng}={}){
   else if(a==='lockItem'){if(s.activity)fail('Volte à cidade.');const i=items(id).find(x=>x.id===p.itemId&&!x.escrow&&!x.starter);if(!i||typeof p.locked!=='boolean')fail('Item indisponível.');i.data.locked=p.locked;db.prepare('UPDATE items SET data=? WHERE id=? AND owner=? AND escrow=0 AND spent=0').run(JSON.stringify(i.data),i.id,id);}
   else if(a==='openMerchant'){if(s.activity)fail('Volte à cidade.');s.merchant={id:randomUUID(),sales:[]};}
   else if(a==='closeMerchant'){if(s.merchant?.id===p.merchantId)delete s.merchant;}
+  else if(a==='merchantBatch'){
+   if(s.activity||!s.merchant||s.merchant.id!==p.merchantId)fail('Reabra a janela da mercadora.');
+   const sell=p.operation==='sell';
+   if(!sell&&p.operation!=='salvage')fail('Operação inválida.');
+   const ids=p.itemIds;
+   if(!Array.isArray(ids)||!integer(ids.length,1,120)||ids.some(id=>typeof id!=='string')||new Set(ids).size!==ids.length)fail('Seleção inválida.');
+   const stock=items(id),refs=presetRefs(s),selected=ids.map(key=>stock.find(item=>item.id===key));
+   if(selected.some(i=>!i||i.escrow||i.data.locked||refs.has(i.id)||!sell&&(i.starter||i.equipped)))fail('Seleção inclui equipamento indisponível ou protegido.');
+   const equipped=new Map(stock.filter(i=>i.equipped).map(i=>[i.slot,i.power]));
+   if(p.confirm!==true&&selected.some(i=>i.rarity>=3||equipped.has(i.slot)&&i.power>equipped.get(i.slot)))fail('Confirme a operação com equipamentos valiosos.');
+   if(sell){
+    const sales=selected.map(i=>({id:i.id,price:equipment.npcValue(i)})),total=sales.reduce((sum,i)=>sum+i.price,0);
+    if(row(id).gold+total>MAX)fail('Carteira cheia.');
+    credit(id,total);
+    s.merchant.sales=[...s.merchant.sales,...sales].slice(-120);
+    s.lastEvent=selected.length+' equipamentos vendidos por '+total+' ouro.';
+   }else{
+    for(const i of selected){
+     mat(s,'mob:'+i.tier+':'+i.rarity,1+(i.data.upgrade||0));
+     awardTradeXP(s,'smith');
+    }
+    s.lastEvent=selected.length+' equipamentos desmantelados.';
+   }
+   const consume=db.prepare('UPDATE items SET spent=1,equipped=0 WHERE id=? AND owner=? AND escrow=0 AND spent=0');
+   for(const i of selected)consume.run(i.id,id);
+   const after=stats(id,r,s);
+   s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);
+  }
   else if(a==='sellItem'||a==='salvage'||a==='buybackItem'){
    if(s.activity)fail('Volte à cidade.');
    const merchant=s.merchant?.id===p.merchantId?s.merchant:null;

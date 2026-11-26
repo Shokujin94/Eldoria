@@ -767,3 +767,8 @@ body.play14 #tabs{box-shadow:0 6px 18px #000b,inset 0 1px #d9ac702c}
  body.play14 #combatHUD22 .c22-top button{font-size:12px;padding:1px 4px}
  body.play14 #city61{bottom:155px}
 }
+
+#win-merchant .merchant-batch{padding:7px 9px;margin-top:8px;border:1px solid #806544;border-radius:6px;background:#181a24}
+#win-merchant .merchant-select{display:flex;align-items:center;gap:5px;margin:0 0 7px;color:#d3bea1;font-size:11px}
+#win-merchant .merchant-select input{width:auto;accent-color:#d7b775}
+#win-merchant .merchant-stock:has([data-batch-item]:checked){outline:1px solid var(--rar61);outline-offset:-2px}

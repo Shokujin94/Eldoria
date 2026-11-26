@@ -59,6 +59,28 @@ test('regional relic catalogue',async()=>{const eq=await import('./equipment.mjs
 
 test('merchant, inventory protection, training and mastery are authoritative',async()=>{const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.5});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Mercador','war');const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);s.materials={'mining:0:0':10};s.level=2;db.prepare('UPDATE characters SET data=?,gold=1000,level=2 WHERE account=?').run(JSON.stringify(s),'a');db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run('gear','a','Espada','weapon',0,1,0,'hunt',10,JSON.stringify({baseMods:{damage:10},mods:{damage:6.2},quality:0,sockets:0}));const merchantId=g.action('a',{action:'openMerchant'}).character.merchant.id;g.action('a',{action:'lockItem',itemId:'gear',locked:true});assert.throws(()=>g.action('a',{action:'sellItem',itemId:'gear',confirm:true,merchantId}));assert.throws(()=>g.trade('a',{action:'list',itemId:'gear',price:100}));g.action('a',{action:'lockItem',itemId:'gear',locked:false});let d=g.action('a',{action:'sellItem',itemId:'gear',confirm:true,merchantId});assert.equal(d.character.gold,1006);assert.throws(()=>g.action('a',{action:'sellItem',itemId:'gear',confirm:true,merchantId}));d=g.action('a',{action:'sellMaterial',key:'mining:0:0',count:4});assert.equal(d.character.gold,1018);assert.equal(d.character.materials['mining:0:0'],6);assert.throws(()=>g.action('a',{action:'sellMaterial',key:'mining:0:0',count:-1}));d=g.action('a',{action:'buyRune',key:'r30_weapon_might_0',count:1});assert.equal(d.character.runeStock.r30_weapon_might_0,1);assert.equal(d.character.gold,978);g.action('a',{action:'talent',key:'x'});assert.throws(()=>g.action('a',{action:'rotation',ids:['x','x']}));assert.throws(()=>g.action('a',{action:'rotation',ids:['unknown']}));g.action('a',{action:'rotation',ids:['x']});g.action('a',{action:'trackCreature',key:'0:2'});assert.equal(g.state('a').character.trackCreature,'0:2');g.action('a',{action:'start',mode:'train',zone:0});for(let i=0;i<40;i++){now+=1500;d=g.state('a');}assert(d.character.skill>1);assert.equal(d.character.skillXpNeed,Math.round((12+d.character.skill*3)*1.2));assert.equal(d.character.gold,978);assert.equal(d.character.xp,0);assert.equal(d.character.kills,0);assert.equal(d.items.length,1);const trained=d.character.skillXp;now+=10000;d=g.state('a');assert.equal(d.character.activity,null);assert.equal(d.character.skillXp,trained);g.action('a',{action:'start',mode:'hunt',zone:0});now+=120000;d=g.state('a');assert.equal(Object.values(d.character.bestiary).reduce((a,b)=>a+b,0),d.character.kills);assert.equal(d.character.creatureCatalog.length,60);const session=d.character.analyzer||d.character.history[0];assert(session.seconds>0);assert.equal(session.offlineSeconds,session.seconds);assert.equal(Object.values(session.enemies).reduce((total,n)=>total+n,0),session.kills);assert.equal(session.rarities.reduce((total,n)=>total+n,0),session.items);assert.equal(session.drops.length,Math.min(session.items,60));db.close();});
 
+test('merchant batches are atomic and require confirmation only for valuable equipment',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);
+ g.create('a','Mercador','war');
+ const insert=db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,?,?,?,?)');
+ for(const id of ['one','two','rare','four','five'])insert.run(id,'a',id,'head',id==='rare'?3:0,'hunt',1,'{"mods":{}}');
+ const merchantId=g.action('a',{action:'openMerchant'}).character.merchant.id;
+ const trade=(operation,itemIds,confirm)=>g.action('a',{action:'merchantBatch',operation,itemIds,merchantId,confirm});
+ assert.throws(()=>trade('sell',['one','missing']));
+ assert.throws(()=>trade('salvage',['one','rare']),/Confirme/);
+ assert.equal(g.state('a').items.length,6);
+ const sold=trade('sell',['one','two']);
+ assert.equal(sold.merchantSales.length,2);
+ assert.ok(sold.character.gold>0);
+ const salvaged=trade('salvage',['rare','four','five'],true);
+ assert.equal(salvaged.character.materials['mob:0:3'],1);
+ assert.equal(salvaged.character.materials['mob:0:0'],2);
+ assert.equal(salvaged.items.length,1);
+ db.close();
+});
+
 test('merchant restores the same starter item and closes its buyback session',()=>{
  const db=new DatabaseSync(':memory:');schema(db);
  const g=game(db,{clock:()=>100000,random:()=>.5});

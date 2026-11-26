@@ -449,6 +449,11 @@ try{
  await page.locator('[data-group65="2"]').click();
  await page.locator('[data-tab=merchant]').click();
  const trader=page.locator('#win-merchant');
+ await trader.locator('[data-batch-rarity]').selectOption('0');
+ assert.ok(await trader.locator('[data-batch-item]:checked').count()>0);
+ assert.equal(await trader.locator('[data-merchant-batch=sell]').isEnabled(),true);
+ await trader.locator('[data-batch-rarity]').selectOption('');
+ assert.equal(await trader.locator('[data-merchant-batch=sell]').isDisabled(),true);
  const sale=trader.locator('[data-act=sellItem]').first();
  const soldId=await sale.getAttribute('data-id');
  await trader.locator('[data-merchant-item]').first().hover();
