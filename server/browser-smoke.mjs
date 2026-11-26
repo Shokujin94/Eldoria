@@ -278,6 +278,7 @@ try{
  assert.match(await cancellation.innerText(),/Remover em (30:00|29:\d{2})/);
  await page.locator('[data-group65="3"]').click();await page.locator('[data-tab=ranking]').click();
  await page.locator('#rankcat').waitFor();
+ await page.locator('#win-ranking .rank-1 .ranking-insignia[aria-label=Ouro]').waitFor();
  for(const id of ['ranking','market','talent','bag','character'])await page.locator('#win-'+id+' [data-close65]').evaluate(b=>b.click());
  await page.locator('[data-group65="3"]').click();await page.locator('[data-tab=security]').click();await page.locator('#security54-dialog[open]').waitFor();await page.locator('#security54-close').click();
  await page.locator('[data-tab=dungeon]').click();await page.locator('#content-dungeon .dungeon11').waitFor();await page.locator('#win-dungeon [data-close65]').click();

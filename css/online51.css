@@ -696,3 +696,17 @@ body.play14 .floating65 .window-body .vocation-sheet .stat13{
 #drop-notice :is(strong,small){display:block}
 #drop-notice strong{font:400 18px "DM Serif Text",Georgia,serif;color:#f4e7d0}
 #drop-notice small:first-child{color:var(--rar61)}
+
+#win-ranking .ranking-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px}
+#win-ranking .ranking-head h2{font-family:"DM Serif Text",Georgia,serif;margin:0}
+#win-ranking .ranking-head label{margin-left:auto}
+#win-ranking .ranking-table table{width:100%;border-collapse:separate;border-spacing:0 4px;font-variant-numeric:tabular-nums}
+#win-ranking .ranking-table thead{color:#d7c8b1}
+#win-ranking .ranking-table td{background:#151a23;padding:7px}
+#win-ranking .ranking-table .ranking-top-ten td{background:#262436;color:#e0d8ef}
+#win-ranking .ranking-table .ranking-medal td{background:color-mix(in srgb,var(--medal) 15%,#171923);color:var(--medal)}
+#win-ranking .rank-1{--medal:#f1cf73}
+#win-ranking .rank-2{--medal:#c4d6ec}
+#win-ranking .rank-3{--medal:#e3a07c}
+#win-ranking .ranking-medal td:first-child{border-left:2px solid var(--medal);white-space:nowrap}
+#win-ranking .ranking-insignia{display:inline-grid;place-items:center;width:21px;height:21px;margin-right:5px;border:1px solid var(--medal);border-radius:50%;background:#0f111b;box-shadow:0 0 6px color-mix(in srgb,var(--medal) 35%,transparent)}

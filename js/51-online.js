@@ -618,7 +618,20 @@ else if(id==='prof')panel.innerHTML=professions()+professionProgress();
 else if(id==='craft')renderCraftPanel(panel);
 else if(id==='talent'){const html=talents(),at=html.indexOf('<h3>Ascensão');panel.innerHTML=at>=0?html.slice(0,at)+'</div></div>':html;requestAnimationFrame(connect64);}
 else if(id==='market'){market=await request('/market');marketClock={server:market.serverNow??Date.now(),observed:performance.now()};panel.innerHTML=market65();updateMarketCountdown();}
-else if(id==='ranking'){const r=await request('/ranking?category='+encodeURIComponent(category)+'&page='+rankPage);panel.innerHTML='<h2>Ranking de Eldoria</h2><label>Categoria<select id="rankcat">'+options(cats,category)+'</select></label><div class="table-wrap"><table><thead><tr><th>#</th><th>Personagem</th><th>Vocação</th><th>Nv.</th><th>'+esc(cats[category])+'</th></tr></thead><tbody>'+r.rows.map(i=>'<tr><td>'+i.rank+'</td><td>'+esc(i.name)+'</td><td>'+esc(voc[i.cls])+'</td><td>'+i.level+'</td><td>'+nf(i.score)+'</td></tr>').join('')+'</tbody></table></div><div class="row"><button data-act="prev" '+(!rankPage?'disabled':'')+'>Anterior</button><button data-act="next" '+(r.rows.length<50?'disabled':'')+'>Próxima</button></div><small>Poder = 10 × nível + soma do poder equipado (iLvl, melhorias e runas) × multiplicador de raridade. Rankings refletem o último progresso processado pelo servidor.</small>';}
+else if(id==='ranking'){
+ const r=await request('/ranking?category='+encodeURIComponent(category)+'&page='+rankPage);
+ const medals={1:['✦','Ouro'],2:['◆','Prata'],3:['▲','Bronze']};
+ const rows=r.rows.map(i=>{
+  const medal=medals[i.rank];
+  return '<tr class="'+(medal?'ranking-medal rank-'+i.rank:i.rank<=10?'ranking-top-ten':'')+'"><td>'+
+   (medal?'<span class="ranking-insignia" aria-label="'+medal[1]+'">'+medal[0]+'</span>':'')+
+   '<b>'+i.rank+'</b></td><td>'+esc(i.name)+'</td><td>'+esc(voc[i.cls])+'</td><td>'+i.level+'</td><td>'+nf(i.score)+'</td></tr>';
+ }).join('');
+ panel.innerHTML='<header class="bag46-head ranking-head"><h2>Ranking de Eldoria</h2><label>Categoria<select id="rankcat">'+options(cats,category)+'</select></label></header>'+
+  '<div class="table-wrap ranking-table"><table><thead><tr><th>#</th><th>Personagem</th><th>Vocação</th><th>Nv.</th><th>'+esc(cats[category])+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  (rows?'':'<p>Nenhum personagem nesta página.</p>')+
+  '<div class="row"><button data-act="prev" '+(!rankPage?'disabled':'')+'>Anterior</button><button data-act="next" '+(r.rows.length<50?'disabled':'')+'>Próxima</button></div><small>Poder = 10 × nível + soma do poder equipado (iLvl, melhorias e runas) × multiplicador de raridade. Rankings refletem o último progresso processado pelo servidor.</small>';
+}
 for(const banner of panel.querySelectorAll('[data-atlas-map]')){
  banner.style.backgroundImage='linear-gradient(0deg,#101218ee,transparent),url(assets/maps/'+banner.dataset.atlasMap+'.webp)';
 }
