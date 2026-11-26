@@ -68,6 +68,26 @@ try{
  assert.ok(Math.abs(camera.scaleY-camera.scale*.62)<1e-6);
  assert.ok(camera.ox<=0&&camera.backgroundY<=0&&camera.ox>=camera.w*(1-camera.scale)-.01&&camera.backgroundY>=camera.h*(1-camera.scale)-.01);
  await page.locator('#scene52').focus();
+ const facing=await page.evaluateHandle(()=>{
+  const seen={left:false,right:false};
+  const ctx=document.getElementById('scene52').getContext('2d'),draw=ctx.drawImage.bind(ctx);
+  const frames=window.eldoria52Art.hero.necro.slice(1,3);
+  ctx.drawImage=(...args)=>{
+   if(frames.some(src=>args[0].src?.endsWith('/'+src))){
+    const direction=ctx.getTransform().a;
+    if(direction<0)seen.left=true;
+    if(direction>0)seen.right=true;
+   }
+   draw(...args);
+  };
+  return seen;
+ });
+ for(const [key,direction] of [['ArrowLeft','left'],['ArrowRight','right']]){
+  await page.keyboard.down(key);
+  try{await page.waitForFunction(([seen,d])=>seen[d],[facing,direction]);}
+  finally{await page.keyboard.up(key);}
+ }
+ await facing.dispose();
  await page.keyboard.down('ArrowDown');
  try{await page.waitForFunction(oy=>window.eldoria52Scene.view()?.oy<oy-20,camera.oy,{timeout:3000});}
  finally{await page.keyboard.up('ArrowDown');}

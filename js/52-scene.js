@@ -10,7 +10,7 @@ function setMotionMode(mode){
  try{localStorage.setItem('eldoria-scene-motion',mode);}catch{}
 }
 const citySpawn={x:400/800,y:300/600};
-let cityPos={...citySpawn},cityDest=null,cityNear=null,cityClickNPC=null,cityRoute=[],cityKeys=new Set(),lastCityFrame=0,projection=null,huntCamera=null;
+let cityPos={...citySpawn},cityFacingLeft=false,cityDest=null,cityNear=null,cityClickNPC=null,cityRoute=[],cityKeys=new Set(),lastCityFrame=0,projection=null,huntCamera=null;
 const cityNPC=[
  {x:150,y:192,name:'Bram',role:'Ferreiro',mode:'forge'},
  {x:270,y:192,name:'Mira',role:'Mercadora',mode:'merchant'},
@@ -20,7 +20,7 @@ const cityNPC=[
  {x:302,y:408,name:'Orven',role:'Depósito',mode:'vault'}
 ].map(n=>({...n,x:n.x/800,y:n.y/600}));
 const baseZoom=.55;
-let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],combatQueue=[],heroAction=null,enemyAction=null,heroStride=0,enemyStride=0,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
+let zoom61=baseZoom,state=null,previous=null,minionVisual=[],visual={hero:.32,enemy:.68,servant:.46},fx=[],combatQueue=[],heroAction=null,enemyAction=null,bossAction=null,heroStride=0,enemyStride=0,heroHitAt=-Infinity,flash=0,defeated=null,levelEffect=null,seen='',audio=null,sound=false,lastFrame=0,raf=0;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 // The 0.45.0 gather points use the legacy 800 × 600 stage and its walkable floor.
 const gatherBounds=[[.09,.91],[.06,.94],[.11,.89],[.10,.90],[.11,.89],[.075,.925],[.07,.93],[.12,.88],[.075,.925],[.10,.90]];
@@ -137,6 +137,7 @@ const enemyAttackMotion={
  melee:{duration:410,peak:.34,from:[-.045,0,-.075,.96],hit:[.18,.028,.15,1.045]},
  ranged:{duration:440,peak:.36,from:[.02,.025,.06,1.035],hit:[-.09,.01,-.11,.96]}
 };
+const bossAttackMotion={duration:640,peak:.37,from:[-.05,.012,-.08,.92],hit:[.12,.065,.11,1.12]};
 const neutralAttackPose=[0,0,0,1];
 function blendAttackPose(from,to,t){
  const ease=t*t*(3-2*t);
@@ -219,7 +220,7 @@ function showCombat(event,cls,now,currentEncounter){
   }});
  }
  if(enemyMelee)popup('-'+Math.ceil(enemyMelee.damage),'#f38585',enemyRelease,p.hero,p.heroY??.84,true);
- if(event.encounter===currentEncounter&&(enemyImpact?.damage||enemyMelee?.damage))heroHitAt=enemyImpact?.damage?enemyContactAt:enemyRelease;
+ if(event.encounter===currentEncounter&&(enemyImpact?.damage||enemyMelee?.damage))heroHitAt=Math.max(heroHitAt,enemyImpact?.damage?enemyContactAt:enemyRelease);
  const otherDamage=Math.max(0,received-(enemyImpact?.damage??enemyShot?.damage??0)-(enemyMelee?.damage??0));
  if(otherDamage)popup('-'+Math.ceil(otherDamage),'#f38585',now,p.hero,p.heroY??.84,true);
 }
@@ -430,13 +431,13 @@ function breakPixels(kind,z,index,now){
  fx=fx.filter(f=>!f.parts);
  fx.push({parts,index,at:now});
 }
-function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};zoom61=baseZoom;state=previous=null;fx=[];combatQueue=[];heroAction=null;enemyAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}if(!state||state.cls!==s.cls)for(const src of art.hero[s.cls]||[])image(src);const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];combatQueue=[];heroAction=null;enemyAction=null;enemyStride=0;heroHitAt=-Infinity;
+function apply(s){if(!s){cityKeys.clear();cityNear=null;cityDest=null;cityRoute=[];cityClickNPC=null;projection=null;huntCamera=null;gatherHero=null;lastGatherFrame=0;seen='';cityPos={...citySpawn};cityFacingLeft=false;zoom61=baseZoom;state=previous=null;fx=[];combatQueue=[];heroAction=null;enemyAction=null;bossAction=null;heroStride=enemyStride=0;heroHitAt=-Infinity;defeated=null;levelEffect=null;minionVisual=[];if(raf)cancelAnimationFrame(raf);raf=0;return;}if(!state||state.cls!==s.cls)for(const src of art.hero[s.cls]||[])image(src);const now=performance.now(),a=s.activity,old=previous?.activity,oldRare=previous?.rareEvent,key=a?a.mode+':'+a.z+':'+(a.prof||''):'city';if(key!==seen||a?.encounter!==old?.encounter){const areaChanged=key!==seen;seen=key;fx=[];combatQueue=[];heroAction=null;enemyAction=null;bossAction=null;enemyStride=0;heroHitAt=-Infinity;
  const keepHero=!areaChanged&&!motion.matches&&a?.enemy&&old?.enemy;
  if(!keepHero)heroStride=0;
  visual={
   hero:keepHero?visual.hero:a?.positions?.hero??.32,heroY:keepHero?visual.heroY:a?.positions?.heroY??.84,
   enemy:a?.positions?.enemy??.68,enemyY:a?.positions?.enemyY??.84,servant:a?.positions?.servant??.46
- };if(areaChanged){levelEffect=null;gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a)cityPos={...citySpawn};}}if(defeated?.next!==a?.encounter)defeated=null;
+ };if(areaChanged){levelEffect=null;gatherHero=null;lastGatherFrame=0;previous=null;cityDest=null;cityRoute=[];cityClickNPC=null;minionVisual=[];cityKeys.clear();if(!a){cityPos={...citySpawn};cityFacingLeft=false;}}}if(defeated?.next!==a?.encounter)defeated=null;
 if(previous){const event=s.lastCombat;
  const offline=(s.analyzer||s.history?.[0])?.offlineSeconds||0;
  const priorOffline=(previous.analyzer||previous.history?.[0])?.offlineSeconds||0;
@@ -449,10 +450,14 @@ if(previous){const event=s.lastCombat;
   const retreat=mechanic.kind==='retreat',side=retreat?'hero':'enemy',p=a.positions;
   const label=mechanic.kind==='warning'?mechanic.name+' iminente':mechanic.name;
   popup(label,retreat?'#8ccfa3':impactColors[mechanic.element]??'#f4cf79',now,p[side],p[side+'Y']??.84,true);
+  if(!motion.matches&&(mechanic.kind==='impact'||retreat)){
+   bossAction={at:now,dx:p.hero-p.enemy,dy:(p.heroY??.84)-(p.enemyY??.84),profile:bossAttackMotion};
+  }
   if(!motion.matches&&mechanic.kind==='impact'){
-   heroHitAt=now;
+   const release=now+bossAttackMotion.duration*bossAttackMotion.peak;
+   heroHitAt=release;
    const element=mechanic.element??'physical';
-   fx.push({at:now,impact:{x:p.hero,y:p.heroY??.84,color:impactColors[element],element,elemental:true,side:Math.sign(p.hero-p.enemy)||1,melee:element==='physical'}});
+   fx.push({at:release,impact:{x:p.hero,y:p.heroY??.84,color:impactColors[element],element,elemental:true,side:Math.sign(p.hero-p.enemy)||1,melee:element==='physical'}});
   }
  }
  if(a?.lastCombo&&(!old||a.encounter!==old.encounter||a.comboSeq!==old.comboSeq)){
@@ -568,7 +573,7 @@ const heroBeforeX=visual.hero,heroBeforeY=visual.heroY??.84;
 const enemyBeforeX=visual.enemy,enemyBeforeY=visual.enemyY??.84;
 for(const k of ['hero','enemy','servant'])visual[k]+=(target[k]-visual[k])*blend;for(const axis of ['heroY','enemyY']){visual[axis]??=.84;visual[axis]+=((target[axis]??.84)-visual[axis])*blend;}const x=w*visual.hero,heroY=h*visual.heroY,enemyY=h*visual.enemyY;
 function shadow(x,y,h){c.fillStyle='#0008';c.beginPath();c.ellipse(x,y,Math.max(10,h*.22),h*.055,0,0,Math.PI*2);c.fill();}
-if(!a){const dt=Math.min(.06,Math.max(0,(now-lastCityFrame)/1000));lastCityFrame=now;const keys=cityKeys;let dx=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft')),dy=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));if(dx||dy){cityDest=null;cityRoute=[];cityClickNPC=null;}else if(cityDest){const waypoint=cityRoute[0];if(waypoint){dx=waypoint.x-cityPos.x;dy=waypoint.y-cityPos.y;}else cityDest=null;}const distance=Math.hypot(dx,dy);if(distance){const step=Math.min(.21*dt,distance),nx=cityPos.x+dx/distance*step,ny=cityPos.y+dy/distance*step;if(openSegment(cityPos,{x:nx,y:ny}))cityPos={x:nx,y:ny};else if(!cityDest){if(cityWalkable(nx,cityPos.y))cityPos.x=nx;if(cityWalkable(cityPos.x,ny))cityPos.y=ny;}}if(cityRoute[0]&&Math.hypot(cityRoute[0].x-cityPos.x,cityRoute[0].y-cityPos.y)<.001)cityRoute.shift();const actorH=cityActorHeight(w,h),actors=cityNPC.map(n=>({...n,npc:true})).concat([{...cityPos,cls:s.cls,npc:false}]).sort((a,b)=>a.y-b.y);for(const n of actors){const px=n.x*w,py=n.y*h;shadow(px,py,actorH);draw(c,n.npc?art.npcs[n.mode]:art.hero[n.cls][distance&&!motion.matches?1+Math.floor(now/130)%2:0],px,py,actorH);if(n.npc){c.font='bold 11px system-ui';c.textAlign='center';c.lineWidth=3;c.strokeStyle='#08080b';c.strokeText(n.name,px,py-actorH-5);c.fillStyle='#f0d59c';c.fillText(n.name,px,py-actorH-5);}}cityNear=cityNPC.map(n=>({n,d:Math.hypot((n.x-cityPos.x)*w,(n.y-cityPos.y)*h)})).sort((a,b)=>a.d-b.d).find(x=>x.d<=Math.max(35,actorH*.8))?.n||null;const hint=document.getElementById('city61-hint'),button=document.getElementById('interact61');if(hint)hint.textContent=cityNear?cityNear.name+' · '+cityNear.role:'WASD / setas · clique para andar';if(button)button.disabled=!cityNear;if(cityClickNPC&&cityNear===cityClickNPC){cityDest=null;cityRoute=[];cityClickNPC=null;interact();}c.restore();mini(c,key,w,h,cityPos,cityNPC);return;}
+if(!a){const dt=Math.min(.06,Math.max(0,(now-lastCityFrame)/1000));lastCityFrame=now;const keys=cityKeys;let dx=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft')),dy=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));if(dx||dy){cityDest=null;cityRoute=[];cityClickNPC=null;}else if(cityDest){const waypoint=cityRoute[0];if(waypoint){dx=waypoint.x-cityPos.x;dy=waypoint.y-cityPos.y;}else cityDest=null;}const lastX=cityPos.x;const distance=Math.hypot(dx,dy);if(distance){const step=Math.min(.21*dt,distance),nx=cityPos.x+dx/distance*step,ny=cityPos.y+dy/distance*step;if(openSegment(cityPos,{x:nx,y:ny}))cityPos={x:nx,y:ny};else if(!cityDest){if(cityWalkable(nx,cityPos.y))cityPos.x=nx;if(cityWalkable(cityPos.x,ny))cityPos.y=ny;}}if(cityPos.x!==lastX)cityFacingLeft=cityPos.x<lastX;if(cityRoute[0]&&Math.hypot(cityRoute[0].x-cityPos.x,cityRoute[0].y-cityPos.y)<.001)cityRoute.shift();const actorH=cityActorHeight(w,h),actors=cityNPC.map(n=>({...n,npc:true})).concat([{...cityPos,cls:s.cls,npc:false}]).sort((a,b)=>a.y-b.y);for(const n of actors){const px=n.x*w,py=n.y*h;shadow(px,py,actorH);draw(c,n.npc?art.npcs[n.mode]:art.hero[n.cls][distance&&!motion.matches?1+Math.floor(now/130)%2:0],px,py,actorH,!n.npc&&cityFacingLeft);if(n.npc){c.font='bold 11px system-ui';c.textAlign='center';c.lineWidth=3;c.strokeStyle='#08080b';c.strokeText(n.name,px,py-actorH-5);c.fillStyle='#f0d59c';c.fillText(n.name,px,py-actorH-5);}}cityNear=cityNPC.map(n=>({n,d:Math.hypot((n.x-cityPos.x)*w,(n.y-cityPos.y)*h)})).sort((a,b)=>a.d-b.d).find(x=>x.d<=Math.max(35,actorH*.8))?.n||null;const hint=document.getElementById('city61-hint'),button=document.getElementById('interact61');if(hint)hint.textContent=cityNear?cityNear.name+' · '+cityNear.role:'WASD / setas · clique para andar';if(button)button.disabled=!cityNear;if(cityClickNPC&&cityNear===cityClickNPC){cityDest=null;cityRoute=[];cityClickNPC=null;interact();}c.restore();mini(c,key,w,h,cityPos,cityNPC);return;}
 if(a.mode!=='gather'){
  const heroTravel=Math.hypot(x-heroBeforeX*w,heroY-heroBeforeY*h);
  const enemyTravel=Math.hypot(visual.enemy*w-enemyBeforeX*w,enemyY-enemyBeforeY*h);
@@ -619,10 +624,11 @@ if(a.mode!=='gather'){
  const enemyBreathing=!motion.matches?Math.sin(now/280+1.8)*(1-enemyGait):0;
  const enemyLift=Math.abs(gait)*eh*.045;
  let attackLift=0;
- if(!motion.matches&&enemyAction&&now-enemyAction.at<enemyAction.profile.duration){
-  const phase=clamp((now-enemyAction.at)/enemyAction.profile.duration,0,1);
-  const [advance,rise,angle,scale]=attackPose(enemyAction.profile,phase);
-  const dx=w*enemyAction.dx,dy=h*enemyAction.dy;
+ const attack=bossAction&&now-bossAction.at<bossAttackMotion.duration?bossAction:enemyAction;
+ if(!motion.matches&&attack&&now-attack.at<attack.profile.duration){
+  const phase=clamp((now-attack.at)/attack.profile.duration,0,1);
+  const [advance,rise,angle,scale]=attackPose(attack.profile,phase);
+  const dx=w*attack.dx,dy=h*attack.dy;
   const distance=Math.hypot(dx,dy)||1;
   const step=eh*advance;
   enemyX+=dx/distance*step;enemyFeet+=dy/distance*step;
@@ -631,6 +637,13 @@ if(a.mode!=='gather'){
   attackLift=eh*rise;
  }
  shadow(enemyX,enemyFeet,eh);
+ if(a.warning){
+  const pulse=motion.matches?.7:.68+.22*Math.sin(now/110);
+  c.save();
+  c.globalAlpha=pulse;c.strokeStyle=impactColors[a.mechanicEvent?.element]??'#f4cf79';c.lineWidth=2;
+  c.beginPath();c.ellipse(enemyX,enemyFeet,eh*.33,eh*.095,0,0,Math.PI*2);c.stroke();
+  c.restore();
+ }
  draw(c,boss?art.boss[z]:art.monsters[z]?.[a.index||0],enemyX,enemyFeet-enemyLift-attackLift,eh,monsterFlip(z,a.index||0,boss,enemyOnLeft),!motion.matches&&now>=flash&&now-flash<130,lean+gait*.045,stretch-gait*.055+enemyBreathing*.014,s.enemyAppearance?.affixes?.length?titleColors[s.enemyAppearance.rarity]:null);
  drawConditions(c,a.effects,enemyX,enemyFeet,eh);
  drawCombatHealth(c,enemyX,enemyFeet,a.enemyHp/a.enemy.hp,'#ac4b47');
