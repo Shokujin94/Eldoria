@@ -5,7 +5,7 @@ import { tree, canLearn, potionRecipes, potions } from './combat.mjs';
 import { rebuild } from './equipment.mjs';
 import { materialSale, generate, professionOdds, professionInterval } from './content.mjs';
 
-function run(vocation, seed, zone=0, mode="hunt", prepared=false, options={}) {
+function run(vocation, seed, zone=0, mode="hunt", prepared=false, options={}, veteran=false) {
  const db=new DatabaseSync(':memory:');
  schema(db);
  let now=100000;
@@ -27,13 +27,14 @@ function run(vocation, seed, zone=0, mode="hunt", prepared=false, options={}) {
    if(!talent)break;
    player.talents[talent.id]=(player.talents[talent.id]||0)+1;
   }
-  player.potions={hp2:10,mp2:10};
+  player.potions=veteran?{hp2:35,mp2:35}:{hp2:10,mp2:10};
   player.autoPotion={hp:45,mp:35,hpKey:'hp2',mpKey:'mp2'};
   db.prepare('UPDATE items SET equipped=0 WHERE owner=?').run('bench');
-  const insert=db.prepare("INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,?,?,2,'hunt',0,?,1)");
+  const rarity=veteran?3:2,upgrade=veteran?8:4;
+  const insert=db.prepare("INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,?,?,?,'hunt',0,?,1)");
   for(const slot of Object.keys(slots)){
-   const item=generate({tier:zone,rarity:2,quality:2,vocation,slot},'hunt',0,()=>.5,level);
-   insert.run(slot,'bench',slot,slot,zone,item.level,JSON.stringify(rebuild({rarity:2,slot,data:{baseMods:item.baseMods,upgrade:4,quality:2,vocation}})));
+   const item=generate({tier:zone,rarity,quality:2,vocation,slot},'hunt',0,()=>.5,level);
+   insert.run(slot,'bench',slot,slot,zone,item.level,rarity,JSON.stringify(rebuild({rarity,slot,data:{baseMods:item.baseMods,upgrade,quality:2,vocation}})));
   }
   player.hp=player.mana=100000;
   db.prepare('UPDATE characters SET data=?,level=? WHERE account=?').run(JSON.stringify(player),level,'bench');
@@ -65,8 +66,13 @@ const combatScenarios=[
  ['boss','boss',{}]
 ];
 if(full)combatScenarios.push(['dungeon IV','dungeon',{difficulty:4}],['tower','dungeon',{tower:true}]);
-for(const zone of regions)for(const [name,mode,options] of combatScenarios){
- const trials=Object.keys(vocations).flatMap(vocation=>[41,97,173].map(seed=>run(vocation,seed,zone,mode,true,options)));
+const profaneComparison=process.argv.includes('--profana');
+const scenarios=profaneComparison?[
+ ['dungeon IV rare +4','dungeon',{difficulty:4},false],
+ ['dungeon IV epic +8','dungeon',{difficulty:4},true]
+]:combatScenarios;
+for(const zone of regions)for(const [name,mode,options,veteran] of scenarios){
+ const trials=Object.keys(vocations).flatMap(vocation=>[41,97,173].map(seed=>run(vocation,seed,zone,mode,true,options,veteran)));
  const kills=trials.map(run=>run.kills);
  const netPerMinute=trials.map(run=>run.minutes?run.net/run.minutes:0).sort((a,b)=>a-b);
  console.log('T'+(zone+1),name,'deaths',trials.filter(run=>run.deaths).length+'/'+trials.length,

@@ -840,3 +840,6 @@ body.play14 #windowLayer65 .window-body :is(.service-card,.stat13,.region-card){
 .audio-slider{display:grid;grid-template-columns:minmax(105px,1fr) minmax(70px,1.3fr) 42px;align-items:center;gap:8px;margin:6px 0}
 .audio-slider input{width:100%;min-width:0;accent-color:#dfb17c}
 .audio-slider output{color:#f0d4a2;text-align:right;font-variant-numeric:tabular-nums}
+#brew59{padding:8px;border:1px solid #705a41;border-radius:6px;background:#18161c}
+#brew59 h4{margin:0 0 6px;color:#efcea1}
+#brew59 [data-brew-quote]{margin:.4rem 0 0;color:#d7c3a5;font-variant-numeric:tabular-nums}

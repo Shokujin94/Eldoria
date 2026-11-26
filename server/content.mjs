@@ -37,8 +37,10 @@ export function enemy(z,i,mode='hunt',wave=1,level=1,{difficulty=0,floor=1,affix
  if(boss)a.name=bossNames[z];else if(mode==='dungeon')a.name+=' de elite';
  if(mode==='trial')return a;
  const d=mode==='dungeon'?difficulty:0,t=mode==='dungeon'?Math.max(0,floor-1):0;
- a.hp=Math.round(a.hp*(1+d*.35)*(1+t*.09)*(1+affixes*.32));
- a.atk=Math.round(a.atk*(1+d*.17+t*.055)*(1+affixes*.10));
+ const difficultyHealth=d===4?2.15:1+d*.35;
+ const difficultyAttack=d===4?1.56:1+d*.17;
+ a.hp=Math.round(a.hp*difficultyHealth*(1+t*.09)*(1+affixes*.32));
+ a.atk=Math.round(a.atk*(difficultyAttack+t*.055)*(1+affixes*.10));
  a.xp=Math.round(a.xp*(1+d*.24+t*.045+affixes*.20));
  a.gold=Math.round(a.gold*(1+d*.15+t*.03+affixes*.12));
  const over=Math.max(0,level-(10+10*z));

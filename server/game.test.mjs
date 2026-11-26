@@ -397,6 +397,11 @@ test('encounter layers combine before overlevel and regional reward rounding',as
  const final=enemy(0,4,'dungeon',4);
  assert.equal(final.xp,41);
  assert.equal(final.gold,11);
+ const abyssal=enemy(4,2,'dungeon',2,45,{difficulty:3,affixes:3});
+ const profane=enemy(4,2,'dungeon',2,45,{difficulty:4,affixes:3});
+ assert(profane.hp>abyssal.hp&&profane.hp/abyssal.hp<1.06);
+ assert(profane.atk>abyssal.atk&&profane.atk/abyssal.atk<1.05);
+ assert(profane.xp>abyssal.xp&&profane.gold>=abyssal.gold);
 });
 
 test('existing encounters migrate early life proportions once without altering rewards',()=>{

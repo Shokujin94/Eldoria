@@ -418,7 +418,18 @@ function skinningPanel(c){
   '% de chance de material comum adicional por vitória.</p>'+(rank<6?'<button type="button" data-act="trainSkinning" '+
    (c.activity||xp<goal?'disabled':'')+'>Especializar · '+nf(goal)+' XP</button>':'')+'</article>';
 }
-function tradePanel(){const c=data.character;return '<section><h3>Especializações de fabricação</h3><div class="grid">'+[['smith','Ferraria'],['alch','Alquimia'],['enchant','Encantamento'],['jewel','Joalheria']].map(([k,n])=>'<article><b>'+n+'</b><p>Nv. '+(1+Math.floor(Math.sqrt(c.tradeXP[k]/25)))+' · '+nf(c.tradeXP[k])+' XP</p></article>').join('')+'</div>'+skinningPanel(c)+'<form id="brew59"><label>Poção<select name="key">'+Object.entries(c.potionRecipes).map(([key,recipe])=>'<option value="'+esc(key)+'" '+(key===(c.autoPotion.hpKey||'hp1')?'selected':'')+'>'+esc(c.potionsCatalog[key].name)+' · '+recipe.herbs+' erva(s) + '+recipe.gold+' ◈ / un.</option>').join('')+'</select></label><label>Quantidade<input name="count" type="number" min="1" max="99" value="1" required></label><button '+(c.activity?'disabled':'')+'>Preparar</button></form><button data-act="basicJewel" '+(c.activity?'disabled':'')+'>Fabricar anel incomum · 3 ervas + 3 minérios + 30 ◈</button></section>';}
+function tradePanel(){const c=data.character;return '<section><h3>Especializações de fabricação</h3><div class="grid">'+[['smith','Ferraria'],['alch','Alquimia'],['enchant','Encantamento'],['jewel','Joalheria']].map(([k,n])=>'<article><b>'+n+'</b><p>Nv. '+(1+Math.floor(Math.sqrt(c.tradeXP[k]/25)))+' · '+nf(c.tradeXP[k])+' XP</p></article>').join('')+'</div>'+skinningPanel(c)+'<form id="brew59" class="brew-panel"><h4>Alquimia</h4><label>Poção<select name="key">'+Object.entries(c.potionRecipes).map(([key,recipe])=>'<option value="'+esc(key)+'" '+(key===(c.autoPotion.hpKey||'hp1')?'selected':'')+'>'+esc(c.potionsCatalog[key].name)+' · '+recipe.herbs+' erva(s) + '+recipe.gold+' ◈ / un.</option>').join('')+'</select></label><label>Quantidade<input name="count" type="number" min="1" max="99" value="1" required></label><button '+(c.activity?'disabled':'')+'>Preparar</button><p data-brew-quote role="status"></p></form><button data-act="basicJewel" '+(c.activity?'disabled':'')+'>Fabricar anel incomum · 3 ervas + 3 minérios + 30 ◈</button></section>';}
+function updateBrewQuote(form){
+ const c=data.character,recipe=c.potionRecipes[form.elements.key.value],quantity=form.elements.count;
+ const herbs=c.materials['herb:0:0']||0,stock=c.potions[form.elements.key.value]||0;
+ const max=Math.min(99,999-stock,Math.floor(herbs/recipe.herbs),Math.floor(c.gold/recipe.gold));
+ quantity.max=Math.max(1,max);
+ const n=quantity.valueAsNumber,valid=quantity.validity.valid;
+ form.querySelector('button').disabled=!!c.activity||max<1||!valid;
+ const total=Number.isSafeInteger(n)&&n>0?'Lote · '+nf(n*recipe.herbs)+' ervas · '+nf(n*recipe.gold)+' ◈. ':'';
+ const limit=c.activity?'Volte à cidade para preparar.':max?'Pode preparar até '+nf(max)+'.':'Sem estoque, espaço ou ouro para preparar.';
+ form.querySelector('[data-brew-quote]').textContent=total+' Ervas em estoque: '+nf(herbs)+'. '+limit;
+}
 function combatDetails(){const c=data.character;return '<section><h3>Combate avançado</h3><button data-act="defensive" data-enabled="'+(!c.defensive)+'">Recuo defensivo '+(c.defensive?'ligado':'desligado')+'</button><p>Evita habilidade especial de chefe quando abaixo de 30% PV.</p><h4>Resistências efetivas</h4><p>'+Object.entries(c.stats.advanced.resist).map(([k,n])=>esc(elementNames[k]||k)+' '+Math.round(n*1000)/10+'%').join(' · ')+'</p><h4>Afixos</h4>'+Object.values(c.affixCatalog).map(([n,d])=>'<p><b>'+esc(n)+'</b> · '+esc(d)+'</p>').join('')+'<p>Combos: fogo + veneno; físico + congelamento; arcano + shock; sangramento + exposição.</p><p>Coleção registrada: '+Object.keys(c.collection).length+' categorias de equipamentos e relíquias.</p></section>';}
 function chronicles(){const c=data.character,points=Math.max(0,Math.floor(Math.sqrt(c.legacyXP/100))-Object.values(c.legacy).reduce((a,b)=>a+b,0));return '<h2>Crônicas</h2><h3>Torre Infinita</h3><p>Recorde: andar '+nf(c.towerRecord)+'</p><form id="expedition57"><label>Região<select name="zone">'+options(regions)+'</select></label><label>Dificuldade<select name="difficulty">'+options(['Normal','Heroica','Pesadelo','Abissal','Profana'])+'</select></label><label>Expedição<select name="tower"><option value="false">Dungeon</option><option value="true">Torre Infinita</option></select></label><button '+(c.activity?'disabled':'')+'>Iniciar expedição</button></form><h3>Eventos raros</h3>'+ (c.rareEvent?'<p><strong>'+esc(c.rareEventName??'Evento raro')+'</strong> · '+esc(regions[c.rareEvent.z])+'</p><button data-act="resolveEvent">Resolver evento</button>':'<p>Eventos raros aparecem durante caçadas, com 0,3% de chance por vitória.</p>')+'<h3>Legado · nível 100</h3><p>'+nf(c.legacyXP)+' XP de legado · '+points+' pontos disponíveis</p>'+[['power','Poder','+0,6% de dano'],['survive','Sobrevivência','+0,6% de PV e +0,4 p.p. de resistências'],['fortune','Fortuna','+0,5% de ouro por vitória'],['craft','Ofícios','+0,5% de XP de especialização']].map(([k,n,bonus])=>'<article class="item"><span>'+n+' '+(c.legacy[k]||0)+'/20 · '+bonus+' por ponto</span><button data-act="legacy" data-id="'+k+'" '+(c.level<100||!points||c.activity||(c.legacy[k]||0)>=20?'disabled':'')+'>Investir</button></article>').join('');}
 let bagFilter61='all',characterTab61='sheet',talentPath61=0,talentSelected61=null,talentFilter61='all',journeyMode61='hunt',journeyZone61=0,journeyProf61='mining';
@@ -649,7 +660,11 @@ function renderCraftPanel(panel){
  const feedback=pendingCraftFeedback||(same?panel.querySelector('[data-forge-feedback]')?.textContent:'');
  pendingCraftFeedback='';
  panel.dataset.crafter=name;
+ const selectedPotion=same?panel.querySelector('#brew59 select')?.value:null;
  panel.innerHTML=forge()+rareRecipes()+tradePanel()+gearServices();
+ const brew=panel.querySelector('#brew59');
+ if(selectedPotion&&data.character.potionRecipes[selectedPotion])brew.elements.key.value=selectedPotion;
+ updateBrewQuote(brew);
  const result=panel.querySelector('[data-forge-feedback]');
  result.textContent=feedback||'';
  result.hidden=!feedback;
@@ -1110,6 +1125,8 @@ $('windowLayer65').addEventListener('input',e=>{
   form.dataset.merchantTrade==='buyRune'&&data.character.gold<total;
 });
 $('windowLayer65').addEventListener('input',e=>{
+ const brew=e.target.closest('#brew59');
+ if(brew){updateBrewQuote(brew);return;}
  const form=e.target.closest('[data-buy-potion]');
  if(!form)return;
  const count=Number(form.elements.count.value),total=count*Number(form.dataset.unitPrice);

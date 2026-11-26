@@ -288,6 +288,11 @@ try{
  assert.equal(await forgeResult.locator('img').count(),1);
  assert.equal(await forgeForm.locator('button').isDisabled(),true);
  await forgeQuote.getByText('✗ Materiais',{exact:true}).waitFor();
+ const brew=page.locator('#brew59');
+ await brew.locator('select').selectOption('hp3');
+ await brew.locator('[name=count]').fill('2');
+ assert.match(await brew.locator('[data-brew-quote]').innerText(),/8 ervas · 48/);
+ assert.equal(await brew.locator('button').isDisabled(),true);
  assert.equal(await forgeForm.locator('[name=grade_herb]').isHidden(),true);
  assert.match(await forgeForm.locator('[name=grade_mob] option').first().textContent(),/0 \/ 5/);
  await forgeForm.locator('[name=grade_mob]').selectOption('1');
