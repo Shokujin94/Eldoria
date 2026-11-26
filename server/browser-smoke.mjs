@@ -113,7 +113,7 @@ try{
   save.materials['mining:0:2']=2;
   save.runeStock.r30_weapon_might_2=1;
   save.rareEvent={z:0,k:0};
-  fixture.prepare('UPDATE characters SET data=?,gold=10 WHERE account=?').run(JSON.stringify(save),character.account);
+  fixture.prepare('UPDATE characters SET data=?,gold=25 WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
   for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0,...(slot==='head'?{sockets:2,runes:['r30_head_memory_2'],corrupt:'power'}:{})}));
   fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
@@ -125,6 +125,11 @@ try{
  assert.equal(await page.locator('.cons-item11').count(),12);
  const flaskMarkup=await page.locator('#win-cons .flask-icon').evaluateAll(icons=>icons.map(icon=>icon.innerHTML));
  assert.equal(new Set(flaskMarkup).size,12);
+ const buyPotions=page.locator('#win-cons [data-buy-potion=hp1]');
+ await buyPotions.locator('input').fill('2');
+ assert.equal(await buyPotions.locator('[data-potion-total]').innerText(),'16');
+ await buyPotions.locator('button').click();
+ await page.locator('#quick61 [data-potion-tip=hp1] .potion-count').getByText('2').waitFor();
  await page.locator('#win-cons [data-potion-tip=might]').scrollIntoViewIfNeeded();
  await page.locator('#win-cons [data-potion-tip=might]').hover();
  await page.locator('#tal47-tip .detail-tooltip-rows').getByText('Duração',{exact:true}).waitFor();

@@ -583,3 +583,8 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 .attribute-precision dl{margin:.5em 0}
 .attribute-precision dl>div{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #6567794d}
 .attribute-precision dd{margin:0;color:#eddbb9;font-variant-numeric:tabular-nums}
+
+#quick61 .potion-count{display:inline-block;color:#efd6a3;font-variant-numeric:tabular-nums;white-space:nowrap}
+.potion-buy-batch{display:grid;grid-template-columns:auto 1fr;align-items:end;gap:5px;margin:0}
+.potion-buy-batch input{width:5em}
+.potion-buy-batch small{grid-column:1/-1}
