@@ -301,6 +301,16 @@ export function game(db,{clock=Date.now,random=rng}={}){
   return item?[{...item,data:equipment.itemData({...item,data:JSON.parse(item.data)}),npcValue:sale.price}]:[];
  }),vault:vault(id).map(({owner,...i})=>i),items:items(id).map(({owner,...i})=>({...i,craftBaseAvailable:craftBaseAvailable(i,r.cls,refs),merchantSaleAvailable:!i.escrow&&!i.data.locked&&!refs.has(i.id),data:equipment.itemData(i),npcValue:equipment.npcValue(i),upgradeQuote:equipment.upgradeQuote(i),refineQuote:equipment.refineQuote(i),advancedQuotes:Object.fromEntries(['enchant','corrupt','awaken','addSocket','reroll'].map(k=>[k,equipment.advancedQuote(i,k)]))}))})};}
  function state(id,compact=false){return tx(db,()=>{if(row(id))settle(id);return view(id,compact);});}
+ function salvageItems(s,selected){
+  const materials={},before=s.tradeXP.smith||0;
+  for(const i of selected){
+   const key='mob:'+i.tier+':'+i.rarity,stock=s.materials[key]||0;
+   mat(s,key,1+(i.data.upgrade||0));
+   materials[key]=(materials[key]||0)+s.materials[key]-stock;
+   awardTradeXP(s,'smith');
+  }
+  s.lastSalvage={materials,xp:(s.tradeXP.smith||0)-before,count:selected.length,name:selected.length===1?selected[0].name:null};
+ }
  const canChangeTalents=s=>!s.activity||['hunt','dungeon','boss'].includes(s.activity.mode);
  function action(id,p){tx(db,()=>settle(id));return tx(db,()=>{const {r,s}=get(id),a=p.action;if(pending(s))fail('Processando progresso offline. Tente novamente após a sincronização.',409);if(a==='stop'){const active=!!s.activity;s.activity=null;combat.clear(s);finishAnalysis(s,'Retorno à cidade');if(active){autoSell(id,s);s.hp=stats(id,r,s).hp;}s.last=Math.max(s.last,clock());}
   else if(a==='pauseActivity'||a==='resumeActivity'){
@@ -358,10 +368,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
     s.merchant.sales=[...s.merchant.sales,...sales].slice(-120);
     s.lastEvent=selected.length+' equipamentos vendidos por '+total+' ouro.';
    }else{
-    for(const i of selected){
-     mat(s,'mob:'+i.tier+':'+i.rarity,1+(i.data.upgrade||0));
-     awardTradeXP(s,'smith');
-    }
+    salvageItems(s,selected);
     s.lastEvent=selected.length+' equipamentos desmantelados.';
    }
    const consume=db.prepare('UPDATE items SET spent=1,equipped=0 WHERE id=? AND owner=? AND escrow=0 AND spent=0');
@@ -392,8 +399,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
      merchant.sales=[...merchant.sales.slice(-119),{id:i.id,price}];
      s.lastEvent='Item vendido por '+price+' ouro.';
     }else{
-     mat(s,'mob:'+i.tier+':'+i.rarity,1+(i.data.upgrade||0));
-     awardTradeXP(s,'smith');s.lastEvent='Equipamento desmantelado.';
+     salvageItems(s,[i]);s.lastEvent='Equipamento desmantelado.';
     }
     db.prepare('UPDATE items SET spent=1,equipped=0 WHERE id=? AND owner=? AND escrow=0').run(i.id,id);
     const after=stats(id,r,s);

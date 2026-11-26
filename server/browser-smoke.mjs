@@ -416,6 +416,8 @@ try{
   expeditionFixture.prepare('UPDATE characters SET level=5,data=? WHERE account=?').run(JSON.stringify(save),character.account);
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
    .run('expedition-weapon',character.account,'Arma de teste','weapon','hunt',100,JSON.stringify({mods:{damage:50}}));
+  expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
+   .run('receipt-gear',character.account,'Anel para desmantelar','ring','hunt',1,JSON.stringify({mods:{mana:1}}));
  }finally{expeditionFixture.close();}
  await page.waitForFunction(()=>document.getElementById('character63').textContent==='Nível 5');
  await page.locator('[data-tab=dungeon]').click();
@@ -473,6 +475,13 @@ try{
  await trader.getByText('Nenhum item vendido nesta visita.').waitFor();
  await trader.locator('[data-merchant-tab=sell]').click();
  await trader.locator('[data-act=sellItem][data-id="'+soldId+'"]').waitFor();
+ await trader.locator('[data-act=salvage][data-id=receipt-gear]').click();
+ await page.locator('#game-confirmation[open]').getByRole('button',{name:'Confirmar',exact:true}).click();
+ const receipt=trader.locator('.salvage-receipt');
+ await receipt.getByText(/XP de Ferraria/).waitFor();
+ await receipt.locator('[data-material-tip="mob:0:0"]').hover();
+ await page.locator('#tal47-tip').getByText('Uso',{exact:true}).waitFor();
+ await receipt.getByRole('button',{name:'Fechar resultado'}).click();
  await trader.locator('[data-merchant-tab=materials]').click();
  const materialSale=trader.locator('[data-merchant-trade=sellMaterial]').first();
  await materialSale.waitFor();

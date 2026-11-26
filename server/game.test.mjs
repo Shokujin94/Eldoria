@@ -78,6 +78,7 @@ test('merchant batches are atomic and require confirmation only for valuable equ
  assert.equal(salvaged.character.materials['mob:0:3'],1);
  assert.equal(salvaged.character.materials['mob:0:0'],2);
  assert.equal(salvaged.items.length,1);
+ assert.deepEqual(salvaged.character.lastSalvage,{materials:{'mob:0:3':1,'mob:0:0':2},xp:30,count:3,name:null});
  db.close();
 });
 
