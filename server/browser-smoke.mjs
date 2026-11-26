@@ -437,6 +437,13 @@ try{
  await expeditionBag.locator('[data-act=unequip][data-id=expedition-weapon]').waitFor();
  assert.match(await page.locator('#world52-location').innerText(),/Andar 1\/3/);
  await expeditionBag.locator('[data-close65]').click();
+ await page.locator('[data-tab=talent]').click();
+ const expeditionTalents=page.locator('#win-talent');
+ await expeditionTalents.locator('[data-tfilter62=ready]').click();
+ const invest=expeditionTalents.locator('[data-act=talent][data-points61="1"]');
+ await invest.click();
+ await expeditionTalents.locator('.tal47-state').getByText(/1\//).waitFor();
+ await expeditionTalents.locator('[data-close65]').click();
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
  await page.locator('[data-group65="2"]').click();

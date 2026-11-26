@@ -82,6 +82,29 @@ test('merchant restores the same starter item and closes its buyback session',()
  db.close();
 });
 
+test('talents can be invested and reset during hunts, dungeons and boss encounters',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);
+ g.create('a','Guerreiro','war');
+ const original=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);
+ db.prepare('UPDATE characters SET data=?,level=5,gold=2000 WHERE account=?').run(JSON.stringify({...original,level:5}),'a');
+ for(const mode of ['hunt','dungeon','boss']){
+  const before=g.action('a',{action:'start',mode,zone:0}).character;
+  const invested=g.action('a',{action:'talent',key:'x'}).character;
+  assert.equal(invested.talents.x,1);
+  assert.equal(invested.activity.encounter,before.activity.encounter);
+  assert.equal(invested.activity.enemyHp,before.activity.enemyHp);
+  const refunded=g.action('a',{action:'resetTalents'}).character;
+  assert.equal(refunded.talents.x,undefined);
+  assert.equal(refunded.activity.encounter,before.activity.encounter);
+  g.action('a',{action:'stop'});
+ }
+ g.action('a',{action:'start',mode:'gather',zone:0,prof:'mining'});
+ assert.throws(()=>g.action('a',{action:'talent',key:'x'}),/indisponíveis nesta atividade/);
+ db.close();
+});
+
 test('equipment swaps are allowed in hunts, dungeons and boss encounters',()=>{
  const db=new DatabaseSync(':memory:');schema(db);
  const g=game(db,{clock:()=>100000,random:()=>.5});

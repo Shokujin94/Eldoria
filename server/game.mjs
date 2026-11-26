@@ -301,6 +301,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   return item?[{...item,data:equipment.itemData({...item,data:JSON.parse(item.data)}),npcValue:sale.price}]:[];
  }),vault:vault(id).map(({owner,...i})=>i),items:items(id).map(({owner,...i})=>({...i,craftBaseAvailable:craftBaseAvailable(i,r.cls,refs),merchantSaleAvailable:!i.escrow&&!i.data.locked&&!refs.has(i.id),data:equipment.itemData(i),npcValue:equipment.npcValue(i),upgradeQuote:equipment.upgradeQuote(i),refineQuote:equipment.refineQuote(i),advancedQuotes:Object.fromEntries(['enchant','corrupt','awaken','addSocket','reroll'].map(k=>[k,equipment.advancedQuote(i,k)]))}))})};}
  function state(id,compact=false){return tx(db,()=>{if(row(id))settle(id);return view(id,compact);});}
+ const canChangeTalents=s=>!s.activity||['hunt','dungeon','boss'].includes(s.activity.mode);
  function action(id,p){tx(db,()=>settle(id));return tx(db,()=>{const {r,s}=get(id),a=p.action;if(pending(s))fail('Processando progresso offline. Tente novamente após a sincronização.',409);if(a==='stop'){const active=!!s.activity;s.activity=null;combat.clear(s);finishAnalysis(s,'Retorno à cidade');if(active){autoSell(id,s);s.hp=stats(id,r,s).hp;}s.last=Math.max(s.last,clock());}
   else if(a==='pauseActivity'||a==='resumeActivity'){
    const paused=a==='pauseActivity';
@@ -379,9 +380,9 @@ export function game(db,{clock=Date.now,random=rng}={}){
   else if(a==='usePotion'){if(!combat.usePotion(s,stats(id,r,s),p.key))fail('Poção indisponível ou em recarga.');}
   else if(a==='autoPotion'){if(!['hp','mp'].includes(p.key)||!integer(p.threshold,0,95))fail('Configuração inválida.');if(p.potion!==undefined){if(!Object.hasOwn(combat.potions,p.potion)||combat.potions[p.potion].kind!==p.key)fail('Poção incompatível.');s.autoPotion[p.key+'Key']=p.potion;}s.autoPotion[p.key]=p.threshold;}
   else if(a==='title'){if(s.activity)fail('Volte à cidade.');if(p.key==='none')s.title=null;else{const t=titles.find(t=>t.id===p.key);if(!t||titleProgress(s,t)<t.goal)fail('Título ainda não conquistado.');s.title=t.id;}const st=stats(id,r,s);s.hp=Math.min(s.hp,st.hp);s.mana=Math.min(s.mana,st.mana);s.lastEvent=s.title?'Título equipado: '+earnedTitle(s).name:'Título removido.';}
-  else if(a==='skillForm'){if(s.activity||!Object.hasOwn(s.talents,p.key)||!s.talents[p.key]||!combat.skill(r.cls,s,p.key)||!(s.casts[p.key]>=30)||!['power','flow'].includes(p.form))fail('Especialização bloqueada.');if(s.forms[p.key]!==p.form){if(s.forms[p.key])debit(id,60+s.level*3);s.forms[p.key]=p.form;}}
-  else if(a==='talent'){if(s.activity)fail('Volte à cidade.');const qty=p.points===undefined?1:p.points;if(!integer(qty,1,3))fail('Quantidade de pontos inválida.');for(let i=0;i<qty;i++){if(!combat.canLearn(r.cls,s,p.key))fail('Talento bloqueado ou sem pontos.');s.talents[p.key]=(s.talents[p.key]||0)+1;}}
-  else if(a==='resetTalents'){if(s.activity)fail('Volte à cidade.');const n=Object.values(s.talents).reduce((a,b)=>a+b,0);if(!n)fail('Sem pontos investidos.');debit(id,100+50*s.level+25*n);s.talents={};s.rotation=null;s.rotationConditions={};s.cursor=0;combat.clear(s);}
+  else if(a==='skillForm'){if(!canChangeTalents(s)||!Object.hasOwn(s.talents,p.key)||!s.talents[p.key]||!combat.skill(r.cls,s,p.key)||!(s.casts[p.key]>=30)||!['power','flow'].includes(p.form))fail('Especialização bloqueada.');if(s.forms[p.key]!==p.form){if(s.forms[p.key])debit(id,60+s.level*3);s.forms[p.key]=p.form;}}
+  else if(a==='talent'){if(!canChangeTalents(s))fail('Talentos indisponíveis nesta atividade.');const qty=p.points===undefined?1:p.points;if(!integer(qty,1,3))fail('Quantidade de pontos inválida.');for(let i=0;i<qty;i++){if(!combat.canLearn(r.cls,s,p.key))fail('Talento bloqueado ou sem pontos.');s.talents[p.key]=(s.talents[p.key]||0)+1;}}
+  else if(a==='resetTalents'){if(!canChangeTalents(s))fail('Talentos indisponíveis nesta atividade.');const n=Object.values(s.talents).reduce((a,b)=>a+b,0);if(!n)fail('Sem pontos investidos.');debit(id,100+50*s.level+25*n);s.talents={};s.rotation=null;s.rotationConditions={};s.cursor=0;combat.clear(s);}
   else if(a==='trial'){if(s.activity||!combat.eligibleTrial(s)||!integer(p.index,0,2))fail('Provação bloqueada.');s.clsForTrial=r.cls;s.activity={mode:'trial',z:1,wave:1,trial:p.index};newEncounter(s);s.last=Math.max(s.last,clock());}
   else if(a==='attribute'){if(s.activity)fail('Volte à cidade.');const k=p.key,n=p.points??1;if(!Object.hasOwn(s.attrs,k)||!integer(n,1,freeAttrs(s)))fail('Pontos de atributo insuficientes.');s.attrs[k]+=n;}
   else if(a==='equip'){if(s.activity&&!['hunt','dungeon','boss'].includes(s.activity.mode))fail('Equipamento indisponível nesta atividade.');const i=items(id).find(i=>i.id===p.itemId&&!i.escrow);if(!i||i.level>s.level||i.data.vocation&&i.data.vocation!==r.cls)fail('Item indisponível, vocação ou nível incompatível.');db.prepare('UPDATE items SET equipped=0 WHERE owner=? AND slot=? AND equipped=1').run(id,i.slot);db.prepare('UPDATE items SET equipped=1 WHERE id=?').run(i.id);const after=stats(id,r,s);s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);}
@@ -392,7 +393,12 @@ export function game(db,{clock=Date.now,random=rng}={}){
    if(z&&!base)fail('Selecione peça anterior livre.');if(count(id)>=120&&!base)fail('Inventário cheio.');if(Object.entries(q.req).some(([k,v])=>(s.materials[k]||0)<v))fail('Materiais insuficientes.');
    debit(id,q.cost);for(const [k,v] of Object.entries(q.req))s.materials[k]-=v;const ok=random()<craft.success(s.craft.level,l,q.quality);if(ok){if(base)db.prepare('UPDATE items SET spent=1 WHERE id=?').run(base.id);const rar=content.rollOdds(q.odds,random),uid=issue(id,slot,z,0,rar,'craft',false,false,l,q.quality);recordDrop(id,s,uid,rar);awardTradeXP(s,'smith');}recordCraftResult(s,l,ok,'Fabricação concluída.');
   }
-  else fail('Ação não reconhecida.');persist(id,s);return view(id);
+  else fail('Ação não reconhecida.');
+  if(['talent','resetTalents','skillForm'].includes(a)){
+   const after=stats(id,r,s);
+   s.hp=Math.min(s.hp,after.hp);s.mana=Math.min(s.mana,after.mana);
+  }
+  persist(id,s);return view(id);
  });}
  const cancellationDelay=30*60*1000;
  const listingSQL='SELECT l.id,l.item AS itemId,l.seller,l.price,l.bps,l.burn,l.price-l.burn AS net,l.status,l.created,l.listing_fee AS listingFee,i.name,i.slot,i.tier,i.level,i.rarity,i.source,i.power,i.data AS itemData,c.name AS sellerName FROM listings l JOIN items i ON i.id=l.item JOIN characters c ON c.account=l.seller';
