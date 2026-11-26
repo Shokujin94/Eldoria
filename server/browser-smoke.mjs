@@ -137,6 +137,12 @@ try{
  await page.locator('#drop-notice .rarity61-4').getByText('Relíquia de teste').waitFor();
  assert.match(await dropCard.innerText(),/42/);
  assert.match(await dropCard.innerText(),/0,5%/);
+ await page.locator('[data-group65="3"]').click();
+ await page.waitForFunction(()=>{
+  const drawer=document.querySelector('.navDrawer13:not([hidden])');
+  return drawer&&document.getElementById('drop-notice').getBoundingClientRect().top>=drawer.getBoundingClientRect().bottom+6;
+ });
+ await page.locator('[data-group65="3"]').click();
  const flaskMarkup=await page.locator('#win-cons .flask-icon').evaluateAll(icons=>icons.map(icon=>icon.innerHTML));
  assert.equal(new Set(flaskMarkup).size,12);
  const autoLife=page.locator('#auto-hp');
@@ -358,6 +364,7 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.locator('[data-group65="3"]').click();
  await page.locator('[data-tab=settings]').click();
+ assert.equal(await page.locator('#win-settings').getByRole('link',{name:'Abrir Wiki'}).getAttribute('href'),'wiki.html');
  const motionMode=page.locator('[data-scene-motion]');
  assert.equal(await motionMode.inputValue(),'system');
  await motionMode.selectOption('full');
@@ -488,6 +495,17 @@ try{
  await page.locator('[data-tab=merchant]').click();
  const trader=page.locator('#win-merchant');
  assert.equal(await trader.locator('[data-merchant-item=expedition-weapon]').count(),0);
+ await page.locator('[data-tab=bag]').click();
+ const expeditionTile=expeditionBag.locator('[data-bag64=expedition-weapon]');
+ const unequipWeapon=expeditionBag.locator('[data-act=unequip][data-id=expedition-weapon]');
+ if(!await unequipWeapon.isVisible())await expeditionTile.click();
+ await unequipWeapon.click();
+ await trader.locator('[data-merchant-item=expedition-weapon]').waitFor({state:'visible'});
+ const equipWeapon=expeditionBag.locator('[data-act=equip][data-id=expedition-weapon]');
+ if(!await equipWeapon.isVisible())await expeditionTile.click();
+ await equipWeapon.click();
+ await trader.locator('[data-merchant-item=expedition-weapon]').waitFor({state:'hidden'});
+ await expeditionBag.locator('[data-close65]').click();
  const common=trader.locator('[data-batch-rarity="0"]');
  const uncommon=trader.locator('[data-batch-rarity="1"]');
  await common.check();

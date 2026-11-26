@@ -134,9 +134,19 @@ dropNotice.id='drop-notice';
 dropNotice.hidden=true;
 dropNotice.setAttribute('role','status');
 $('world52').append(dropNotice);
+function positionDropNotice(){
+ const menu=$('tabs');
+ const drawer=menu.querySelector('.navDrawer13:not([hidden])');
+ const bottom=Math.max(menu.getBoundingClientRect().bottom,drawer?.getBoundingClientRect().bottom||0);
+ dropNotice.style.top=Math.max(55,Math.ceil(bottom)+8)+'px';
+}
+const dropMenuObserver=new ResizeObserver(positionDropNotice);
+dropMenuObserver.observe($('tabs'));
+for(const drawer of $('tabs').querySelectorAll('.navDrawer13'))dropMenuObserver.observe(drawer);
 let seenDrop=null;
 const pendingDrops=[];
 function drawDropCards(){
+ positionDropNotice();
  while(pendingDrops.length&&dropNotice.childElementCount<4){
   const {item,c}=pendingDrops.shift(),rank=item.rarity??0,highlight=item.relic!=null||rank>=c.loot.notify;
   let title=item.name,icon,type=item.level?'Equipamento · Nv. '+item.level:'Equipamento';
@@ -482,7 +492,7 @@ function merchant(){
  const tabs=[['sell','Equipamentos'],['buyback','Recomprar'],['materials','Materiais'],['runes','Runas']];
  return '<header class="bag46-head"><div><h2>Mira · Mercadora</h2><p>Saldo · '+nf(c.gold)+' ◈</p></div></header><nav class="gear46-tabs merchant-tabs">'+
   tabs.map(([key,name])=>'<button type="button" data-merchant-tab="'+key+'" aria-pressed="'+(merchantTab===key)+'">'+name+'</button>').join('')+'</nav>'+
-  batch+(merchantTab==='runes'?runes():'<div class="merchant-grid">'+(merchantTab==='materials'?materials():list||'<p>'+(rebuy?'Nenhum item vendido nesta visita.':'Nenhum equipamento disponível.')+'</p>')+'</div>');
+  (merchantTab==='sell'?'<p class="muted">Ao desequipar uma peça livre, ela aparece nesta lista.</p>':'')+batch+(merchantTab==='runes'?runes():'<div class="merchant-grid">'+(merchantTab==='materials'?materials():list||'<p>'+(rebuy?'Nenhum item vendido nesta visita.':'Nenhum equipamento disponível.')+'</p>')+'</div>');
 }
 function bestiary(){const c=data.character,known=c.creatureCatalog.filter(m=>c.bestiary[m.key]>0).length;return '<h2>Maestria de criaturas</h2><p>'+known+'/60 registradas · +0,5% dano por 1.000 abates, até +3,5% por espécie.</p>'+regions.map((name,z)=>'<details class="talentpath" '+(z===0?'open':'')+'><summary>'+esc(name)+'</summary>'+c.creatureCatalog.filter(m=>m.z===z).map(m=>{const n=c.bestiary[m.key]||0,goal=[1,50,250,1000,5000,20000].find(x=>x>n)||20000,src=m.boss?window.eldoria52Art.boss[z]:window.eldoria52Art.monsters[z][m.index];return '<article class="item"><img class="mat52" src="'+esc(src)+'" alt=""><div><b>'+esc(n?m.name:'Criatura não registrada')+'</b><p>'+nf(n)+' / '+nf(goal)+' · +'+Math.min(3.5,Math.floor(n/1000)*.5).toLocaleString('pt-BR')+'% dano</p><progress max="'+goal+'" value="'+Math.min(n,goal)+'"></progress></div><button data-act="trackCreature" data-id="'+esc(m.key)+'">'+(c.trackCreature===m.key?'Fixado':'Fixar')+'</button></article>';}).join('')+'</details>').join('');}
 function rotation(){const c=data.character,learned=c.talentTree.flatMap(p=>p.nodes).filter(n=>n.active&&n.rank);return '<section><h3>Rotação de combate</h3><p>Automática ou até seis habilidades em ordem, ignorando as que estão em recarga ou sem mana.</p><form id="rotation56"><label>Modo<select name="mode"><option value="auto" '+(c.rotation===null?'selected':'')+'>Automática</option><option value="custom" '+(c.rotation!==null?'selected':'')+'>Personalizada</option></select></label>'+Array.from({length:6},(_,i)=>'<label>Prioridade '+(i+1)+'<select name="slot'+i+'"><option value="">Vazio</option>'+options(Object.fromEntries(learned.map(n=>[n.id,n.name])),c.rotation?.[i])+'</select></label><label>Condição<select name="cond'+i+'">'+options({always:'Sempre',hp:'PV abaixo de 50%',mp:'Mana abaixo de 35%',execute:'Alvo abaixo de 30%',boss:'Chefes e inimigos com afixo',control:'Sem controle ativo'},c.rotationConditions[c.rotation?.[i]])+'</select></label>').join('')+'<button '+(c.activity?'disabled':'')+'>Salvar rotação</button></form></section>';}
@@ -784,7 +794,7 @@ function chronicles65(){const html=chronicles();return html.slice(html.indexOf('
 function city65(){return '<h3>Vespera</h3><div class="city65-grid">'+[['train','Treinamento'],['play','Regiões'],['craft','Forja'],['merchant','Mercador'],['sub','Subclasses'],['prof','Ofícios'],['vault','Depósito'],['market','Mercado']].map(([id,n])=>'<button type="button" class="secondary" data-open65="'+id+'">'+emblem63(defs65[id][0])+esc(n)+'</button>').join('')+'</div><button data-act="stop" '+(!data.character.activity?'disabled':'')+'>Retornar a Vespera</button>';}
 function settings65(){
  const animation=window.eldoria52Scene?.motionMode()||'system';
- return '<h3>Interface e conta</h3><label>Movimento da cena<select data-scene-motion>'+options({system:'Usar preferência do navegador',full:'Animações completas',reduced:'Movimento reduzido'},animation)+'</select></label><div class="settings65"><button type="button" class="secondary" data-ui65="reset">Restaurar posição das janelas</button><button type="button" class="secondary" data-ui65="security">Segurança da conta</button><button type="button" class="secondary" data-ui65="logout">Sair da conta</button></div><h3>Organização da HUD</h3><div class="hud-options">'+Object.entries(hudLabels).map(([key,label])=>'<label><input type="checkbox" data-hud-visible="'+key+'" '+(hiddenHud[key]?'':'checked')+'>'+label+'</label>').join('')+'</div>'+combatDetails();}
+ return '<h3>Interface e conta</h3><label>Movimento da cena<select data-scene-motion>'+options({system:'Usar preferência do navegador',full:'Animações completas',reduced:'Movimento reduzido'},animation)+'</select></label><div class="settings65"><a href="wiki.html" target="_blank" rel="noopener">Abrir Wiki</a><button type="button" class="secondary" data-ui65="reset">Restaurar posição das janelas</button><button type="button" class="secondary" data-ui65="security">Segurança da conta</button><button type="button" class="secondary" data-ui65="logout">Sair da conta</button></div><h3>Organização da HUD</h3><div class="hud-options">'+Object.entries(hudLabels).map(([key,label])=>'<label><input type="checkbox" data-hud-visible="'+key+'" '+(hiddenHud[key]?'':'checked')+'>'+label+'</label>').join('')+'</div>'+combatDetails();}
 function log65(){const c=data.character;return '<h3>Registro da aventura</h3><p>'+esc(c.lastEvent)+'</p><p>'+esc(c.lastCast||'')+'</p><h4>Sessões recentes</h4>'+c.history.map(a=>'<p>'+esc(regions[a.z])+' · '+esc(a.reason||a.mode)+' · '+nf(a.kills)+' abates</p>').join('');}
 let marketTab65='offers';
 function market65(){
