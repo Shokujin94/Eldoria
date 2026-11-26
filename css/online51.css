@@ -685,3 +685,14 @@ body.play14 .floating65 .window-body .vocation-sheet .stat13{
 }
 .vocation-sheet .sheet-stat-icon{display:inline-flex;align-items:center;margin-right:4px;vertical-align:middle}
 .vocation-sheet .stat13 b{color:var(--sheet-accent)}
+
+#drop-notice{
+ position:fixed;z-index:17;top:55px;left:50%;transform:translateX(-50%);width:min(330px,calc(100vw - 20px));pointer-events:none;
+ display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--rar61);border-radius:8px;
+ background:linear-gradient(145deg,color-mix(in srgb,var(--rar61) 24%,#20212d),#11141b 75%);box-shadow:0 8px 20px #000b,inset 0 0 12px color-mix(in srgb,var(--rar61) 23%,transparent)
+}
+#drop-notice[hidden]{display:none}
+#drop-notice .gear61-icon{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 0 5px var(--rar61))}
+#drop-notice :is(strong,small){display:block}
+#drop-notice strong{font:400 18px "DM Serif Text",Georgia,serif;color:#f4e7d0}
+#drop-notice small:first-child{color:var(--rar61)}
