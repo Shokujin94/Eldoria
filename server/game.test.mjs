@@ -90,6 +90,12 @@ test('merchant restores the same starter item and closes its buyback session',()
  const merchantId=g.action('a',{action:'openMerchant'}).character.merchant.id;
  const sell={action:'sellItem',itemId:starter.id,confirm:true,merchantId};
  const buy={action:'buybackItem',itemId:starter.id,merchantId};
+ assert.equal(g.state('a').items[0].merchantSaleAvailable,false);
+ assert.throws(()=>g.action('a',sell),/indisponível/);
+ assert.throws(()=>g.action('a',{action:'merchantBatch',operation:'sell',itemIds:[starter.id],confirm:true,merchantId}),/indisponível/);
+ assert.equal(g.state('a').items[0].equipped,1);
+ const unequipped=g.action('a',{action:'unequip',itemId:starter.id});
+ assert.equal(unequipped.items[0].merchantSaleAvailable,true);
  const sold=g.action('a',sell);
  assert.equal(sold.items.length,0);
  assert.equal(sold.merchantSales[0].id,starter.id);

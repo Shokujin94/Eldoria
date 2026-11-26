@@ -445,6 +445,8 @@ try{
   expeditionFixture.prepare('UPDATE characters SET level=5,data=? WHERE account=?').run(JSON.stringify(save),character.account);
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
    .run('expedition-weapon',character.account,'Arma de teste','weapon','hunt',100,JSON.stringify({mods:{damage:50}}));
+  expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
+   .run('common-merchant',character.account,'Anel comum','ring','hunt',1,JSON.stringify({mods:{mana:1}}));
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,1,?,?,?)')
    .run('receipt-gear',character.account,'Anel para desmantelar','ring','hunt',1,JSON.stringify({mods:{mana:1}}));
  }finally{expeditionFixture.close();}
@@ -481,6 +483,7 @@ try{
  await page.locator('[data-group65="2"]').click();
  await page.locator('[data-tab=merchant]').click();
  const trader=page.locator('#win-merchant');
+ assert.equal(await trader.locator('[data-merchant-item=expedition-weapon]').count(),0);
  const common=trader.locator('[data-batch-rarity="0"]');
  const uncommon=trader.locator('[data-batch-rarity="1"]');
  await common.check();
