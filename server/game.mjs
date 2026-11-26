@@ -156,6 +156,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  }
  function recordDrop(id,s,uid,rarity,relic=false,chance=null){const row=lootItem.get(uid,id);if(!row)return;const i={...row,data:JSON.parse(row.data)};s.collection[i.slot+':'+i.tier+':'+rarity]=true;if(relic)s.collection['relic:'+i.tier]=true;if(relic||rarity>=s.loot.protect){i.data.locked=true;db.prepare('UPDATE items SET data=? WHERE id=? AND owner=?').run(JSON.stringify(i.data),uid,id);}if(i.source!=='craft')queueLoot(s,{name:i.name,slot:i.slot,tier:i.tier,level:i.level,vocation:i.data.vocation,relic:i.data.relic,rarity,value:equipment.npcValue(i),chance});if(s.analyzer){s.analyzer.items++;const a=s.analyzer,value=equipment.npcValue(i);
   if(a.itemValue!==undefined)a.itemValue+=value;
+  if(a.sellableValue!==undefined)a.sellableValue+=value;
   if(a.drops){
    const drop={name:i.name,slot:i.slot,rarity,level:i.level,value};
    a.rarities[rarity]++;
@@ -185,9 +186,11 @@ export function game(db,{clock=Date.now,random=rng}={}){
   queueLoot(s,{kind:'material',key,rarity:key.startsWith('boss:')?3:Number(key.split(':')[2]),value:content.materialSale(key)});
   if(!a?.materialDrops)return;
   a.materialDrops[key]=(a.materialDrops[key]||0)+1;
-  a.itemValue+=content.materialSale(key);
+  const value=content.materialSale(key);
+  a.itemValue+=value;
+  if(a.sellableValue!==undefined)a.sellableValue+=value;
  }
- function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],materialDrops:{},runeDrops:{},damageSources:{},damage:0,received:0,damageTaken:0,procs:0}:null;}
+ function beginAnalysis(s){const a=s.activity;s.analyzer=['hunt','boss','dungeon','trial'].includes(a?.mode)?{mode:a.mode,z:a.z,seconds:0,kills:0,xp:0,gold:0,items:0,itemValue:0,sellableValue:0,consumableCost:0,consumablesUsed:0,potionsFound:0,deaths:0,enemies:{},rarities:[0,0,0,0,0],drops:[],materialDrops:{},runeDrops:{},damageSources:{},damage:0,received:0,damageTaken:0,procs:0}:null;}
  function finishAnalysis(s,reason){if(s.analyzer?.seconds){s.history.unshift({...s.analyzer,reason});s.history=s.history.slice(0,20);}s.analyzer=null;}
  function combatTick(id,r,s){const a=s.activity;if(!a.enemy||!Number.isFinite(a.enemyHp))newEncounter(s);const e=a.enemy,st=stats(id,r,s),boss=a.mode==='boss'||a.mode==='trial'||a.mode==='dungeon'&&a.wave===4;
  if(!s.analyzer)beginAnalysis(s);const h0=s.hp,enemy0=a.enemyHp,proc0=s.energyProcs,hit0=a.hitSeq;const projectiles=!!(a.pendingHeroShot||a.pendingEnemyShot);
@@ -397,7 +400,8 @@ export function game(db,{clock=Date.now,random=rng}={}){
    if(!sell&&p.operation!=='salvage')fail('Operação inválida.');
    const ids=p.itemIds;
    if(!Array.isArray(ids)||!integer(ids.length,1,120)||ids.some(id=>typeof id!=='string')||new Set(ids).size!==ids.length)fail('Seleção inválida.');
-   const stock=items(id),refs=presetRefs(s),selected=ids.map(key=>stock.find(item=>item.id===key));
+   const stock=items(id),refs=presetRefs(s),byId=new Map(stock.map(item=>[item.id,item]));
+   const selected=ids.map(key=>byId.get(key));
    if(selected.some(i=>!merchantEligible(i,refs)||!sell&&i.starter))fail('Seleção inclui equipamento indisponível ou protegido.');
    const equipped=new Map(stock.filter(i=>i.equipped).map(i=>[i.slot,i.power]));
    if(p.confirm!==true&&selected.some(i=>i.rarity>=3||equipped.has(i.slot)&&i.power>equipped.get(i.slot)))fail('Confirme a operação com equipamentos valiosos.');
@@ -477,7 +481,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const cancellationDelay=30*60*1000;
  const listingSQL='SELECT l.id,l.item AS itemId,l.seller,l.price,l.bps,l.burn,l.price-l.burn AS net,l.status,l.created,l.listing_fee AS listingFee,i.name,i.slot,i.tier,i.level,i.rarity,i.source,i.power,i.data AS itemData,c.name AS sellerName FROM listings l JOIN items i ON i.id=l.item JOIN characters c ON c.account=l.seller';
  const listing=id=>db.prepare(listingSQL+' WHERE l.id=?').get(id);
- function market(id){return tx(db,()=>{settle(id);return {serverNow:clock(),gold:row(id).gold,items:items(id).filter(i=>!i.starter&&!i.equipped&&!i.escrow&&!i.data.locked&&!presetRefs(get(id).s).has(i.id)).map(({owner,...i})=>({...i,listingFee:i.level})),offers:db.prepare(listingSQL+" WHERE l.status='open' ORDER BY l.created DESC LIMIT 200").all().map(({seller,...i})=>({...i,data:JSON.parse(i.itemData),itemData:undefined,own:seller===id})),mine:db.prepare(listingSQL+' WHERE l.seller=? ORDER BY l.created DESC LIMIT 100').all(id).map(({seller,...i})=>({...i,cancelAt:i.created+cancellationDelay,data:JSON.parse(i.itemData),itemData:undefined})),totals:db.prepare('SELECT count(*) sales,coalesce(sum(burn),0) burned FROM ledger').get()};});}
+ function market(id){return tx(db,()=>{const refs=presetRefs(settle(id));return {serverNow:clock(),gold:row(id).gold,items:items(id).filter(i=>!i.starter&&merchantEligible(i,refs)).map(({owner,...i})=>({...i,listingFee:i.level})),offers:db.prepare(listingSQL+" WHERE l.status='open' ORDER BY l.created DESC LIMIT 200").all().map(({seller,...i})=>({...i,data:JSON.parse(i.itemData),itemData:undefined,own:seller===id})),mine:db.prepare(listingSQL+' WHERE l.seller=? ORDER BY l.created DESC LIMIT 100').all(id).map(({seller,...i})=>({...i,cancelAt:i.created+cancellationDelay,data:JSON.parse(i.itemData),itemData:undefined})),totals:db.prepare('SELECT count(*) sales,coalesce(sum(burn),0) burned FROM ledger').get()};});}
  function trade(id,p){tx(db,()=>settle(id));return tx(db,()=>{if(pending(get(id).s))fail('Processando progresso offline. Tente novamente após a sincronização.',409);if(p.action==='list'){const i=items(id).find(i=>i.id===p.itemId&&!i.starter&&!i.equipped&&!i.escrow&&!i.data.locked&&!presetRefs(get(id).s).has(i.id));if(!i)fail('Item indisponível.',409);if(db.prepare("SELECT count(*) n FROM listings WHERE seller=? AND status='open'").get(id).n>=30)fail('Limite de 30 anúncios.');const q=quote(i,p.price),uid=randomUUID(),fee=i.level;debit(id,fee);db.prepare('UPDATE items SET escrow=1 WHERE id=?').run(i.id);db.prepare("INSERT INTO listings(id,item,seller,price,bps,burn,status,created,listing_fee) VALUES(?,?,?,?,?,?,'open',?,?)").run(uid,i.id,id,q.price,q.bps,q.burn,clock(),fee);return {ok:true,id:uid,listingFee:fee};}
   const l=listing(p.id);if(!l||l.status!=='open')fail('Anúncio indisponível.',409);const i=db.prepare('SELECT * FROM items WHERE id=?').get(l.itemId);if(!i||i.owner!==l.seller||!i.escrow||i.spent)fail('Custódia inválida.',409);
   if(p.action==='cancel'){if(l.seller!==id)fail('Anúncio de outro jogador.',403);if(clock()<l.created+cancellationDelay)fail('Aguarde 30 minutos desde a publicação para cancelar.',409);db.prepare("UPDATE listings SET status='cancelled',closed=? WHERE id=?").run(clock(),l.id);db.prepare('UPDATE items SET escrow=0 WHERE id=?').run(i.id);return {ok:true};}

@@ -1,12 +1,11 @@
 // Deterministic smoke scenarios. Uses an in-memory database and synthetic characters.
 import { DatabaseSync } from 'node:sqlite';
 import { game, schema, vocations, slots, quote } from './game.mjs';
-import { tree, canLearn } from './combat.mjs';
+import { tree, canLearn, potionRecipes, potions } from './combat.mjs';
 import { rebuild } from './equipment.mjs';
-import { potionRecipes, potions } from './combat.mjs';
 import { materialSale, generate, professionOdds, professionInterval } from './content.mjs';
 
-function run(vocation, seed, zone=0, mode="hunt", prepared=false) {
+function run(vocation, seed, zone=0, mode="hunt", prepared=false, options={}) {
  const db=new DatabaseSync(':memory:');
  schema(db);
  let now=100000;
@@ -39,7 +38,7 @@ function run(vocation, seed, zone=0, mode="hunt", prepared=false) {
   player.hp=player.mana=100000;
   db.prepare('UPDATE characters SET data=?,level=? WHERE account=?').run(JSON.stringify(player),level,'bench');
  }
- g.action('bench',{action:'start',mode,zone});
+ g.action('bench',{action:'start',mode,zone,...options});
  let character;
  for(let i=0;i<(prepared?5:30);i++){
   now+=60000;
@@ -47,19 +46,32 @@ function run(vocation, seed, zone=0, mode="hunt", prepared=false) {
   if(!character.activity)break;
  }
  db.close();
- return [character.kills,character.deaths,character.level,character.gold,character.dungeons,character.bosses];
+ const session=character.analyzer||character.history[0];
+ return {kills:character.kills,deaths:character.deaths,level:character.level,gold:character.gold,dungeons:character.dungeons,bosses:character.bosses,minutes:(session?.seconds||0)/60,net:(session?.gold||0)+(session?.sellableValue??session?.itemValue??0)-(session?.consumableCost||0)};
 }
 for(const vocation of Object.keys(vocations)){
  const runs=[41,71,97,131,173].map(seed=>run(vocation,seed));
- const range=i=>[Math.min(...runs.map(r=>r[i])),Math.max(...runs.map(r=>r[i]))].join('-');
- console.log(vocation,'kills',range(0),'deaths',range(1),'level',range(2),'gold',range(3));
+ const range=key=>[Math.min(...runs.map(run=>run[key])),Math.max(...runs.map(run=>run[key]))].join('-');
+ console.log(vocation,'kills',range('kills'),'deaths',range('deaths'),'level',range('level'),'gold',range('gold'));
 }
 for(const [key,recipe] of Object.entries(potionRecipes))
  console.log(key,'effective craft',recipe.gold+recipe.herbs*materialSale('herb:0:0'),'shop',potions[key].price);
 
-for(const zone of [0,4,9])for(const mode of ['hunt','dungeon','boss']){
- const trials=Object.keys(vocations).flatMap(vocation=>[41,97,173].map(seed=>run(vocation,seed,zone,mode,true)));
- console.log('T'+(zone+1),mode,'deaths',trials.filter(r=>r[1]).length+'/'+trials.length,'kills',Math.min(...trials.map(r=>r[0]))+'-'+Math.max(...trials.map(r=>r[0])),'completed',trials.filter(r=>r[4]||r[5]).length);
+const full=process.argv.includes('--full');
+const regions=full?Array.from({length:10},(_,i)=>i):[0,4,9];
+const combatScenarios=[
+ ['hunt','hunt',{}],
+ ['dungeon','dungeon',{}],
+ ['boss','boss',{}]
+];
+if(full)combatScenarios.push(['dungeon IV','dungeon',{difficulty:4}],['tower','dungeon',{tower:true}]);
+for(const zone of regions)for(const [name,mode,options] of combatScenarios){
+ const trials=Object.keys(vocations).flatMap(vocation=>[41,97,173].map(seed=>run(vocation,seed,zone,mode,true,options)));
+ const kills=trials.map(run=>run.kills);
+ const netPerMinute=trials.map(run=>run.minutes?run.net/run.minutes:0).sort((a,b)=>a-b);
+ console.log('T'+(zone+1),name,'deaths',trials.filter(run=>run.deaths).length+'/'+trials.length,
+  'kills',Math.min(...kills)+'-'+Math.max(...kills),'completed',trials.filter(run=>run.dungeons||run.bosses).length,
+  'median net value/min',Math.round(netPerMinute[Math.floor(netPerMinute.length/2)]));
 }
 for(const [label,profession] of [
  ['novice',{level:1,talents:{}}],

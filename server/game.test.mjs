@@ -446,6 +446,7 @@ test('hunt analyzer records potions looted and consumed',()=>{
  assert.equal(won.materials['mob:0:0'],2);
  assert.equal(won.analyzer.materialDrops['mob:0:0'],2);
  assert.equal(won.analyzer.itemValue,won.analyzer.drops.reduce((sum,d)=>sum+d.value,0)+4);
+ assert.equal(won.analyzer.sellableValue,won.analyzer.itemValue);
  now+=1000;
  const recovered=g.state('pot').character;
  assert.equal(recovered.activity.recovery,0);

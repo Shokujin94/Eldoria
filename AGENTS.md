@@ -130,4 +130,6 @@ O quadro de trabalho do projeto é [Elorian](https://trello.com/b/FA00MHIV/elori
 4. Após validar a mudança, comente no cartão o que foi entregue, como foi implementado, problemas encontrados e corrigidos e quais testes foram executados com seus resultados. Inclua o commit e o resultado da publicação quando aplicável. Marque os itens de checklist que foram comprovados.
 5. Marque o check de conclusão do cartão e mova para **Concluido** apenas depois de atender aos requisitos e verificar a publicação quando o cartão afetar o jogo público. Se o Trello estiver indisponível, informe o bloqueio e continue o trabalho local que puder ser verificado.
 
+Mantenha a lista **🛠️ Codex · Diário de desenvolvimento** como registro das entregas. Crie um cartão por rodada de alterações, com motivação, comportamento alterado, resultados medidos, testes, commit e situação da publicação. Registre investigações em andamento como abertas. Os cartões do diário são registros e não entram na fila de implementação.
+
 **Prioridade dos cartões:** vermelho = P1 Alta, laranja = P2 Média-alta, amarelo = P3 Média, verde = P4 Baixa.
