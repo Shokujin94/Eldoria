@@ -50,7 +50,16 @@ function abilityIcon(n,color='#d7b775'){
 
 const defs65={character:['hero','Personagem',850,750],bag:['bag','Inventário',610,640],talent:['talent','Talentos',820,670],sub:['sub','Subclasses',440,570],achieve:['achieve','Conquistas',660,620],play:['zones','Regiões',660,740],bestiary:['bestiary','Bestiário',680,640],hunt:['hunt','Caçadas',340,320],dungeon:['dungeon','Dungeons',740,660],boss:['boss','Bosses',340,320],city:['city','Cidade',400,420],train:['train','Treinamento',350,300],prof:['train','Ofícios',660,690],craft:['forge','Forja',520,650],merchant:['merchant','Mercador',490,620],vault:['vault','Depósito',610,640],market:['bag','Mercado',720,620],cons:['cons','Consumíveis',490,580],rotation:['talent','Rotação',490,620],analyzer:['analyzer','Hunt Analyzer',380,600],log:['log','Registro',390,400],chronicles:['records','Crônicas',490,550],ranking:['records','Ranking',620,540],settings:['settings','Configurações',430,500]};
 const windows65=new Map(),prefs65=new Map();let z65=20;
-try{const v=JSON.parse(localStorage.getItem('eldoria-online-layout-65')||'{}');for(const k of Object.keys(defs65))if(v[k]&&[v[k].x,v[k].y,v[k].w,v[k].h].every(Number.isFinite))prefs65.set(k,v[k]);}catch{}
+function compactSize65(def){return {w:Math.round(def[2]*.89),h:Math.round(def[3]*.84)};}
+try{
+ const saved=JSON.parse(localStorage.getItem('eldoria-online-layout-65')||'{}');
+ for(const [id,def] of Object.entries(defs65)){
+  const pref=saved[id];
+  if(!pref||![pref.x,pref.y,pref.w,pref.h].every(Number.isFinite))continue;
+  const oldDefault=Math.abs(pref.w-def[2])<2&&Math.abs(pref.h-def[3])<2;
+  prefs65.set(id,oldDefault?{...pref,...compactSize65(def)}:pref);
+ }
+}catch{}
 const groups65=[['Personagem','hero',['sub','achieve','rotation','cons']],['Mundo','zones',['hunt','boss','city','train']],['Ofícios','forge',['prof','craft','merchant','vault','market']],['Gestão','settings',['log','chronicles','ranking','settings','security','logout']]];
 function nav65(id,direct=false){const d=defs65[id]||({security:['settings','Segurança da conta'],logout:['settings','Sair da conta']})[id];return '<button type="button" '+(direct?'class="direct14" ':'')+'data-tab="'+id+'" title="'+d[1]+'" aria-label="'+d[1]+'" aria-pressed="false"><span class="navicon">'+emblem63(d[0])+'</span><span class="navtext">'+d[1]+'</span></button>';}
 $('tabs').innerHTML=['bag','character','talent','play','bestiary','dungeon','analyzer'].map(id=>nav65(id,true)).join('')+groups65.map(([name,ico,ids],i)=>'<div class="navgroup12"><button type="button" class="navToggle13" data-group65="'+i+'" aria-label="'+name+'" aria-expanded="false"><span class="navicon">'+emblem63(ico)+'</span><span class="nav14-label">'+name+'</span></button><div class="navDrawer13" hidden>'+ids.map(id=>nav65(id)).join('')+'</div></div>').join('')+'<button type="button" class="direct14 navHide14" id="fold65" title="Recolher menu" aria-label="Recolher menu">‹</button>';
@@ -58,7 +67,15 @@ function menus65(){for(const g of $('tabs').querySelectorAll('.navgroup12')){g.q
 function pressed65(){for(const b of $('tabs').querySelectorAll('[data-tab]'))b.setAttribute('aria-pressed',String(windows65.has(b.dataset.tab)&&!windows65.get(b.dataset.tab).hidden));}
 function focus65(id){const w=windows65.get(id);if(w&&!w.hidden){page=id;w.style.zIndex=String(++z65);}}
 function remember65(id){const w=windows65.get(id);if(!w||w.hidden||innerWidth<=620)return;const r=w.getBoundingClientRect();prefs65.set(id,{x:r.left,y:r.top,w:r.width,h:r.height});try{localStorage.setItem('eldoria-online-layout-65',JSON.stringify(Object.fromEntries(prefs65)));}catch{}}
-function fit65(id){const w=windows65.get(id),d=defs65[id],v=prefs65.get(id),mobile=innerWidth<=620,W=Math.min(mobile?innerWidth-12:v?.w||d[2],innerWidth-12),H=Math.min(mobile?innerHeight-116:v?.h||d[3],innerHeight-12),n=[...windows65.values()].filter(x=>!x.hidden).length-1,x=mobile?6:v?.x??(id==='analyzer'?innerWidth-W-18:(innerWidth-W)/2+n*20),y=mobile?104:v?.y??Math.max(6,Math.min(180+n*24,innerHeight-H-75));Object.assign(w.style,{width:W+'px',height:H+'px',left:Math.max(0,Math.min(x,innerWidth-W))+'px',top:Math.max(0,Math.min(y,innerHeight-H))+'px'});}
+function fit65(id){
+ const w=windows65.get(id),defaults=compactSize65(defs65[id]),saved=prefs65.get(id),mobile=innerWidth<=620;
+ const width=Math.min(mobile?innerWidth-12:saved?.w||defaults.w,innerWidth-12);
+ const height=Math.min(mobile?defaults.h:saved?.h||defaults.h,innerHeight-(mobile?116:12));
+ const offset=Math.max(0,[...windows65.values()].filter(window=>!window.hidden).length-1);
+ const x=mobile?6:saved?.x??(id==='analyzer'?innerWidth-width-18:(innerWidth-width)/2+offset*20);
+ const y=mobile?104:saved?.y??Math.max(6,Math.min(150+offset*24,innerHeight-height-75));
+ Object.assign(w.style,{width:width+'px',height:height+'px',left:Math.max(0,Math.min(x,innerWidth-width))+'px',top:Math.max(0,Math.min(y,innerHeight-height))+'px'});
+}
 function close65(id){const w=windows65.get(id);if(!w||w.hidden)return;hide64();remember65(id);w.hidden=true;pressed65();if(id==='merchant'&&merchantId){const id=merchantId;merchantId=null;merchantTab='sell';request('/action','POST',{action:'closeMerchant',merchantId:id}).catch(e=>status(e.message));}if(id==='play')$('journey61').hidden=true;if(page===id)page=[...windows65.entries()].filter(([,v])=>!v.hidden).sort((a,b)=>Number(b[1].style.zIndex)-Number(a[1].style.zIndex))[0]?.[0]||'play';}
 function closeAll65(){for(const id of windows65.keys())close65(id);menus65();}
 function win65(id){if(windows65.has(id))return windows65.get(id);const d=defs65[id],w=document.createElement('section');w.id='win-'+id;w.className='floating floating65';w.dataset.page=id;w.hidden=true;w.setAttribute('role','dialog');w.setAttribute('aria-label',d[1]);w.innerHTML='<header class="window-head"><h2>'+emblem63(d[0])+' '+d[1]+'</h2><button type="button" data-refresh65 aria-label="Atualizar '+d[1]+'">↻</button><button type="button" data-close65 aria-label="Fechar '+d[1]+'">×</button></header><div class="status65" role="status"></div><div class="window-body"><div class="panel65"></div></div>';$('windowLayer65').append(w);windows65.set(id,w);if(id==='play')w.querySelector('.window-body').prepend($('journey61'));if(id==='talent')panelObserver64.observe(w.querySelector('.panel65'));
@@ -424,7 +441,11 @@ function positionBagActions(panel){
  if(!popup||!anchor)return;
  const r=anchor.getBoundingClientRect(),w=popup.offsetWidth,h=popup.offsetHeight;
  popup.style.left=Math.max(6,Math.min(innerWidth-w-6,r.right+8+w<=innerWidth?r.right+8:r.left-w-8))+'px';
- popup.style.top=Math.max(6,Math.min(r.top,innerHeight-h-6))+'px';
+ const filterBottom=panel.querySelector('.filter61')?.getBoundingClientRect().bottom??0;
+ const topLimit=Math.max(6,Math.min(filterBottom+6,innerHeight-150));
+ const top=Math.max(topLimit,Math.min(r.top,innerHeight-h-6));
+ popup.style.top=top+'px';
+ popup.style.maxHeight=Math.max(0,innerHeight-top-6)+'px';
 }
 
 let merchantId=null,merchantTab='sell';
@@ -927,6 +948,9 @@ function show64(e){
    '<section class="rarity61-'+equipped.rarity+'">'+itemTooltip(equipped,c,i,true)+'</section>';
  }
  tooltip64.hidden=false;
+ positionTooltip64(el);
+}
+function positionTooltip64(el){
  const r=el.getBoundingClientRect(),w=tooltip64.offsetWidth,h=tooltip64.offsetHeight;
  tooltip64.style.left=Math.max(6,Math.min(innerWidth-w-6,r.right+8+w<=innerWidth?r.right+8:r.left-w-8))+'px';
  tooltip64.style.top=Math.max(6,Math.min(r.top,innerHeight-h-6))+'px';
@@ -950,7 +974,13 @@ document.addEventListener('scroll',e=>{
   if(panel)positionBagActions(panel);
  }
 },true);
-document.addEventListener('scroll',hide64,true);
+document.addEventListener('scroll',e=>{
+ if(!tooltipAnchor)return;
+ const anchor=tooltipAnchor,rect=anchor.getBoundingClientRect(),scroller=e.target;
+ const bounds=scroller.contains?.(anchor)&&scroller.getBoundingClientRect?.();
+ if(!anchor.isConnected||rect.bottom<=0||rect.top>=innerHeight||bounds&&(rect.bottom<=bounds.top||rect.top>=bounds.bottom))hide64();
+ else positionTooltip64(anchor);
+},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tooltip64.hidden){e.preventDefault();e.stopImmediatePropagation();hide64();}},true);
 window.addEventListener('resize',()=>{hide64();connect64();});
 

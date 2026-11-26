@@ -219,6 +219,9 @@ try{
  await page.keyboard.press('Escape');
  await page.locator('[data-bag64][data-bag-slot=weapon]').first().click();await page.locator('.stock19-details').waitFor();
  const bag=page.locator('#win-bag');
+ const bagBounds=await bag.boundingBox();
+ assert.ok(bagBounds.width<610&&bagBounds.height<640);
+ assert.ok((await bag.locator('.stock19-slot .gear61-icon').first().boundingBox()).width<=28);
  const rarityColor=tile=>tile.evaluate(el=>getComputedStyle(el).getPropertyValue('--rar').trim());
  assert.equal(await rarityColor(bag.locator('[data-bag64][data-bag-slot=weapon]').first()),'#b9bec6');
  await bag.locator('[data-filter61=head]').click();
