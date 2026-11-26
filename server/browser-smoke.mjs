@@ -343,6 +343,8 @@ try{
   const character=expeditionFixture.prepare('SELECT account,data FROM characters').get();
   const save=JSON.parse(character.data);save.level=5;
   expeditionFixture.prepare('UPDATE characters SET level=5,data=? WHERE account=?').run(JSON.stringify(save),character.account);
+  expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
+   .run('expedition-weapon',character.account,'Arma de teste','weapon','hunt',1,JSON.stringify({mods:{damage:5}}));
  }finally{expeditionFixture.close();}
  await page.waitForFunction(()=>document.getElementById('character63').textContent==='Nível 5');
  await page.locator('[data-tab=dungeon]').click();
@@ -350,6 +352,15 @@ try{
  await page.waitForFunction(()=>document.getElementById('dungeon-progress66')?.textContent.includes('Andar 1/3 · 0/3 elites'));
  assert.match(await page.locator('#world52-location').innerText(),/Andar 1\/3 · 0\/3 elites/);
  await page.locator('#win-dungeon [data-close65]').click();
+ await page.locator('[data-tab=bag]').click();
+ const expeditionBag=page.locator('#win-bag');
+ await expeditionBag.locator('[data-bagtab66=equip]').click();
+ await expeditionBag.locator('[data-filter61=weapon]').click();
+ await expeditionBag.locator('[data-bag64=expedition-weapon]').click();
+ await expeditionBag.locator('[data-act=equip][data-id=expedition-weapon]').click();
+ await expeditionBag.locator('[data-act=unequip][data-id=expedition-weapon]').waitFor();
+ assert.match(await page.locator('#world52-location').innerText(),/Andar 1\/3/);
+ await expeditionBag.locator('[data-close65]').click();
  await page.locator('[data-quick61=stop]').click();
  await page.locator('#city61').waitFor({state:'visible'});
  await page.locator('[data-group65="2"]').click();

@@ -81,6 +81,29 @@ test('merchant restores the same starter item and closes its buyback session',()
  db.close();
 });
 
+test('equipment swaps are allowed in hunts, dungeons and boss encounters',()=>{
+ const db=new DatabaseSync(':memory:');schema(db);
+ const g=game(db,{clock:()=>100000,random:()=>.5});
+ db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);
+ const initial=g.create('a','Guerreiro','war');const starter=initial.items[0].id;
+ const row=db.prepare('SELECT data FROM characters WHERE account=?').get('a');
+ const save={...JSON.parse(row.data),level:5};
+ db.prepare('UPDATE characters SET data=?,level=5 WHERE account=?').run(JSON.stringify(save),'a');
+ db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run('new','a','Espada','weapon',0,1,0,'hunt',10,JSON.stringify({baseMods:{damage:10},mods:{damage:10}}));
+ for(const mode of ['hunt','dungeon','boss']){
+  const before=g.action('a',{action:'start',mode,zone:0}).character;
+  const result=g.action('a',{action:'equip',itemId:'new'});
+  assert.equal(result.character.activity.encounter,before.activity.encounter);
+  assert.equal(result.character.activity.enemyHp,before.activity.enemyHp);
+  assert.equal(result.items.find(i=>i.equipped).id,'new');
+  assert.equal(g.action('a',{action:'equip',itemId:starter}).items.find(i=>i.equipped).id,starter);
+  g.action('a',{action:'stop'});
+ }
+ g.action('a',{action:'start',mode:'gather',zone:0,prof:'mining'});
+ assert.throws(()=>g.action('a',{action:'equip',itemId:'new'}),/indisponível nesta atividade/);
+ db.close();
+});
+
 test('vault prevents trade/equip, tower difficulty and legacy gates',()=>{const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.5});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Explorador','war');db.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,?,?,?,?,?,?)').run('gear','a','Espada','weapon',0,1,0,'hunt',10,JSON.stringify({baseMods:{damage:10},mods:{damage:6.2}}));let d=g.action('a',{action:'deposit',itemId:'gear'});assert.equal(d.items.length,1);assert.equal(d.vault.length,1);assert.throws(()=>g.trade('a',{action:'list',itemId:'gear',price:100}));assert.throws(()=>g.action('a',{action:'equip',itemId:'gear'}));d=g.action('a',{action:'withdraw',itemId:'gear'});assert.equal(d.vault.length,0);assert.equal(d.items.length,2);assert.throws(()=>g.action('a',{action:'legacy',key:'power'}));const x=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);x.level=100;x.legacyXP=100;x.rareEvent={z:0,k:0};db.prepare('UPDATE characters SET data=?,level=100 WHERE account=?').run(JSON.stringify(x),'a');d=g.action('a',{action:'legacy',key:'power'});assert.equal(d.character.legacy.power,1);assert.throws(()=>g.action('a',{action:'legacy',key:'power'}));d=g.action('a',{action:'resolveEvent'});assert.equal(d.character.gold,5);assert.throws(()=>g.action('a',{action:'resolveEvent'}));assert.throws(()=>g.action('a',{action:'start',mode:'dungeon',zone:0,difficulty:5}));d=g.action('a',{action:'start',mode:'dungeon',zone:0,difficulty:4,tower:true});assert.equal(d.character.activity.difficulty,4);assert.equal(d.character.activity.floor,1);assert(d.character.activity.enemy.hp>100);db.close();});
 
 test('profession talents, tools and oath gates are authoritative',async()=>{const db=new DatabaseSync(':memory:');schema(db);let now=100000;const g=game(db,{clock:()=>now,random:()=>.01});db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run('a','a','test',0);g.create('a','Oficial','war');const s=JSON.parse(db.prepare('SELECT data FROM characters WHERE account=?').get('a').data);s.prof.mining.level=15;s.materials={'mining:0:0':10};s.level=30;s.subclass=0;s.zoneDungeons[2]=1;s.zoneBosses[2]=1;db.prepare('UPDATE characters SET data=?,gold=1000,level=30 WHERE account=?').run(JSON.stringify(s),'a');let d=g.action('a',{action:'professionTalent',prof:'mining',key:'speed'});assert.equal(d.character.prof.mining.talents.speed,1);d=g.action('a',{action:'professionTool',prof:'mining'});assert.equal(d.character.prof.mining.tool,1);assert.equal(d.character.gold,900);assert.equal(d.character.materials['mining:0:0'],5);g.action('a',{action:'professionSpec',prof:'mining',key:'yield'});assert.throws(()=>g.action('a',{action:'professionTalent',prof:'wood',key:'quality'}));g.action('a',{action:'oath',index:0,choice:0});assert.throws(()=>g.action('a',{action:'oath',index:1,choice:0}));d=g.action('a',{action:'oath',index:0,choice:1});assert.equal(d.character.gold,450);assert.equal(d.character.oaths[0],1);g.action('a',{action:'energyProfile',key:'boss'});g.action('a',{action:'start',mode:'gather',prof:'mining',zone:0});now+=5000;d=g.state('a');assert.equal(d.character.prof.mining.total,4);assert.throws(()=>g.action('a',{action:'professionTool',prof:'mining'}));assert.equal(g.state('a').character.prof.mining.total,4);db.close();});
