@@ -506,7 +506,33 @@ function talents(){
  const detail=n?'<div class="tal47-detailhead"><span class="tal47-symbol">'+glyph(n)+'</span><div><small>'+(n.active?'HABILIDADE ATIVA':'TALENTO PASSIVO')+'</small><h3>'+esc(n.name)+'</h3></div><strong>'+n.rank+'/'+n.max+'</strong></div><p class="tal47-state '+(n.rank===n.max?'max':n.available?'ready':'locked')+'">'+(n.rank===n.max?'Dominado':n.available?'Disponível':n.rank?'Aprendido':'Bloqueado')+' · '+n.rank+'/'+n.max+'</p><h4>'+(n.rank?'Efeito atual':'Efeito ao aprender')+'</h4><p>'+esc(talentText61(n))+'</p><h4>Requisitos</h4>'+req(n)+'<div class="tal47-buy"><button class="primary" data-act="talent" data-id="'+esc(n.id)+'" data-points61="1" '+(!allowed?'disabled':'')+'>+1 ponto</button><button class="secondary" data-act="talent" data-id="'+esc(n.id)+'" data-points61="'+max+'" '+(!allowed||max<2?'disabled':'')+'>Investir +'+max+'</button></div>'+talentMastery(n,c):'<p>Nenhum talento neste filtro.</p>';
  return '<div id="content-talent"><div class="tal47" data-vocation-color="'+theme.accent+'" data-path-color="'+pathColor+'"><header class="tal47-top"><div><small>VOCAÇÃO · '+esc(voc[c.cls])+'</small><h2>Talentos</h2><span>'+spent+' pontos investidos</span></div><div class="tal47-free"><strong>'+c.freeTalents+'</strong><small>PONTOS LIVRES</small></div><button class="secondary tal47-reset" data-act="resetTalents" '+(!canChangeTalents(c)||c.catchupSeconds||!spent||c.gold<cost?'disabled':'')+'>Redistribuir<small>'+nf(cost)+' ouro</small></button></header><nav class="tal47-paths">'+c.talentTree.map((p,i)=>{const color=theme.colors[i]||theme.accent;return '<button type="button" data-path61="'+i+'" data-tal47-path="'+i+'" aria-pressed="'+(talentPath61===i)+'" data-node-color="'+color+'"><span class="tal47-symbol">'+skillIcon63(theme.icons[i]||'arcane',color)+'</span><span><b>'+esc(theme.paths[i]||p.name)+'</b><small>'+esc(theme.focus[i]||'Especialização avançada')+'</small><small>'+p.nodes.reduce((s,n)=>s+n.rank,0)+' pontos</small></span></button>';}).join('')+'</nav><div class="tal47-tools"><nav>'+[['all','Todos'],['active','Ativas'],['passive','Passivas'],['ready','Disponíveis'],['learned','Aprendidos']].map(([k,label])=>'<button type="button" data-tfilter62="'+k+'" data-tal47-filter="'+k+'" aria-pressed="'+(talentFilter61===k)+'">'+label+'</button>').join('')+'</nav></div><div class="tal47-work"><section class="tal47-tree"><header><h3>'+esc(theme.paths[talentPath61]||path.name)+'</h3><small>'+visible.length+'/'+path.nodes.length+' talentos</small></header><div class="tal47-legend"><span>Disponível</span><span>Investido</span><span>Bloqueado</span></div><div class="tal47-grid"><svg class="tal47-edges" aria-hidden="true"></svg>'+[...groups].sort((a,b)=>a[0]-b[0]).map(([d,nodes])=>'<div class="tal47-tier"><small>ETAPA '+(d+1)+'</small><div>'+nodes.map(tile).join('')+'</div></div>').join('')+'</div></section><aside class="tal47-details codex62-detail">'+detail+'</aside></div><p class="tal47-foot">Saldo: '+nf(c.gold)+' ouro · Maestria de combate '+c.skill+' · Ajustes na cidade e em combate.</p><h3>Ascensão</h3><p>Nv. 16, maestria 5, dungeon e boss de Valdren.</p>'+(c.subclass!=null?'<b>'+esc(c.subclasses[c.subclass])+'</b>':c.subclasses.map((n,i)=>'<button data-act="trial" data-id="'+i+'" '+(!c.trialReady||c.activity?'disabled':'')+'>'+esc(n)+'</button>').join(' '))+'</div></div>';}
 const elementNames={physical:'Físico',fire:'Fogo',ice:'Gelo',shock:'Elétrico',arcane:'Arcano',holy:'Sagrado',dark:'Sombrio',poison:'Veneno',bleed:'Sangramento'};
-function itemDetails(i){const d=i.data||{},c=data.character,r=d.relic!=null?c.relicCatalog[d.relic]:null;return '<details class="item53-details"><summary>Detalhes</summary>'+(r?'<b>'+esc(r.effect)+'</b>':'')+(Number.isFinite(d.materialQuality)?'<p>Qualidade dos materiais '+d.materialQuality.toLocaleString('pt-BR',{maximumFractionDigits:2})+'/4</p>':'')+'<p>'+esc(voc[d.vocation]||'Todas as vocações')+' · Refino '+(d.refine||0)+' · Runas '+(d.runes?.length||0)+'/'+(d.sockets||0)+'</p><p>'+Object.entries(d.mods||{}).map(([k,v])=>esc(itemStatName(k)+' '+itemStatValue(k,v))).join(' · ')+'</p><p>'+[d.enchant?'Resistência '+elementNames[d.enchant]:null,d.corrupt?'Corrupção '+({power:'Poder',ward:'Proteção',scar:'Cicatriz'}[d.corrupt]):null,d.awake?'Desperto':null].filter(Boolean).map(esc).join(' · ')+'</p></details>';}
+function equipmentSockets(d,c){
+ const runes=d.runes||[],count=Math.max(d.sockets||0,runes.length);
+ if(!count)return '';
+ const sockets=Array.from({length:count},(_,i)=>{
+  const id=runes[i],rune=c.runeCatalog?.[id],position='Encaixe '+(i+1);
+  return {label:position+': '+(id?rune?.name||'Runa':'vazio'),filled:!!id,rune};
+ });
+ return '<h4>Encaixes <span>'+runes.filter(Boolean).length+' / '+count+'</span></h4><ol class="item-tooltip-sockets">'+sockets.map(({label,filled,rune})=>
+  '<li aria-label="'+esc(label)+'"><span aria-hidden="true" class="item-tooltip-socket'+(filled?' filled rarity61-'+(rune?.rarity??0):'')+'"></span></li>'
+ ).join('')+'</ol>'+sockets.filter(socket=>socket.filled).map(({label,rune})=>
+  '<div class="item-tooltip-rune rarity61-'+(rune?.rarity??0)+'">'+runeIcon(rune)+'<strong>'+esc(label)+'</strong>'+(rune?.desc?'<p>'+esc(rune.desc)+'</p>':'')+'</div>'
+ ).join('');
+}
+function itemDetails(i){
+ const d=i.data||{},c=data.character,relic=c.relicCatalog?.[d.relic];
+ const attributes=Object.entries(d.mods||{}).filter(([,value])=>Number.isFinite(value)&&value!==0)
+  .map(([key,value])=>[itemStatName(key),itemStatValue(key,value)]);
+ return '<details class="item53-details rarity61-'+i.rarity+'"><summary>Detalhes</summary>'+
+  tooltipRows([['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:'Sem refino'],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null]])+
+  (attributes.length?'<h4>Atributos</h4>'+tooltipRows(attributes):'')+
+  tooltipEffects('Efeitos especiais',[
+   ['Relíquia',relic?.effect],
+   ['Encantamento',d.enchant?'Resistência a '+elementNames[d.enchant]+'.':null],
+   ['Despertar',d.awake?'Aumenta a potência em 4%.':null],
+   ['Corrupção',({power:'Aumenta o dano em 3,5%.',ward:'Aumenta as resistências em 2,5 pontos percentuais.',scar:'Cicatriz sem bônus.'})[d.corrupt]]
+  ].filter(([,description])=>description))+equipmentSockets(d,c)+'</details>';
+}
 function advancedServices(i,c){const q=i.advancedQuotes,d=i.data;if(!q)return '';const btn=(a,n)=>'<button data-act="'+a+'" data-id="'+esc(i.id)+'" '+(!q[a].allowed||c.activity?'disabled':'')+'>'+n+' · '+nf(q[a].cost)+' ◈</button><small>'+Object.entries(q[a].req).map(([k,n])=>esc(materialLabel(k,c))+' '+(c.materials[k]||0)+'/'+n).join(' · ')+'</small>';return '<details><summary>Encantamento, despertar e corrupção</summary><label>Resistência<select data-element53>'+options(elementNames,d.enchant)+'</select></label>'+btn('enchant','Encantar')+btn('awaken',d.awake?'Desperto':'Despertar')+btn('addSocket','Abrir encaixe')+btn('reroll','Recalibrar último atributo')+btn('corrupt',d.corrupt?'Corrompido':'Corromper')+'<p class="muted">Corrupção única: +3,5% dano, +2,5 p.p. resistências ou cicatriz sem bônus. Despertar: +4% potência.</p></details>';}
 function gearServices(){const c=data.character,stock=Object.entries(c.runeStock||{}).filter(([k,n])=>n>0);const req=q=>Object.entries(q.req).map(([k,n])=>esc(materialLabel(k,c))+' '+(c.materials[k]||0)+'/'+n).join(' · ');return '<section><h3>Melhorias e runas</h3><p>Serviços na cidade. Aprimoramento garantido até +10, refino até III. Remover runa a destrói.</p>'+data.items.filter(i=>!i.starter&&!i.escrow).map(i=>{const d=i.data,q=i.upgradeQuote,r=i.refineQuote;return '<article><b>'+label(i)+'</b>'+itemDetails(i)+advancedServices(i,c)+'<p>Refino '+d.refine+'/3 · Encaixes '+d.runes.length+'/'+d.sockets+'</p><p class="muted">'+Object.entries(d.mods).map(([k,v])=>esc(itemStatName(k)+' '+itemStatValue(k,v))).join(' · ')+'</p><div class="row"><button data-act="upgrade" data-id="'+esc(i.id)+'" '+(!q.allowed||c.activity?'disabled':'')+'>Aprimorar · '+nf(q.cost)+' ◈</button><button data-act="refine" data-id="'+esc(i.id)+'" '+(!r.allowed||c.activity?'disabled':'')+'>Refinar · '+nf(r.cost)+' ◈</button></div><small>'+req(q)+'</small>'+ (r.allowed?'<p class="muted">Refino: '+req(r)+'</p>':'')+d.runes.map((k,j)=>'<div class="row"><span>'+esc(c.runeCatalog[k]?.name||k)+'</span><button data-act="removeRune" data-id="'+esc(i.id)+'" data-index="'+j+'" '+(c.activity?'disabled':'')+'>Destruir</button></div>').join('')+stock.filter(([k])=>c.runeCatalog[k]?.slot===i.slot).map(([k,n])=>'<div class="row"><span>'+esc(c.runeCatalog[k].name)+' ×'+n+'</span><button data-act="socketRune" data-id="'+esc(i.id)+'" data-rune="'+esc(k)+'" '+(c.activity||d.runes.length>=d.sockets?'disabled':'')+'>Inserir · 25 ◈</button></div>').join('')+'</article>';}).join('')+'<h3>Runas guardadas</h3>'+ (stock.map(([k,n])=>'<p>'+esc(c.runeCatalog[k]?.name||k)+' ×'+n+'</p>').join('')||'<p class="muted">Chefes finais de dungeons podem conceder runas (11%).</p>')+'</section>';}
 const craftQuoteRequests=new WeakMap();
@@ -828,12 +854,6 @@ function itemTooltip(i,c,other=null,comparisonEquipped=false){
   ['Despertar',d.awake?'Aumenta a potência em 4%.':null],
   ['Corrupção',corruption[d.corrupt]]
  ].filter(([,description])=>description);
- const runes=d.runes||[],socketCount=Math.max(d.sockets||0,runes.length);
- const sockets=Array.from({length:socketCount},(_,index)=>{
-  const id=runes[index],rune=c.runeCatalog?.[id];
-  const label=id?'Encaixe '+(index+1)+': '+(rune?.name||'Runa'): 'Encaixe '+(index+1)+': vazio';
-  return {label,filled:!!id,rune};
- });
  const own=d.mods||{},against=other?.data?.mods||{};
  const keys=new Set([...Object.keys(own),...Object.keys(against)]);
  const attributes=[...keys].map(k=>{
@@ -844,12 +864,7 @@ function itemTooltip(i,c,other=null,comparisonEquipped=false){
   tooltipRows([['Tipo',slots[i.slot]],['Nível necessário',i.level],['Nível do item',i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:null],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
   (attributes.length?'<h4>Atributos</h4>'+tooltipRows(attributes):'')+
   tooltipEffects('Efeitos especiais',effects)+
-  (socketCount?'<h4>Encaixes <span>'+runes.length+' / '+socketCount+'</span></h4><ol class="item-tooltip-sockets">'+sockets.map(socket=>
-   '<li aria-label="'+esc(socket.label)+'"><span aria-hidden="true" class="item-tooltip-socket'+(socket.filled?' filled rarity61-'+(socket.rune?.rarity??0):'')+'"></span></li>'
-  ).join('')+'</ol>'+sockets.filter(socket=>socket.filled).map(socket=>
-   '<div class="item-tooltip-rune rarity61-'+(socket.rune?.rarity??0)+'">'+runeIcon(socket.rune)+'<strong>'+esc(socket.label)+'</strong>'+
-   (socket.rune?.desc?'<p>'+esc(socket.rune.desc)+'</p>':'')+'</div>'
-  ).join(''):'');
+  equipmentSockets(d,c);
 }
 function potionTooltip(id,p,c){
  const instant=p.kind==='hp'||p.kind==='mp',life=p.kind==='hp',target=life?'PV':'PM';

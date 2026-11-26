@@ -232,6 +232,13 @@ try{
  assert.equal(await socketedTip.locator('.item-tooltip-socket').count(),2);
  assert.equal(await socketedTip.locator('.item-tooltip-socket.filled').count(),1);
  await page.keyboard.press('Escape');
+ await socketedItem.click();
+ const itemDetails=bag.locator('.stock19-details .item53-details');
+ await itemDetails.locator('summary').click();
+ await itemDetails.getByText('Regeneração de mana',{exact:true}).waitFor();
+ await itemDetails.getByText('+0,5 PM/s',{exact:true}).waitFor();
+ assert.equal(await itemDetails.locator('.item-tooltip-socket').count(),2);
+ assert.equal(await itemDetails.locator('.item-tooltip-socket.filled').count(),1);
  await bag.locator('[data-bagtab66=mat]').click();
  const ore=bag.locator('[data-material-tip="mining:0:2"]');
  assert.equal(await rarityColor(ore),'#7aaff0');
