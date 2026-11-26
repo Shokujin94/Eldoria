@@ -118,24 +118,47 @@ dropNotice.hidden=true;
 dropNotice.setAttribute('role','status');
 $('world52').append(dropNotice);
 let seenDrop=null;
+const pendingDrops=[];
+function drawDropCards(){
+ while(pendingDrops.length&&dropNotice.childElementCount<4){
+  const {item,c}=pendingDrops.shift(),rank=item.rarity??0,highlight=item.relic!=null||rank>=c.loot.notify;
+  let title=item.name,icon,type=item.level?'Equipamento · Nv. '+item.level:'Equipamento';
+  if(item.kind==='material'){
+   const material=materialInfo(item.key,c);
+   title=material.name;
+   icon=material.src?'<img src="'+esc(material.src)+'" alt="">':'';
+   type='Material · T'+(material.zone+1);
+  }else if(item.kind==='rune'){
+   const rune=c.runeCatalog[item.key];
+   title=rune?.name||'Runa';
+   icon=runeIcon(rune);
+   type='Runa';
+  }else if(item.kind==='potion'){
+   const potion=c.potionsCatalog[item.key];
+   title=potion?.name||'Poção';
+   icon=potionIcon(item.key,potion||{kind:'hp'});
+   type='Consumível';
+  }else icon=itemIcon({...item,data:{vocation:item.vocation,relic:item.relic}});
+  const details=[item.value==null?null:'Valor de venda · '+nf(item.value)+' ◈',item.chance==null?null:
+   'Chance de '+(item.relic!=null?'relíquia':item.kind==='potion'?'poção':'raridade e slot')+' · '+new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:3}).format(item.chance)].filter(Boolean);
+  const card=document.createElement('div');
+  card.className='drop-card rarity61-'+rank+(highlight?' drop-highlight':'');
+  card.innerHTML='<div class="drop-icon">'+icon+'</div><div><small>'+esc(rar[rank]+' · '+type)+'</small><strong>'+esc(title)+'</strong>'+details.map(detail=>'<small>'+esc(detail)+'</small>').join('')+'</div>';
+  dropNotice.append(card);
+  setTimeout(()=>{card.remove();drawDropCards();},highlight?6500:pendingDrops.length>=4?1400:2800);
+ }
+ dropNotice.hidden=!dropNotice.childElementCount;
+}
 function showDropNotice(c){
- if(!c){seenDrop=null;dropNotice.replaceChildren();dropNotice.hidden=true;return;}
+ if(!c){seenDrop=null;pendingDrops.length=0;dropNotice.replaceChildren();dropNotice.hidden=true;return;}
  const latest=c.lastLoot?.seq||0;
  if(seenDrop===null||c.catchupSeconds||c.activity?.offlineUntil){seenDrop=latest;return;}
  if(latest<=seenDrop)return;
  const drops=(c.recentLoot||[]).filter(i=>i.seq>seenDrop);
  if(!drops.some(i=>i.seq===latest))drops.push(c.lastLoot);
  seenDrop=latest;
- for(const item of drops.filter(i=>i?.slot).slice(-3)){
-  const detail=item.chance==null?'':'<small>Chance de '+(item.relic!=null?'relíquia':'raridade e slot')+' · '+new Intl.NumberFormat('pt-BR',{style:'percent',maximumFractionDigits:3}).format(item.chance)+'</small>';
-  const card=document.createElement('div');
-  card.className='drop-card rarity61-'+item.rarity;
-  card.innerHTML=itemIcon({...item,data:{vocation:item.vocation,relic:item.relic}})+'<div><small>'+esc(rar[item.rarity])+'</small><strong>'+esc(item.name)+'</strong><small>Valor de venda · '+nf(item.value)+' ◈</small>'+detail+'</div>';
-  dropNotice.prepend(card);
-  if(dropNotice.childElementCount>3)dropNotice.lastElementChild.remove();
-  setTimeout(()=>{card.remove();dropNotice.hidden=!dropNotice.childElementCount;},6500);
- }
- dropNotice.hidden=!dropNotice.childElementCount;
+ for(const item of drops)if(item?.slot||item?.kind)pendingDrops.push({item,c});
+ drawDropCards();
 }
 function display(){const c=data?.character;document.body.classList.toggle('playing61',!!c);document.body.classList.toggle('play14',!!c);$('login').hidden=!!token;$('create').hidden=!token||!!c;$('game').hidden=!token||!c;$('logout').hidden=!token;$('security54').hidden=!token;if(!c){showDropNotice(null);gatherChoice={prof:'mining',zone:0};$('offlineReturn').hidden=true;editHud(false);closeAll65();selectedBag64=null;marketTab65='offers';gearSlot66='weapon';gearTab66='gear';bagTab66='equip';dungeonZone66=0;analyzerTab66='summary';window.eldoria52Scene?.apply(null);return;}window.eldoria52Scene?.apply(c);showOfflineReturn(c);showDropNotice(c);hud52(c);renderActiveEffects(c);applyHud();$('gold63').textContent=nf(c.gold)+' ◈ ouro';$('activity63').textContent=c.activity?.paused?'Atividade pausada':c.activity?'Em atividade':'Zona segura · Vespera';$('character63').textContent='Nível '+c.level;$('hero').innerHTML='<div class="hero61-identity"><img src="'+esc(window.eldoria52Art.hero[c.cls][0])+'" alt=""><div><small>'+esc(voc[c.cls])+'</small><h2>'+esc(c.name)+' · Nv. '+c.level+'</h2><span>XP '+nf(c.xp)+' · PV '+nf(Math.floor(c.hp))+'/'+nf(c.stats.hp)+' · PM '+nf(Math.floor(c.mana))+'/'+nf(c.stats.mana)+'</span></div></div><div><small>PODER DE COMBATE</small><h2>'+nf(c.power)+'</h2><b>'+nf(c.gold)+' ◈</b></div>';const tracker=$('tracker56'),m=c.creatureCatalog?.find(x=>x.key===c.trackCreature),n=m?c.bestiary[m.key]||0:0,goal=[1,50,250,1000,5000,20000].find(x=>x>n)||20000;tracker.hidden=!m;if(m)tracker.innerHTML='<small>MAESTRIA DE CRIATURAS</small><b>'+esc(n?m.name:'Criatura não registrada')+'</b><progress max="'+goal+'" value="'+Math.min(n,goal)+'"></progress><small>'+nf(n)+' / '+nf(goal)+'</small>';const pending=$('catchup55');pending.hidden=!c.catchupSeconds;pending.textContent=c.catchupSeconds?'Sincronizando progresso offline: '+Math.ceil(c.catchupSeconds/60)+' min de atividade pendente. Aguarde a conclusão antes de realizar ações.':'';}
 const itemArt=i=>{const d=i.data||{},a=window.eldoria52Art;if(d.relic!=null)return a.relic[d.relic];const cl=d.vocation||data.character.cls;return a.gear[(cl==='necro'?'mage':cl)+':'+(i.tier||0)+':'+i.slot]?.src;};
@@ -359,7 +382,7 @@ function professionMastery(c){
 function professions(){const c=data.character;return '<section id="gatheringStatus">'+gatheringStatus(c)+'</section>'+gatherTravel(c)+'<div id="professionMastery" class="grid">'+professionMastery(c)+'</div><section><h3>Materiais</h3>'+Object.entries(c.materials).filter(([k,v])=>v>0).map(([k,v])=>'<article class="item"'+materialTarget(k)+'><span>'+esc(materialLabel(k,c))+'</span><b>×'+nf(v)+'</b></article>').join('')+'</section>';}
 function vaultPanel(){const c=data.character,btn=(a,i,t)=>'<button data-act="'+a+'" data-id="'+esc(i.id)+'" '+(c.activity||i.equipped||i.escrow||i.starter?'disabled':'')+'>'+t+'</button>';return '<h2>Orven · Depósito</h2><p>'+data.vault.length+'/500 itens · Mochila '+data.items.length+'/120</p><h3>Mochila</h3>'+data.items.filter(i=>!i.starter&&!i.equipped&&!i.escrow).map(i=>'<article class="item"><span>'+label(i)+itemDetails(i)+'</span>'+btn('deposit',i,'Depositar')+'</article>').join('')+'<h3>Depositados</h3>'+data.vault.map(i=>'<article class="item"><span>'+label(i)+itemDetails(i)+'</span>'+btn('withdraw',i,'Retirar')+'</article>').join('');}
 function analysisPanel(){const c=data.character,card=a=>'<article><b>'+esc(regions[a.z])+' · '+esc(a.mode)+(a.reason?' · '+esc(a.reason):'')+'</b><p>'+nf(a.seconds)+' s · '+nf(a.offlineSeconds||0)+' s offline · '+nf(a.kills)+' abates · '+nf(a.items)+' equipamentos</p><p>'+nf(a.xp)+' XP · '+nf(a.gold)+' ouro bruto · '+(a.itemValue!==undefined&&a.consumableCost!==undefined?nf(a.gold+a.itemValue-a.consumableCost)+' lucro estimado · ':'')+nf(a.procs)+' golpes fortalecidos</p><p>DPS registrado '+nf(Math.round(analyzerDamage(a)/Math.max(1,a.seconds)))+' · Perda líquida de PV '+nf(Math.round(a.received))+'</p></article>';return '<h3>Analisador de combate</h3>'+(c.analyzer?card(c.analyzer):'<p>Nenhuma sessão ativa.</p>')+'<h3>Últimas 20 sessões</h3>'+ (c.history.map(card).join('')||'<p>Sem histórico.</p>');}
-function lootPanel(){const c=data.character,opts=Object.fromEntries(rar.map((n,i)=>[i,n]));return '<section><h3>Filtros de loot</h3><p>Proteção ao receber item e venda automática somente no retorno à cidade. Relíquias e itens de perfis são preservados.</p><form id="loot58"><label>Proteger a partir de<select name="protect">'+options({...opts,5:'Nunca (exceto relíquias)'},c.loot.protect)+'</select></label><label>Vender até<select name="sell">'+options({'-1':'Desativado',...opts},c.loot.sell)+'</select></label><label>Notificar a partir de<select name="notify">'+options({...opts,5:'Nunca (exceto relíquias)'},c.loot.notify)+'</select></label><button '+(c.activity?'disabled':'')+'>Salvar filtros</button></form>'+(c.lastAutoSale?'<p>Última venda: '+nf(c.lastAutoSale.items)+' itens · '+nf(c.lastAutoSale.gold)+' ouro</p>':'')+'<h3>Perfis de personagem</h3><p>Três perfis de atributos, talentos, equipamentos, rotação e poções. Redistribuição tem custo normal de reset.</p>'+[1,2,3].map(i=>'<article><b>Perfil '+i+' · '+(c.presets[i]?'Nv. '+c.presets[i].level:'Vazio')+'</b><div class="row">'+[['presetSave','Salvar'],['presetLoad','Restaurar'],['presetDelete','Excluir']].map(([a,n])=>'<button data-act="'+a+'" data-id="'+i+'" '+(c.activity||a!=='presetSave'&&!c.presets[i]?'disabled':'')+'>'+n+'</button>').join('')+'</div></article>').join('')+'</section>';}
+function lootPanel(){const c=data.character,opts=Object.fromEntries(rar.map((n,i)=>[i,n]));return '<section><h3>Filtros de loot</h3><p>Proteção ao receber item e venda automática somente no retorno à cidade. Relíquias e itens de perfis são preservados.</p><form id="loot58"><label>Proteger a partir de<select name="protect">'+options({...opts,5:'Nunca (exceto relíquias)'},c.loot.protect)+'</select></label><label>Vender até<select name="sell">'+options({'-1':'Desativado',...opts},c.loot.sell)+'</select></label><label>Destacar avisos a partir de<select name="notify">'+options({...opts,5:'Só relíquias'},c.loot.notify)+'</select></label><button '+(c.activity?'disabled':'')+'>Salvar filtros</button></form>'+(c.lastAutoSale?'<p>Última venda: '+nf(c.lastAutoSale.items)+' itens · '+nf(c.lastAutoSale.gold)+' ouro</p>':'')+'<h3>Perfis de personagem</h3><p>Três perfis de atributos, talentos, equipamentos, rotação e poções. Redistribuição tem custo normal de reset.</p>'+[1,2,3].map(i=>'<article><b>Perfil '+i+' · '+(c.presets[i]?'Nv. '+c.presets[i].level:'Vazio')+'</b><div class="row">'+[['presetSave','Salvar'],['presetLoad','Restaurar'],['presetDelete','Excluir']].map(([a,n])=>'<button data-act="'+a+'" data-id="'+i+'" '+(c.activity||a!=='presetSave'&&!c.presets[i]?'disabled':'')+'>'+n+'</button>').join('')+'</div></article>').join('')+'</section>';}
 function rareRecipes(){const c=data.character,learned=Object.keys(c.recipes).filter(k=>c.recipes[k]),lo=1+10*Number(learned[0]);return '<section><h3>Receitas raras de chefe</h3><p>8% de chance de aprendizado por chefe. Joia épica: 1 material de chefe, 4 minérios raros, 150 × tier em ouro; requer amuleto anterior no tier 2+. A falha preserva a peça base.</p>'+(learned.length?'<form id="rare58"><label>Região<select name="zone">'+options(Object.fromEntries(learned.map(z=>[z,regions[z]])))+'</select></label><label>Nível<input type="number" name="level" value="'+lo+'" min="'+lo+'" max="'+(lo+4)+'" required></label><label>Peça base<select name="baseId" '+(lo>1?'required':'')+'>'+craftBaseOptions((lo-1)/10,'accessory')+'</select></label><div data-craft-quote></div><button '+(c.activity?'disabled':'')+'>Forjar joia épica</button></form>':'<p>Nenhuma receita aprendida.</p>')+'</section>';}
 function skinningPanel(c){
  const rank=c.skinRank||0,xp=c.skinXP||0,goal=(rank+1)*50;

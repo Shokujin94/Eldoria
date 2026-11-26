@@ -119,8 +119,8 @@ try{
   save.materials['mining:0:2']=2;
   save.runeStock.r30_weapon_might_2=1;
   save.rareEvent={z:0,k:0};
-  save.lastLoot={seq:2,name:'Item de teste do saque',slot:'weapon',tier:0,vocation:'necro',rarity:3,value:42,chance:.005};
-  save.recentLoot=[{...save.lastLoot,seq:1,name:'Relíquia de teste',rarity:4},save.lastLoot];
+  save.lastLoot={seq:5,name:'Item de teste do saque',slot:'weapon',tier:0,vocation:'necro',rarity:3,value:42,chance:.005};
+  save.recentLoot=[{...save.lastLoot,seq:1,name:'Relíquia de teste',rarity:4},{seq:2,kind:'material',key:'mob:0:0',rarity:0},{seq:3,kind:'rune',key:'r30_weapon_might_2',rarity:2},{seq:4,kind:'potion',key:'hp1',rarity:0},save.lastLoot];
   fixture.prepare('UPDATE characters SET data=?,gold=25 WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
   for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:slot==='head'?{r30regen:5}:{},quality:0,...(slot==='head'?{sockets:2,runes:['r30_head_memory_2'],corrupt:'power'}:{})}));
@@ -131,7 +131,8 @@ try{
  await page.locator('[data-tab=cons]').click();
  await page.locator('#auto-hp').waitFor({state:'attached'});
  assert.equal(await page.locator('.cons-item11').count(),12);
- const dropCard=page.locator('#drop-notice .rarity61-3');
+ await page.locator('#drop-notice .rarity61-0:not(.drop-highlight)').getByText('Poção de vida menor',{exact:true}).waitFor();
+ const dropCard=page.locator('#drop-notice .rarity61-3.drop-highlight');
  await dropCard.getByText('Item de teste do saque',{exact:true}).waitFor();
  await page.locator('#drop-notice .rarity61-4').getByText('Relíquia de teste').waitFor();
  assert.match(await dropCard.innerText(),/42/);

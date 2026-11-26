@@ -806,3 +806,8 @@ body.play14 #tabs{box-shadow:0 6px 18px #000b,inset 0 1px #d9ac702c}
 .item53-details[open]{padding:9px;border:1px solid var(--rar61,#746047);border-radius:6px;background:#18171d}
 .item53-details h4{margin:9px 0 4px;color:#ecd6ab}
 .item53-details .detail-tooltip-rows{margin:5px 0}
+#drop-notice .drop-icon{display:grid;place-items:center;flex:0 0 37px;width:37px;height:37px}
+#drop-notice .drop-icon :is(img,svg){width:100%;height:100%;object-fit:contain}
+#drop-notice .drop-card:not(.drop-highlight){padding:5px 9px;background:#17151e;box-shadow:0 3px 8px #0008}
+#drop-notice .drop-card:not(.drop-highlight) strong{font-size:14px}
+#drop-notice .drop-highlight{border-width:2px}

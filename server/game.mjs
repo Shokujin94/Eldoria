@@ -144,7 +144,11 @@ export function game(db,{clock=Date.now,random=rng}={}){
  const presetRefs=s=>new Set(Object.values(s.presets).flatMap(p=>Object.values(p.equipment||{})));
  const craftBaseAvailable=(i,cls,refs)=>!i.equipped&&!i.escrow&&!i.starter&&!i.data.locked&&
   i.data.relic==null&&!refs.has(i.id)&&(!i.data.vocation||i.data.vocation===cls);
- function recordDrop(id,s,uid,rarity,relic=false,chance=null){const i=items(id).find(x=>x.id===uid);if(!i)return;s.collection[i.slot+':'+i.tier+':'+rarity]=true;if(relic)s.collection['relic:'+i.tier]=true;if(relic||rarity>=s.loot.protect){i.data.locked=true;db.prepare('UPDATE items SET data=? WHERE id=? AND owner=?').run(JSON.stringify(i.data),uid,id);}if(rarity>=s.loot.notify||relic){s.lastLoot={name:i.name,slot:i.slot,tier:i.tier,vocation:i.data.vocation,relic:i.data.relic,rarity,value:equipment.npcValue(i),chance,seq:(s.lastLoot?.seq||0)+1};s.recentLoot=[...(s.recentLoot||[]).slice(-7),s.lastLoot];}if(s.analyzer){s.analyzer.items++;const a=s.analyzer,value=equipment.npcValue(i);
+ function queueLoot(s,details){
+  s.lastLoot={...details,seq:(s.lastLoot?.seq||0)+1};
+  s.recentLoot=[...(s.recentLoot||[]).slice(-31),s.lastLoot];
+ }
+ function recordDrop(id,s,uid,rarity,relic=false,chance=null){const i=items(id).find(x=>x.id===uid);if(!i)return;s.collection[i.slot+':'+i.tier+':'+rarity]=true;if(relic)s.collection['relic:'+i.tier]=true;if(relic||rarity>=s.loot.protect){i.data.locked=true;db.prepare('UPDATE items SET data=? WHERE id=? AND owner=?').run(JSON.stringify(i.data),uid,id);}if(i.source!=='craft')queueLoot(s,{name:i.name,slot:i.slot,tier:i.tier,level:i.level,vocation:i.data.vocation,relic:i.data.relic,rarity,value:equipment.npcValue(i),chance});if(s.analyzer){s.analyzer.items++;const a=s.analyzer,value=equipment.npcValue(i);
   if(a.itemValue!==undefined)a.itemValue+=value;
   if(a.drops){
    const drop={name:i.name,slot:i.slot,rarity,level:i.level,value};
@@ -171,7 +175,9 @@ export function game(db,{clock=Date.now,random=rng}={}){
   const before=s.materials[key]||0;
   mat(s,key,1);
   const a=s.analyzer;
-  if(!a?.materialDrops||s.materials[key]===before)return;
+  if(s.materials[key]===before)return;
+  queueLoot(s,{kind:'material',key,rarity:key.startsWith('boss:')?3:Number(key.split(':')[2]),value:content.materialSale(key)});
+  if(!a?.materialDrops)return;
   a.materialDrops[key]=(a.materialDrops[key]||0)+1;
   a.itemValue+=content.materialSale(key);
  }
@@ -202,7 +208,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
  if(a.mode==='trial'){s.subclass=a.trial;s.activity=null;delete s.clsForTrial;combat.clear(s);finishAnalysis(s,'Ascensão');autoSell(id,s);s.hp=stats(id,r,s).hp;s.lastEvent='Ascensão conquistada · '+combat.subclassNames(r.cls)[s.subclass];return;}
   e.gold+=Math.floor(e.gold*Math.min(.10,(s.legacy.fortune||0)*.005));
   s.kills++;if(s.analyzer){s.analyzer.kills++;s.analyzer.xp+=e.xp;s.analyzer.gold+=e.gold;if(s.analyzer.enemies)s.analyzer.enemies[e.name]=(s.analyzer.enemies[e.name]||0)+1;}const key=boss?'boss:'+a.z:a.z+':'+a.index;s.bestiary[key]=Math.min(MAX,(s.bestiary[key]||0)+1);if(s.level>=100)s.legacyXP=Math.min(MAX,s.legacyXP+Math.max(1,Math.floor(e.xp/10)));const levelUp=earnXP(s,e.xp);credit(id,e.gold);s.skill??=1;s.skillXp??=0;s.skillXp+=boss?5:2;while(s.skill<100&&s.skillXp>=content.skillXpNeed(s.skill)){s.skillXp-=content.skillXpNeed(s.skill);s.skill++;}if(s.skill===100)s.skillXp=0;
-  if(a.mode==='hunt'&&!s.rareEvent&&random()<.003)s.rareEvent={z:a.z,k:Math.floor(random()*content.rareEvents.length)};if(boss){recordCombatMaterial(s,'boss:'+a.z);if(!s.recipes[a.z]&&random()<.08)s.recipes[a.z]=true;}else if(random()<.8)recordCombatMaterial(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random));if(a.mode==='dungeon'&&a.wave===4&&random()<.11){const key=equipment.runeDrop(a.z,random);s.runeStock[key]=(s.runeStock[key]||0)+1;if(s.analyzer?.runeDrops){s.analyzer.runeDrops[key]=(s.analyzer.runeDrops[key]||0)+1;s.analyzer.itemValue+=equipment.runes[key].price;}s.lastRune={key,seq:(s.lastRune?.seq||0)+1};}
+  if(a.mode==='hunt'&&!s.rareEvent&&random()<.003)s.rareEvent={z:a.z,k:Math.floor(random()*content.rareEvents.length)};if(boss){recordCombatMaterial(s,'boss:'+a.z);if(!s.recipes[a.z]&&random()<.08)s.recipes[a.z]=true;}else if(random()<.8)recordCombatMaterial(s,'mob:'+a.z+':'+content.rollOdds(content.materialOdds[a.index],random));if(a.mode==='dungeon'&&a.wave===4&&random()<.11){const key=equipment.runeDrop(a.z,random);s.runeStock[key]=(s.runeStock[key]||0)+1;if(s.analyzer?.runeDrops){s.analyzer.runeDrops[key]=(s.analyzer.runeDrops[key]||0)+1;s.analyzer.itemValue+=equipment.runes[key].price;}s.lastRune={key,seq:(s.lastRune?.seq||0)+1};queueLoot(s,{kind:'rune',key,rarity:equipment.runes[key].rarity});}
   const source=a.mode==='dungeon'?'dungeon':boss?a.mode:'hunt';
   const dropChance=boss?1:Math.min(1,content.dropRates[a.index]*combat.affixDropMultiplier(a.affixes)*(a.mode==='hunt'&&s.elixirs.fortune>0?1.15:1));
   let found=false;
@@ -224,6 +230,7 @@ export function game(db,{clock=Date.now,random=rng}={}){
   const potionFound=potionStock<999&&random()<.07;
   if(potionFound){
    s.potions.hp1=potionStock+1;
+   queueLoot(s,{kind:'potion',key:'hp1',rarity:0,chance:.07});
    if(s.analyzer?.potionsFound!==undefined)s.analyzer.potionsFound++;
   }
   const h=stats(id,r,s).hp;s.hp=levelUp?h:Math.min(h,s.hp+Math.ceil(h*(a.z===0?.04:.025)));s.lastEvent=e.name+' derrotado · +'+e.xp+' XP · +'+e.gold+' ouro'+(found?' · Equipamento encontrado.':'.')+(potionFound?' · Poção de vida menor encontrada.':'')+(skinFound?' · Material extra de esfolamento.':'');
