@@ -384,8 +384,15 @@ try{
  const soldId=await sale.getAttribute('data-id');
  await trader.locator('[data-merchant-item]').first().hover();
  await page.locator('#tal47-tip').getByText('Nível do item',{exact:true}).waitFor();
- page.once('dialog',dialog=>dialog.accept());
  await sale.click();
+ const confirmation=page.locator('#game-confirmation[open]');
+ await confirmation.waitFor();
+ await confirmation.getByRole('button',{name:'Cancelar',exact:true}).click();
+ await confirmation.waitFor({state:'hidden'});
+ assert.equal(await sale.isVisible(),true);
+ await sale.click();
+ await confirmation.getByRole('button',{name:'Confirmar',exact:true}).click();
+ await trader.locator('[data-act=sellItem][data-id="'+soldId+'"]').waitFor({state:'hidden'});
  await trader.locator('[data-merchant-tab=buyback]').click();
  await trader.locator('[data-act=buybackItem][data-id="'+soldId+'"]').click();
  await trader.getByText('Nenhum item vendido nesta visita.').waitFor();

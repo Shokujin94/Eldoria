@@ -544,3 +544,10 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #win-market .market-item{display:flex;align-items:center;gap:9px}
 #win-market .market-item small{display:block;color:var(--rar61)}
 #win-market .market-stock button{font-variant-numeric:tabular-nums}
+
+#game-confirmation{width:min(430px,calc(100% - 24px));padding:0;border:1px solid #bfa16b;border-radius:9px;background:linear-gradient(140deg,#25262d,#12141a 72%);color:#efe5d2;box-shadow:0 16px 50px #000b,inset 0 0 20px #ba96531c}
+#game-confirmation::backdrop{background:#08090cc2}
+#game-confirmation form{margin:0;padding:18px;border:0}
+#game-confirmation h3{font:400 23px "DM Serif Text",Georgia,serif;margin:0;color:#efd4a0}
+#game-confirmation p{font:400 13px/1.55 Inter,system-ui,sans-serif;margin:12px 0 18px;padding:10px;border:1px solid #cbb2743e;border-radius:5px;background:#0d1016a6}
+#game-confirmation .confirmation-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
