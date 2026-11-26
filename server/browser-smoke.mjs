@@ -116,7 +116,7 @@ try{
   save.lastLoot={seq:1,name:'Item de teste do saque',slot:'weapon',tier:0,vocation:'necro',rarity:3,value:42,chance:.005};
   fixture.prepare('UPDATE characters SET data=?,gold=25 WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
-  for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0,...(slot==='head'?{sockets:2,runes:['r30_head_memory_2'],corrupt:'power'}:{})}));
+  for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:slot==='head'?{r30regen:5}:{},quality:0,...(slot==='head'?{sockets:2,runes:['r30_head_memory_2'],corrupt:'power'}:{})}));
   fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
    .run('market-fixture',character.account,'Amuleto de teste','accessory','hunt',1,JSON.stringify({mods:{mana:1}}));
  }finally{fixture.close();}
@@ -206,6 +206,9 @@ try{
  await socketedItem.hover();
  const socketedTip=page.locator('#tal47-tip');
  await socketedTip.getByText('Aumenta o dano em 3,5%.',{exact:true}).waitFor();
+ await socketedTip.getByText('Regeneração de mana',{exact:true}).waitFor();
+ await socketedTip.getByText('+0,5 PM/s',{exact:true}).waitFor();
+ assert.equal(await socketedTip.getByText('r30regen',{exact:true}).count(),0);
  await socketedTip.getByText(/\+11 PM máximo/).waitFor();
  assert.equal(await socketedTip.locator('.item-tooltip-socket').count(),2);
  assert.equal(await socketedTip.locator('.item-tooltip-socket.filled').count(),1);
