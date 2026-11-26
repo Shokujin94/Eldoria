@@ -216,6 +216,7 @@ try{
  await bag.locator('[data-bagtab66=rune]').click();
  const rune=bag.locator('[data-rune-tip="r30_weapon_might_2"]');
  assert.equal(await rarityColor(rune),'#7aaff0');
+ assert.equal(await rune.locator('.rune-icon circle').count(),3);
  await rune.hover();
  await page.locator('#tal47-tip .detail-tooltip-rows').getByText('Encaixe',{exact:true}).waitFor();
  await page.locator('#tal47-tip .detail-tooltip-effects').getByText(/Dano base/).waitFor();

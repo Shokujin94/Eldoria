@@ -181,6 +181,28 @@ function materialLabel(key,c){
 function materialTarget(key){
  return ' tabindex="0" data-material-tip="'+esc(key)+'"';
 }
+const runeGlyphs={
+ bleed:'M12 5q12 13 0 14T12 5Z',stun:'M12 4v16m-8-8h16m-13-5 10 10m-10 0L17 7',
+ slow:'M8 6h8m-8 12h8M9 6v4l6 4v4m0-12v4l-6 4v4',expose:'M6 7l6-2 6 2v7l-6 5-6-5Zm7 1-3 4 4 1-3 4',
+ poison:'M6 12a6 6 0 1 1 12 0l-3 2v4H9v-4Zm4-1h.5m3 0h.5',
+ burn:'M12 4q9 8 4 14-8 4-10-4 0-4 4-6l1 4Z',
+ freeze:'M12 4v16m-7-12 14 8m-14 0 14-8m-10-1 3 3 3-3',shock:'M13 4l-7 9h5l-1 7 8-10h-5Z',
+ might:'M6 17L17 6l1 4-8 8m-4-5 5 5',memory:'M7 6h5l2 2 3-2v12l-3 2-2-2H7Zm7 2v12',
+ will:'M6 12q6-8 12 0-6 8-12 0Zm6-2v4',ward:'M6 6l6-2 6 2v7l-6 6-6-6Zm6 2v7',
+ vigor:'M5 12h4l2-5 2 9 2-4h4',barrier:'M6 18V8h3v4h6V8h3v10Zm4-6v6m4-6v6',
+ flux:'M6 9q3-5 6 0t6 0M6 15q3-5 6 0t6 0',focus:'M5 12h14m-7-7v14m-4-7a4 4 0 1 0 8 0 4 4 0 0 0-8 0',
+ rhythm:'M6 17l4-10 4 10 4-10',endurance:'M7 19l5-14 5 14M9 15h6',
+ balance:'M12 5v13M6 8h12M8 8l-2 6h4Zm8 0-2 6h4Z',evasion:'M6 15l4-3-4-3m7 8 5-5-5-5',
+ travel:'M6 7l5 5-5 5m7-10 5 5-5 5',verity:'M5 8l7 11 7-11-7-3Zm0 0h14',
+ learning:'M6 16l6-10 6 10-6 3Zm6-4v3',ritual:'M12 4l7 9-7 7-7-7Zm0 5 3 4-3 3-3-3Z',
+ grace:'M12 19l-6-6q-3-7 6-4 9-3 6 4Z'
+};
+function runeIcon(rune){
+ const rarity=rune?.rarity??0,color=tooltipRarity[rarity];
+ const pips=Array.from({length:rarity+1},(_,i)=>'<circle cx="'+(12+(i-rarity/2)*2.6)+'" cy="21" r=".7"/>').join('');
+ return '<svg class="rune-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1l8 5 2 8-4 6H6l-4-6 2-8Z" fill="'+color+'26" stroke="'+color+'"/>'+
+  '<path d="'+(runeGlyphs[rune?.family]||runeGlyphs.ritual)+'" fill="none" stroke="'+color+'" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/><g fill="'+color+'">'+pips+'</g></svg>';
+}
 function stock66(){const c=data.character;return '<div class="stock19-grid">'+(bagTab66==='mat'?Object.entries(c.materials).filter(([,n])=>n>0).map(([key,n])=>{
  const {name,src,grade}=materialInfo(key,c);
  return '<article class="stock19-slot material-slot rarity61-'+(Number.isInteger(grade)?grade:0)+'"'+materialTarget(key)+'>'+
@@ -189,7 +211,7 @@ function stock66(){const c=data.character;return '<div class="stock19-grid">'+(b
 }).join(''):Object.entries(c.runeStock).filter(([,n])=>n>0).map(([key,n])=>{
  const rune=c.runeCatalog[key];
  return '<article class="stock19-slot material-slot rarity61-'+(rune?.rarity??0)+'" tabindex="0" data-rune-tip="'+esc(key)+'">'+
-  skillIcon63('arcane')+'<span class="stock19-name">'+esc(rune?.name||key)+'</span><small>×'+nf(n)+'</small></article>';
+  runeIcon(rune)+'<span class="stock19-name">'+esc(rune?.name||key)+'</span><small>×'+nf(n)+'</small></article>';
 }).join(''))+'</div>';}
 function inventory66(){const nav='<nav class="gear46-tabs bag-nav19">'+[['equip','Equipamentos'],['mat','Materiais'],['rune','Runas']].map(([k,n])=>'<button class="secondary" data-bagtab66="'+k+'" aria-pressed="'+(bagTab66===k)+'">'+n+'</button>').join('')+'</nav>';return nav+(bagTab66==='equip'?inventory():'<div id="content-bag">'+stock66()+'</div>');}
 function analyzerDamage(a){
@@ -713,7 +735,7 @@ function itemTooltip(i,c,other=null,comparisonEquipped=false){
   (socketCount?'<h4>Encaixes <span>'+runes.length+' / '+socketCount+'</span></h4><ol class="item-tooltip-sockets">'+sockets.map(socket=>
    '<li aria-label="'+esc(socket.label)+'"><span aria-hidden="true" class="item-tooltip-socket'+(socket.filled?' filled rarity61-'+(socket.rune?.rarity??0):'')+'"></span></li>'
   ).join('')+'</ol>'+sockets.filter(socket=>socket.filled).map(socket=>
-   '<div class="item-tooltip-rune rarity61-'+(socket.rune?.rarity??0)+'"><strong>'+esc(socket.label)+'</strong>'+
+   '<div class="item-tooltip-rune rarity61-'+(socket.rune?.rarity??0)+'">'+runeIcon(socket.rune)+'<strong>'+esc(socket.label)+'</strong>'+
    (socket.rune?.desc?'<p>'+esc(socket.rune.desc)+'</p>':'')+'</div>'
   ).join(''):'');
 }
@@ -743,7 +765,7 @@ function show64(e){
  tooltip64.style.setProperty('--path',color||'#d7b775');
  tooltip64.innerHTML=mastery?tooltipHeader('<span class="tal47-symbol">'+abilityIcon(n)+'</span>','Maestria',n.name)+
   tooltipRows([['Conjurações',nf(c.casts[n.id]||0)],['Primeira escolha','30 conjurações · grátis'],['Domínio','120 conjurações'],['Troca na cidade',nf(60+c.level*3)+' ◈']])+
-  tooltipEffects('Formas',Object.values(masteryForms).map(form=>[form.name,form.details])):rune?tooltipHeader('<span class="tal47-symbol">'+skillIcon63('arcane')+'</span>',rar[rune.rarity],rune.name)+
+  tooltipEffects('Formas',Object.values(masteryForms).map(form=>[form.name,form.details])):rune?tooltipHeader('<span class="tal47-symbol">'+runeIcon(rune)+'</span>',rar[rune.rarity],rune.name)+
   tooltipRows([['Encaixe',slots[rune.slot]],['Estoque',nf(c.runeStock[runeId]||0)]])+tooltipEffects('Efeito',[[null,rune.desc]]):m?tooltipHeader(m.src?'<img class="material-tooltip-icon" src="'+esc(m.src)+'" alt="">':'<span class="tal47-symbol">◆</span>',rar[m.grade]||'Material',m.name)+
   tooltipRows([['Origem',m.source],['Região',regions[m.zone]],['Tier',m.zone+1],['Estoque',nf(c.materials[key]||0)],['Venda por unidade',c.materialQuotes?.[key]?nf(c.materialQuotes[key])+' ◈':null]])+
   tooltipEffects('Uso',[[null,m.uses]]):i?itemTooltip(i,c):p?potionTooltip(potionId,p,c):abilityTooltip(n,c);

@@ -2,10 +2,14 @@
 import balance from '../js/49-modelo.js';
 import {rollOdds,itemPower45,materialPrice} from './content.mjs';
 const EFFECTS={bleed:['Sangramento','','',5],stun:['Atordoamento','','',2],slow:['Lentidão','','',5],expose:['Exposição','','',6],poison:['Veneno','','',8],burn:['Queimadura','','',4],freeze:['Congelamento','','',2],shock:['Shock','','',5]};
-const EFFECT_DESC=Object.fromEntries(Object.keys(EFFECTS).map(k=>[k,'']));
+const EFFECT_DESC={
+ bleed:'Causa dano periódico.',stun:'Impede ações enquanto durar.',slow:'Diminui movimento e frequência de ataque.',
+ expose:'Aumenta o dano direto e periódico recebido.',poison:'Causa dano periódico e acumula até três vezes.',
+ burn:'Causa dano periódico.',freeze:'Interrompe movimento e ataques.',shock:'Reduz o dano causado pelo alvo.'
+};
 const RARITIES=[['Comum'],['Incomum'],['Raro'],['Épico'],['Lendário']];
 const SLOTS={weapon:'Arma',head:'Cabeça',armor:'Peitoral',offhand:'Mão secundária',hands:'Luvas',legs:'Calças',feet:'Botas',ring:'Anel',accessory:'Amuleto'};
-const RUNES={},RUNE_PRICE=[40,100,260,750,2400],RUNE_PROC=[5,8,12,16,22];
+const RUNES={},RUNE_PRICE=[40,100,260,750,2400],RUNE_PROC=[5,9,13,17,22];
 const runeFamilies={};function family(slot,id,name,mod,amount,label,effect){runeFamilies[`${slot}:${id}`]={slot,id,name,mod,amount,label,effect};}
 for(const effect of Object.keys(EFFECTS))family('weapon',effect,EFFECTS[effect][0],null,null,null,effect);
 family('weapon','might','Fio profano','damage',[1,2,3,5,7],'Dano base');
