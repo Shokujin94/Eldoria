@@ -601,3 +601,64 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #offlineReturn dt{font-size:11px;color:#cabfae}
 #offlineReturn dd{margin:1px 0 0;font-size:17px;color:#e8cd95;font-variant-numeric:tabular-nums}
 #offlineReturn .offline-defeat{margin-top:10px;color:#f1a997}
+/* Shared dark-fantasy treatment for the existing online interface. */
+body.play14{
+ --game-ink:#0e1016;
+ --game-plate:#21232c;
+ --game-border:#876c52;
+ --game-accent:#e4c390;
+ --game-blood:#5f292c;
+}
+body.play14 .floating65{
+ border:1px solid var(--game-border)!important;
+ background:radial-gradient(ellipse at 10% 0%,#47282c66,transparent 50%),linear-gradient(155deg,var(--game-plate),var(--game-ink) 70%)!important;
+ box-shadow:0 16px 45px #000a,inset 0 0 0 2px #0a0a0e,inset 0 0 0 3px #b98a5f31!important;
+}
+body.play14 .floating65 .window-head{
+ background:linear-gradient(100deg,#291a20,#25242e 55%,#151721)!important;
+ border-bottom:1px solid #a8865c!important;
+ box-shadow:inset 0 1px #edd5a232,0 2px 6px #0008;
+}
+body.play14 .floating65 .window-head::after{
+ content:"";position:absolute;inset:3px 4px;pointer-events:none;
+ border-inline:2px solid #aa80524d;border-radius:3px;
+}
+body.play14 .floating65 .window-head h2{
+ color:var(--game-accent)!important;font:400 18px/1.3 "DM Serif Text",Georgia,serif!important;letter-spacing:.02em;
+}
+body.play14 .floating65 .window-head>button{
+ border-color:#886b4e!important;background:linear-gradient(#302734,#171a21)!important;
+}
+body.play14 .floating65 .window-head>button:hover{border-color:var(--game-accent)!important}
+body.play14 .floating65 .window-body{font-family:Inter,system-ui,sans-serif;scrollbar-color:#89694d #12141b}
+body.play14 .floating65 .window-body :is(.section-banner11,.an44-header,.bag46-head,.identity13,.atlas-hero,.dungeon-summary11){
+ background:linear-gradient(125deg,#40272a,var(--game-plate) 53%,var(--game-ink))!important;
+ border-color:#957b55!important;box-shadow:inset 0 1px #f4cc8825!important;
+}
+body.play14 .floating65 .window-body :is(.service-card,.activity-card,.stat13,.gear-inspect,.region-card){
+ background:linear-gradient(145deg,#252732,#131620)!important;
+ border-color:#61513f!important;box-shadow:inset 0 1px #e5cba113!important;
+}
+body.play14 #tabs button:is(:hover,[aria-pressed=true],[aria-expanded=true]){
+ border-color:#b98e62!important;background:linear-gradient(145deg,#482930,#20212b)!important;
+}
+body.play14 #tabs button:focus-visible,body.play14 .floating65 :is(button,select,input):focus-visible{
+ outline:2px solid #ebcd94;outline-offset:2px;
+}
+body.play14 #world52 :is(.world52-top,#target60,#tracker56,.city61,.maptools61){
+ background:linear-gradient(140deg,#201c26e8,#10131be6);border-color:#9a7b5080;
+}
+body.play14 #combatHUD22 .c22-slot,body.play14 #quick61 button{
+ border-color:#9a7753!important;background:linear-gradient(145deg,#32232d,#141722)!important;
+}
+@keyframes eldoria-icon-ember{
+ 0%,100%{filter:drop-shadow(0 0 2px #d6a2636b)}
+ 50%{filter:drop-shadow(0 0 6px #efb46fb5)}
+}
+@media(prefers-reduced-motion:no-preference){
+ body.play14 #tabs button:is(:hover,[aria-pressed=true],[aria-expanded=true]) .navicon,
+ body.play14 #combatHUD22 .c22-slot:is(:hover,:focus-visible) :is(svg,img),
+ body.play14 .stock19-slot:is(:hover,:focus-visible) img{
+  animation:eldoria-icon-ember 2.1s ease-in-out infinite!important;
+ }
+}

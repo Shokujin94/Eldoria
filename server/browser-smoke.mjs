@@ -165,6 +165,13 @@ try{
  await page.locator('[data-tab=bag]').click();
  assert.equal(await page.locator('#win-character').isVisible(),true);
  await page.locator('#win-bag').waitFor({state:'visible'});
+ const windowTheme=await page.locator('#win-bag').evaluate(window=>{
+  const frame=getComputedStyle(window),title=getComputedStyle(window.querySelector('.window-head h2'));
+  return {border:frame.borderTopColor,background:frame.backgroundImage,font:title.fontFamily};
+ });
+ assert.equal(windowTheme.border,'rgb(135, 108, 82)');
+ assert.match(windowTheme.background,/radial-gradient/);
+ assert.match(windowTheme.font,/DM Serif Text/);
  assert.equal(await page.locator('#win-character').isVisible(),true);
  await page.locator('[data-filter61=weapon]').click();
  await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
