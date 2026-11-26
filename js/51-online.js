@@ -326,8 +326,37 @@ function combatDetails(){const c=data.character;return '<section><h3>Combate ava
 function chronicles(){const c=data.character,points=Math.max(0,Math.floor(Math.sqrt(c.legacyXP/100))-Object.values(c.legacy).reduce((a,b)=>a+b,0));return '<h2>Crônicas</h2><h3>Torre Infinita</h3><p>Recorde: andar '+nf(c.towerRecord)+'</p><form id="expedition57"><label>Região<select name="zone">'+options(regions)+'</select></label><label>Dificuldade<select name="difficulty">'+options(['Normal','Heroica','Pesadelo','Abissal','Profana'])+'</select></label><label>Expedição<select name="tower"><option value="false">Dungeon</option><option value="true">Torre Infinita</option></select></label><button '+(c.activity?'disabled':'')+'>Iniciar expedição</button></form><h3>Eventos raros</h3>'+ (c.rareEvent?'<p><strong>'+esc(c.rareEventName??'Evento raro')+'</strong> · '+esc(regions[c.rareEvent.z])+'</p><button data-act="resolveEvent">Resolver evento</button>':'<p>Eventos raros aparecem durante caçadas, com 0,3% de chance por vitória.</p>')+'<h3>Legado · nível 100</h3><p>'+nf(c.legacyXP)+' XP de legado · '+points+' pontos disponíveis</p>'+[['power','Poder','+0,6% de dano'],['survive','Sobrevivência','+0,6% de PV e +0,4 p.p. de resistências'],['fortune','Fortuna','+0,5% de ouro por vitória'],['craft','Ofícios','+0,5% de XP de especialização']].map(([k,n,bonus])=>'<article class="item"><span>'+n+' '+(c.legacy[k]||0)+'/20 · '+bonus+' por ponto</span><button data-act="legacy" data-id="'+k+'" '+(c.level<100||!points||c.activity||(c.legacy[k]||0)>=20?'disabled':'')+'>Investir</button></article>').join('');}
 let bagFilter61='all',characterTab61='sheet',talentPath61=0,talentSelected61=null,talentFilter61='all',journeyMode61='hunt',journeyZone61=0,journeyProf61='mining';
 let selectedBag64=null;
-function inventory(){const c=data.character,items=data.items.filter(i=>bagFilter61==='all'||i.slot===bagFilter61),selected=items.find(i=>String(i.id)===selectedBag64);const tile=i=>'<button type="button" class="bag56 stock19-slot rarity61-'+i.rarity+(selected===i?' active':'')+'" data-bag64="'+esc(i.id)+'" aria-pressed="'+(selected===i)+'">'+itemIcon(i)+'<span class="stock19-name">'+esc(i.name)+'</span><small class="tile42-level">Nv. '+i.level+(i.equipped?' · E':i.data.locked?' · ◆':'')+'</small></button>';
-return '<div id="content-bag"><header class="bag46-head"><div><small>PERTENCES DO AVENTUREIRO</small><h3>Inventário</h3><p>Equipamentos e itens guardados</p></div><div><strong>'+data.items.length+'<small>/120</small></strong><div class="bag43-meter"><i data-stock-width="'+Math.min(100,data.items.length/120*100)+'%"></i></div></div></header><div class="filter61">'+[['all','Todos'],...Object.entries(slots)].map(([k,n])=>'<button type="button" data-filter61="'+k+'" aria-pressed="'+(bagFilter61===k)+'">'+esc(n)+'</button>').join('')+'</div>'+rar.map((name,r)=>{const list=items.filter(i=>i.rarity===r);return list.length?'<div class="stock19-group" data-rarity-color="'+['#a8afb6','#73b88d','#75a9dc','#c28de5','#e2bd75'][r]+'"><h4>'+esc(name)+'<span>'+list.length+'</span></h4><div class="stock19-grid">'+list.map(tile).join('')+'</div></div>':'';}).join('')+(selected?'<div class="stock19-details"><h3>'+label(selected)+'</h3>'+itemDetails(selected)+'<div class="row"><button data-act="'+(selected.equipped?'unequip':'equip')+'" data-id="'+esc(selected.id)+'" '+(selected.escrow||(c.activity&&(selected.equipped||!['hunt','dungeon','boss'].includes(c.activity.mode)))||!selected.equipped&&(selected.level>c.level||selected.data.vocation&&selected.data.vocation!==c.cls)?'disabled':'')+'>'+(selected.equipped?'Desequipar':'Equipar')+'</button><button data-act="lockItem" data-id="'+esc(selected.id)+'" data-locked="'+(!selected.data.locked)+'" '+(selected.starter||selected.escrow||c.activity?'disabled':'')+'>'+(selected.data.locked?'Desproteger':'Proteger')+'</button></div></div>':'<p class="muted">Selecione um equipamento para inspecionar.</p>')+'</div>';}
+function inventory(){
+ const c=data.character,equipped=data.items.filter(i=>i.equipped);
+ const stored=data.items.filter(i=>!i.equipped&&(bagFilter61==='all'||i.slot===bagFilter61));
+ const selected=[...equipped,...stored].find(i=>String(i.id)===selectedBag64);
+ const tile=i=>{
+  const current=!i.equipped&&equipped.find(item=>item.slot===i.slot);
+  const direction=current?Math.sign(i.power-current.power):0;
+  const indicator=direction?'<span class="bag-comparison '+(direction>0?'better':'worse')+'" aria-label="'+(direction>0?'Nível de item maior':'Nível de item menor')+'">'+(direction>0?'▲':'▼')+'</span>':'';
+  return '<button type="button" class="bag56 stock19-slot rarity61-'+i.rarity+(selected===i?' active':'')+'" data-bag64="'+esc(i.id)+'" data-bag-slot="'+esc(i.slot)+'" aria-pressed="'+(selected===i)+'" aria-expanded="'+(selected===i)+'">'+
+   indicator+itemIcon(i)+'<span class="stock19-name">'+esc(i.name)+'</span><small class="tile42-level">Nv. '+i.level+(i.equipped?' · E':i.data.locked?' · ◆':'')+'</small></button>';
+ };
+ const groups=rar.map((name,r)=>{
+  const list=stored.filter(i=>i.rarity===r);
+  return list.length?'<div class="stock19-group"><h4>'+esc(name)+'<span>'+list.length+'</span></h4><div class="stock19-grid">'+list.map(tile).join('')+'</div></div>':'';
+ }).join('');
+ const menu=selected?'<div class="stock19-details bag-action-popup" role="group" aria-label="Ações do equipamento"><h3>'+esc(selected.name)+'</h3><div class="row">'+
+  '<button data-act="'+(selected.equipped?'unequip':'equip')+'" data-id="'+esc(selected.id)+'" '+(selected.escrow||(c.activity&&(selected.equipped||!['hunt','dungeon','boss'].includes(c.activity.mode)))||!selected.equipped&&(selected.level>c.level||selected.data.vocation&&selected.data.vocation!==c.cls)?'disabled':'')+'>'+
+  (selected.equipped?'Desequipar':'Equipar')+'</button><button data-act="lockItem" data-id="'+esc(selected.id)+'" data-locked="'+(!selected.data.locked)+'" '+(selected.starter||selected.escrow||c.activity?'disabled':'')+'>'+(selected.data.locked?'Desproteger':'Proteger')+'</button></div>'+
+  itemDetails(selected)+'</div>':'';
+ return '<div id="content-bag"><header class="bag46-head"><div><h3>Inventário</h3></div><div><strong>'+data.items.length+'<small>/120</small></strong><div class="bag43-meter"><i data-stock-width="'+Math.min(100,data.items.length/120*100)+'%"></i></div></div></header>'+
+  '<section class="bag-equipped"><h4>Equipados</h4><div class="stock19-grid">'+(equipped.map(tile).join('')||'<p>Nenhum item equipado.</p>')+'</div></section>'+
+  '<div class="filter61">'+[['all','Todos'],...Object.entries(slots)].map(([k,n])=>'<button type="button" data-filter61="'+k+'" aria-pressed="'+(bagFilter61===k)+'">'+esc(n)+'</button>').join('')+'</div>'+
+  (groups||'<p class="muted">Nenhum equipamento guardado neste filtro.</p>')+menu+'</div>';
+}
+function positionBagActions(panel){
+ const popup=panel.querySelector('.bag-action-popup'),anchor=panel.querySelector('[data-bag64].active');
+ if(!popup||!anchor)return;
+ const r=anchor.getBoundingClientRect(),w=popup.offsetWidth,h=popup.offsetHeight;
+ popup.style.left=Math.max(6,Math.min(innerWidth-w-6,r.right+8+w<=innerWidth?r.right+8:r.left-w-8))+'px';
+ popup.style.top=Math.max(6,Math.min(r.top,innerHeight-h-6))+'px';
+}
 
 let merchantId=null,merchantTab='sell';
 function merchant(){
@@ -518,7 +547,7 @@ function market65(){const d=market,html=marketPanel(),a=html.indexOf('<form id="
 
 async function renderPanel(id=page,open=true){if(!data?.character||!defs65[id])return;const w=win65(id),panel=w.querySelector('.panel65');if(open){const was=w.hidden;w.hidden=false;if(was)fit65(id);focus65(id);}else if(w.hidden)return;pressed65();if(id==='play'){$('journey61').hidden=false;journey61(data.character);panel.innerHTML=play();}
 else if(id==='character')panel.innerHTML=character();
-else if(id==='bag')panel.innerHTML=inventory66()+'<details class="extra64"><summary>Filtros de loot e perfis</summary>'+lootPanel()+'</details>';
+else if(id==='bag'){panel.innerHTML=inventory66()+'<details class="extra64"><summary>Filtros de loot e perfis</summary>'+lootPanel()+'</details>';positionBagActions(panel);}
 else if(id==='vault')panel.innerHTML=vaultPanel();
 else if(id==='chronicles')panel.innerHTML=chronicles65();
 else if(id==='dungeon')panel.innerHTML=dungeon65();
@@ -576,7 +605,7 @@ function tooltipHeader(icon,type,name){
  return '<div class="tal47-detailhead">'+icon+'<div><small>'+esc(type)+'</small><h3>'+esc(name)+'</h3></div></div>';
 }
 function tooltipRows(rows){
- return '<dl class="detail-tooltip-rows">'+rows.filter(([,v])=>v!=null).map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join('')+'</dl>';
+ return '<dl class="detail-tooltip-rows">'+rows.filter(([,v])=>v!=null).map(([k,v,delta])=>'<div><dt>'+esc(k)+'</dt><dd'+(delta?' class="'+(delta>0?'better':'worse')+'"':'')+'>'+esc(v)+'</dd></div>').join('')+'</dl>';
 }
 function tooltipEffects(title,entries){
  const descriptions=entries.filter(([,text])=>text);
@@ -598,7 +627,7 @@ function abilityTooltip(n,c){
   ])+
   (s?tooltipEffects('Sinergia',[[s.name,[s.condition,s.effect,s.requirement,s.rank?'Grau '+s.rank:'Prévia do grau 1'].filter(Boolean).join(' · ')] ]):'');
 }
-function itemTooltip(i,c){
+function itemTooltip(i,c,other=null,comparisonEquipped=false){
  const d=i.data,names={...attrNames67,damage:'Dano',def:'Defesa',hp:'Vida máxima',mana:'Mana máxima',crit:'Crítico',haste:'Ataque extra',tenacity:'Tenacidade',skill:'Maestria',regen:'Regeneração de mana'};
  const relic=d.relic!=null?c.relicCatalog[d.relic]:null;
  const corruption={ward:'Concede +2,5 pontos percentuais de resistência.',power:'Aumenta o dano em 3,5%.',scar:'Cicatriz sem bônus de combate.'};
@@ -614,8 +643,13 @@ function itemTooltip(i,c){
   const label=id?'Encaixe '+(index+1)+': '+(rune?.name||'Runa'): 'Encaixe '+(index+1)+': vazio';
   return {label,filled:!!id,rune};
  });
- const attributes=Object.entries(d.mods||{}).map(([k,v])=>[names[k]||k,(v>0?'+':'')+nf(v)]);
- return tooltipHeader(itemIcon(i),rar[i.rarity],i.name+(d.upgrade?' +'+d.upgrade:''))+
+ const own=d.mods||{},against=other?.data?.mods||{};
+ const keys=new Set([...Object.keys(own),...Object.keys(against)]);
+ const attributes=[...keys].map(k=>{
+  const v=own[k]||0,delta=other?Math.sign(v-(against[k]||0)):0;
+  return [names[k]||k,(delta>0?'▲ ':delta<0?'▼ ':'')+(v>0?'+':'')+nf(v),delta];
+ });
+ return tooltipHeader(itemIcon(i),rar[i.rarity],i.name+(d.upgrade?' +'+d.upgrade:''))+(comparisonEquipped?'<span class="comparison-equipped">Equipado</span>':'')+
   tooltipRows([['Tipo',slots[i.slot]],['Nível necessário',i.level],['Nível do item',i.power],['Vocação',voc[d.vocation]||'Todas'],['Refino',d.refine?['','I','II','III'][d.refine]:null],['Qualidade dos materiais',Number.isFinite(d.materialQuality)?nf(d.materialQuality)+' / 4':null],['Venda',i.npcValue==null?null:nf(i.npcValue)+' ◈']])+
   (attributes.length?'<h4>Atributos</h4>'+tooltipRows(attributes):'')+
   tooltipEffects('Efeitos especiais',effects)+
@@ -636,7 +670,7 @@ function potionTooltip(id,p,c){
 }
 function show64(e){
  const el=e.target.closest?.(tooltipTargets),c=data?.character;
- if(!el||!c||e.pointerType==='touch'||el===tooltipAnchor)return;
+ if(!el||!c||e.pointerType==='touch'||el===tooltipAnchor||el.matches('[data-bag64].active'))return;
  const mastery=el.dataset.masteryTip;
  const nodeId=el.dataset.node62||el.dataset.hudSkill||mastery;
  const path=nodeId?c.talentTree?.findIndex(p=>p.nodes.some(n=>n.id===nodeId)):-1;
@@ -656,6 +690,12 @@ function show64(e){
   tooltipRows([['Encaixe',slots[rune.slot]],['Estoque',nf(c.runeStock[runeId]||0)]])+tooltipEffects('Efeito',[[null,rune.desc]]):m?tooltipHeader(m.src?'<img class="material-tooltip-icon" src="'+esc(m.src)+'" alt="">':'<span class="tal47-symbol">◆</span>',rar[m.grade]||'Material',m.name)+
   tooltipRows([['Origem',m.source],['Região',regions[m.zone]],['Tier',m.zone+1],['Estoque',nf(c.materials[key]||0)],['Venda por unidade',c.materialQuotes?.[key]?nf(c.materialQuotes[key])+' ◈':null]])+
   tooltipEffects('Uso',[[null,m.uses]]):i?itemTooltip(i,c):p?potionTooltip(potionId,p,c):abilityTooltip(n,c);
+ const equipped=i&&!i.equipped&&el.dataset.bag64&&data.items.find(item=>item.equipped&&item.slot===i.slot);
+ tooltip64.classList.toggle('bag-compare-tip',!!equipped);
+ if(equipped){
+  tooltip64.innerHTML='<section class="rarity61-'+i.rarity+'">'+itemTooltip(i,c,equipped)+'</section>'+
+   '<section class="rarity61-'+equipped.rarity+'">'+itemTooltip(equipped,c,i,true)+'</section>';
+ }
  tooltip64.hidden=false;
  const r=el.getBoundingClientRect(),w=tooltip64.offsetWidth,h=tooltip64.offsetHeight;
  tooltip64.style.left=Math.max(6,Math.min(innerWidth-w-6,r.right+8+w<=innerWidth?r.right+8:r.left-w-8))+'px';
@@ -666,6 +706,20 @@ document.addEventListener('pointerover',show64);
 document.addEventListener('focusin',show64);
 document.addEventListener('pointerout',leave64);
 document.addEventListener('focusout',leave64);
+document.addEventListener('pointerdown',e=>{
+ const popup=document.querySelector('#win-bag:not([hidden]) .bag-action-popup:not([hidden])');
+ if(popup&&!e.target.closest('.bag-action-popup,[data-bag64]')){
+  popup.hidden=true;
+  document.querySelector('#win-bag [data-bag64].active')?.classList.remove('active');
+  selectedBag64=null;
+ }
+});
+document.addEventListener('scroll',e=>{
+ if(e.target.closest?.('#win-bag')){
+  const panel=document.querySelector('#win-bag .panel65');
+  if(panel)positionBagActions(panel);
+ }
+},true);
 document.addEventListener('scroll',hide64,true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tooltip64.hidden){e.preventDefault();e.stopImmediatePropagation();hide64();}},true);
 window.addEventListener('resize',()=>{hide64();connect64();});
@@ -701,7 +755,7 @@ function confirmGame(message){
   gameConfirmation.showModal();
  });
 }
-$('windowLayer65').addEventListener('click',e=>{if(busy)return;const win=e.target.closest('.floating65');if(!win)return;focus65(win.dataset.page);const pick=e.target.closest('[data-gearslot66],[data-geartab66],[data-bagtab66],[data-dungeon-zone],[data-analyzer66],[data-gearbag66]');if(pick){hide64();const d=pick.dataset;if(d.gearslot66)gearSlot66=d.gearslot66;if(d.geartab66)gearTab66=d.geartab66;if(d.bagtab66)bagTab66=d.bagtab66;if(d.dungeonZone!==undefined)dungeonZone66=Number(d.dungeonZone);if(d.analyzer66)analyzerTab66=d.analyzer66;if(d.gearbag66){bagTab66='equip';bagFilter61=d.gearbag66;selectedBag64=null;run(()=>renderPanel('bag'));return;}run(renderPanel);return;}const open=e.target.closest('[data-open65]');if(open){run(()=>renderPanel(open.dataset.open65));return;}const ui=e.target.closest('[data-ui65]');if(ui){const k=ui.dataset.ui65;if(k==='security')$('security54').click();else if(k==='logout')$('logout').click();else{prefs65.clear();try{localStorage.removeItem('eldoria-online-layout-65');}catch{}for(const [id,w] of windows65)if(!w.hidden)fit65(id);}return;}const merchantButton=e.target.closest('[data-merchant-tab]');if(merchantButton){merchantTab=merchantButton.dataset.merchantTab;hide64();run(()=>renderPanel('merchant'));return;}const m=e.target.closest('[data-market65]');if(m){marketTab65=m.dataset.market65;run(renderPanel);return;}const tab=e.target.closest('[data-bag64],[data-character61],[data-filter61],[data-path61],[data-node62],[data-tfilter62],[data-jump62]');if(tab){hide64();if(tab.dataset.bag64)selectedBag64=tab.dataset.bag64;if(tab.dataset.character61)characterTab61=tab.dataset.character61;if(tab.dataset.filter61)bagFilter61=tab.dataset.filter61;if(tab.dataset.path61!==undefined){talentPath61=Number(tab.dataset.path61);talentSelected61=null;talentFilter61='all';}if(tab.dataset.node62)talentSelected61=tab.dataset.node62;if(tab.dataset.tfilter62)talentFilter61=tab.dataset.tfilter62;if(tab.dataset.jump62){const i=data.character.talentTree.findIndex(p=>p.nodes.some(n=>n.id===tab.dataset.jump62));if(i>=0){talentPath61=i;talentSelected61=tab.dataset.jump62;talentFilter61='all';}}run(renderPanel);return;}const b=e.target.closest('[data-act]');if(!b||b.disabled)return;run(async()=>{const a=b.dataset.act;if(a==='prev'||a==='next'){rankPage=Math.max(0,rankPage+(a==='next'?1:-1));await renderPanel();return;}if(a==='buy'||a==='cancel'){if(a==='buy'&&!await confirmGame('Comprar por '+nf(+b.dataset.price)+' ouro?'))return;await request('/market','POST',{action:a,id:b.dataset.id,price:+b.dataset.price});data=await request('/state');}else {if(['presetSave','presetLoad','presetDelete'].includes(a)&&!await confirmGame(a==='presetLoad'?'Restaurar perfil? Mudanças de atributos ou talentos têm custo de reset.':a==='presetDelete'?'Excluir perfil salvo?':'Salvar ou substituir perfil?'))return;if(['sellItem','salvage','resetAttrs'].includes(a)&&!await confirmGame(a==='resetAttrs'?'Gastar ouro para redistribuir atributos?':a==='sellItem'?'Vender o equipamento? A recompra fica disponível até fechar a mercadora.':'Esta ação consome o equipamento permanentemente. Confirmar?'))return;if(a==='corrupt'&&!await confirmGame('Corrupção é irreversível e pode não conceder bônus. Continuar?'))return;if(a==='removeRune'&&!await confirmGame('Destruir esta runa permanentemente?'))return;if(a==='resetAnalyzer'&&data.character.analyzer?.seconds&&!await confirmGame('Arquivar os resultados atuais e iniciar uma nova medição?'))return;if(a==='resetTalents'){const c=data.character,n=Object.values(c.talents).reduce((a,b)=>a+b,0),cost=100+50*c.level+25*n;if(!await confirmGame('Recuperar '+n+' pontos por '+nf(cost)+' ouro? Saldo após reset: '+nf(c.gold-cost)+' ouro.'))return;}data=await request('/action','POST',{action:a,itemId:b.dataset.id,merchantId,key:a==='trackCreature'&&data.character.trackCreature===b.dataset.id?null:b.dataset.id,points:b.dataset.points61?Number(b.dataset.points61):undefined,locked:b.dataset.locked==='true',enabled:b.dataset.enabled==='true',prof:b.dataset.prof,choice:Number(b.dataset.choice),index:Number(b.dataset.index??b.dataset.id),form:b.dataset.form,rune:b.dataset.rune,element:b.closest('article')?.querySelector('[data-element53]')?.value,confirm:['corrupt','sellItem','salvage'].includes(a)});}display();await refresh65();});});
+$('windowLayer65').addEventListener('click',e=>{if(busy)return;const win=e.target.closest('.floating65');if(!win)return;focus65(win.dataset.page);const pick=e.target.closest('[data-gearslot66],[data-geartab66],[data-bagtab66],[data-dungeon-zone],[data-analyzer66],[data-gearbag66]');if(pick){hide64();const d=pick.dataset;if(d.gearslot66)gearSlot66=d.gearslot66;if(d.geartab66)gearTab66=d.geartab66;if(d.bagtab66)bagTab66=d.bagtab66;if(d.dungeonZone!==undefined)dungeonZone66=Number(d.dungeonZone);if(d.analyzer66)analyzerTab66=d.analyzer66;if(d.gearbag66){bagTab66='equip';bagFilter61=d.gearbag66;selectedBag64=null;run(()=>renderPanel('bag'));return;}run(renderPanel);return;}const open=e.target.closest('[data-open65]');if(open){run(()=>renderPanel(open.dataset.open65));return;}const ui=e.target.closest('[data-ui65]');if(ui){const k=ui.dataset.ui65;if(k==='security')$('security54').click();else if(k==='logout')$('logout').click();else{prefs65.clear();try{localStorage.removeItem('eldoria-online-layout-65');}catch{}for(const [id,w] of windows65)if(!w.hidden)fit65(id);}return;}const merchantButton=e.target.closest('[data-merchant-tab]');if(merchantButton){merchantTab=merchantButton.dataset.merchantTab;hide64();run(()=>renderPanel('merchant'));return;}const m=e.target.closest('[data-market65]');if(m){marketTab65=m.dataset.market65;run(renderPanel);return;}const tab=e.target.closest('[data-bag64],[data-character61],[data-filter61],[data-path61],[data-node62],[data-tfilter62],[data-jump62]');if(tab){hide64();if(tab.dataset.bag64)selectedBag64=selectedBag64===tab.dataset.bag64?null:tab.dataset.bag64;if(tab.dataset.character61)characterTab61=tab.dataset.character61;if(tab.dataset.filter61)bagFilter61=tab.dataset.filter61;if(tab.dataset.path61!==undefined){talentPath61=Number(tab.dataset.path61);talentSelected61=null;talentFilter61='all';}if(tab.dataset.node62)talentSelected61=tab.dataset.node62;if(tab.dataset.tfilter62)talentFilter61=tab.dataset.tfilter62;if(tab.dataset.jump62){const i=data.character.talentTree.findIndex(p=>p.nodes.some(n=>n.id===tab.dataset.jump62));if(i>=0){talentPath61=i;talentSelected61=tab.dataset.jump62;talentFilter61='all';}}run(renderPanel);return;}const b=e.target.closest('[data-act]');if(!b||b.disabled)return;run(async()=>{const a=b.dataset.act;if(a==='prev'||a==='next'){rankPage=Math.max(0,rankPage+(a==='next'?1:-1));await renderPanel();return;}if(a==='buy'||a==='cancel'){if(a==='buy'&&!await confirmGame('Comprar por '+nf(+b.dataset.price)+' ouro?'))return;await request('/market','POST',{action:a,id:b.dataset.id,price:+b.dataset.price});data=await request('/state');}else {if(['presetSave','presetLoad','presetDelete'].includes(a)&&!await confirmGame(a==='presetLoad'?'Restaurar perfil? Mudanças de atributos ou talentos têm custo de reset.':a==='presetDelete'?'Excluir perfil salvo?':'Salvar ou substituir perfil?'))return;if(['sellItem','salvage','resetAttrs'].includes(a)&&!await confirmGame(a==='resetAttrs'?'Gastar ouro para redistribuir atributos?':a==='sellItem'?'Vender o equipamento? A recompra fica disponível até fechar a mercadora.':'Esta ação consome o equipamento permanentemente. Confirmar?'))return;if(a==='corrupt'&&!await confirmGame('Corrupção é irreversível e pode não conceder bônus. Continuar?'))return;if(a==='removeRune'&&!await confirmGame('Destruir esta runa permanentemente?'))return;if(a==='resetAnalyzer'&&data.character.analyzer?.seconds&&!await confirmGame('Arquivar os resultados atuais e iniciar uma nova medição?'))return;if(a==='resetTalents'){const c=data.character,n=Object.values(c.talents).reduce((a,b)=>a+b,0),cost=100+50*c.level+25*n;if(!await confirmGame('Recuperar '+n+' pontos por '+nf(cost)+' ouro? Saldo após reset: '+nf(c.gold-cost)+' ouro.'))return;}data=await request('/action','POST',{action:a,itemId:b.dataset.id,merchantId,key:a==='trackCreature'&&data.character.trackCreature===b.dataset.id?null:b.dataset.id,points:b.dataset.points61?Number(b.dataset.points61):undefined,locked:b.dataset.locked==='true',enabled:b.dataset.enabled==='true',prof:b.dataset.prof,choice:Number(b.dataset.choice),index:Number(b.dataset.index??b.dataset.id),form:b.dataset.form,rune:b.dataset.rune,element:b.closest('article')?.querySelector('[data-element53]')?.value,confirm:['corrupt','sellItem','salvage'].includes(a)});}display();await refresh65();});});
 $('windowLayer65').addEventListener('change',e=>{if(e.target.id==='rankcat'){focus65('ranking');category=e.target.value;rankPage=0;run(renderPanel);}});
 $('windowLayer65').addEventListener('input',e=>{const f=e.target.closest('#listing');if(!f||!market)return;const d=new FormData(f),i=market.items.find(i=>i.id===d.get('itemId')),p=Number(d.get('price'));if(!i||!Number.isSafeInteger(p)||p<2||p>1e9)return;const bps=Math.min(1200,300+4*(i.level-1)+80*i.rarity+({hunt:0,craft:50,dungeon:100,boss:200}[i.source]||0)),burn=Math.ceil(p*bps/10000);$('quote').textContent='Taxa '+(bps/100).toFixed(2)+'% · Queima '+nf(burn)+' ◈ · Recebe '+nf(p-burn)+' ◈';});
 let lastStateRequest=0;

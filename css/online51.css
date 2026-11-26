@@ -560,3 +560,18 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #content-talent .talent-mastery-form{padding:7px;border:1px solid #494654;border-radius:6px}
 #content-talent .talent-mastery-form.active{border-color:var(--path);box-shadow:inset 0 0 7px color-mix(in srgb,var(--path) 20%,transparent)}
 #content-talent .talent-mastery-form h5{margin:0;color:#e9d9b7}
+
+#content-bag .bag-equipped{padding:8px;border:1px solid #a19a7266;border-radius:7px;background:#131821;margin-bottom:10px}
+#content-bag .bag-equipped h4{margin:0 0 6px;color:#e6cc92}
+#content-bag .bag-equipped .stock19-grid{display:flex!important;overflow-x:auto}
+#content-bag .bag-equipped .stock19-slot{flex:0 0 77px}
+#content-bag .stock19-slot{position:relative}
+.bag-comparison{position:absolute;top:3px;right:5px;font-size:12px;text-shadow:0 1px 2px #000}
+#tal47-tip .better,.bag-comparison.better,.comparison-equipped{color:#a5da9d}
+#tal47-tip .worse,.bag-comparison.worse{color:#f49991}
+#content-bag .bag-action-popup{position:fixed;z-index:8;width:min(250px,calc(100vw - 12px));margin:0;padding:10px;border:1px solid #bc9f6f;border-radius:7px;background:#181b23;box-shadow:0 8px 28px #000c}
+#content-bag .bag-action-popup h3{margin:0 0 8px;font-size:14px}
+#tal47-tip.bag-compare-tip{width:min(680px,calc(100vw - 12px));display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px}
+#tal47-tip.bag-compare-tip>section{--path:var(--rar61);padding:8px;border:1px solid var(--rar61);border-radius:6px;background:#141821;min-width:0}
+#tal47-tip .comparison-equipped{display:block;font-weight:650;margin:3px 0 5px}
+@media(max-width:550px){#tal47-tip.bag-compare-tip{grid-template-columns:1fr}}

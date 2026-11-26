@@ -160,8 +160,8 @@ try{
  assert.equal(await page.locator('#win-character').isVisible(),true);
  await page.locator('[data-filter61=weapon]').click();
  await page.locator('[data-filter61=weapon][aria-pressed=true]').waitFor();
- assert.equal(await page.locator('.bag56').count(),1);
- await page.locator('[data-bag64]').first().focus();
+ assert.equal(await page.locator('.bag56[data-bag-slot=weapon]').count(),1);
+ await page.locator('[data-bag64][data-bag-slot=weapon]').first().focus();
  await page.locator('#tal47-tip').getByText('Nível do item',{exact:true}).waitFor();
  const tooltipFonts=await page.locator('#tal47-tip').evaluate(async tooltip=>{
   const title=getComputedStyle(tooltip.querySelector('h3')).fontFamily;
@@ -173,10 +173,10 @@ try{
  assert.match(tooltipFonts.body,/Inter/);
  assert.ok(tooltipFonts.serif&&tooltipFonts.sans);
  await page.keyboard.press('Escape');
- await page.locator('[data-bag64]').first().click();await page.locator('.stock19-details').waitFor();
+ await page.locator('[data-bag64][data-bag-slot=weapon]').first().click();await page.locator('.stock19-details').waitFor();
  const bag=page.locator('#win-bag');
  const rarityColor=tile=>tile.evaluate(el=>getComputedStyle(el).getPropertyValue('--rar').trim());
- assert.equal(await rarityColor(bag.locator('[data-bag64]').first()),'#b9bec6');
+ assert.equal(await rarityColor(bag.locator('[data-bag64][data-bag-slot=weapon]').first()),'#b9bec6');
  await bag.locator('[data-filter61=head]').click();
  const socketedItem=bag.locator('[data-bag64="fixture-head"]');
  await socketedItem.hover();
@@ -366,7 +366,7 @@ try{
   const save=JSON.parse(character.data);save.level=5;
   expeditionFixture.prepare('UPDATE characters SET level=5,data=? WHERE account=?').run(JSON.stringify(save),character.account);
   expeditionFixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
-   .run('expedition-weapon',character.account,'Arma de teste','weapon','hunt',1,JSON.stringify({mods:{damage:5}}));
+   .run('expedition-weapon',character.account,'Arma de teste','weapon','hunt',100,JSON.stringify({mods:{damage:50}}));
  }finally{expeditionFixture.close();}
  await page.waitForFunction(()=>document.getElementById('character63').textContent==='Nível 5');
  await page.locator('[data-tab=dungeon]').click();
@@ -378,7 +378,13 @@ try{
  const expeditionBag=page.locator('#win-bag');
  await expeditionBag.locator('[data-bagtab66=equip]').click();
  await expeditionBag.locator('[data-filter61=weapon]').click();
- await expeditionBag.locator('[data-bag64=expedition-weapon]').click();
+ const expeditionWeapon=expeditionBag.locator('[data-bag64=expedition-weapon]');
+ assert.equal(await expeditionWeapon.locator('.bag-comparison.better').count(),1);
+ await expeditionWeapon.hover();
+ const comparisonTip=page.locator('#tal47-tip.bag-compare-tip');
+ await comparisonTip.getByText('Equipado',{exact:true}).waitFor();
+ await comparisonTip.locator('dd.better').first().waitFor();
+ await expeditionWeapon.click();
  await expeditionBag.locator('[data-act=equip][data-id=expedition-weapon]').click();
  await expeditionBag.locator('[data-act=unequip][data-id=expedition-weapon]').waitFor();
  assert.match(await page.locator('#world52-location').innerText(),/Andar 1\/3/);
