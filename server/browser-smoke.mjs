@@ -365,6 +365,10 @@ try{
  await page.locator('[data-group65="3"]').click();
  await page.locator('[data-tab=settings]').click();
  assert.equal(await page.locator('#win-settings').getByRole('link',{name:'Abrir Wiki'}).getAttribute('href'),'wiki.html');
+ const musicVolume=page.getByRole('slider',{name:'Trilha ambiente'});
+ await musicVolume.fill('35');
+ assert.equal(await page.evaluate(()=>window.eldoria52Scene.volume('music')),35);
+ assert.equal(await page.evaluate(()=>window.eldoria52Scene.volume('effects')),100);
  const motionMode=page.locator('[data-scene-motion]');
  assert.equal(await motionMode.inputValue(),'system');
  await motionMode.selectOption('full');

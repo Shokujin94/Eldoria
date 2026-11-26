@@ -109,9 +109,21 @@ function draw(c,src,x,y,h,flip=false,bright=false,lean=0,stretch=1,outline=null)
  c.drawImage(im,-w/2,-h,w,h);
  c.shadowBlur=0;
 }c.drawImage(im,-w/2,-h,w,h);c.restore();}
-let audioMix,noiseSample,musicTimer,musicStep=0;
+let audioMix,audioEffects,audioMusic,noiseSample,musicTimer,musicStep=0;
+const volumes={effects:100,music:65};
+try{
+ const saved=JSON.parse(localStorage.getItem('nethar-audio-mix')||'{}');
+ for(const key of Object.keys(volumes))if(Number.isFinite(saved[key]))volumes[key]=clamp(saved[key],0,100);
+}catch{}
+function setVolume(channel,value){
+ if(!Object.hasOwn(volumes,channel)||!Number.isFinite(value))return;
+ volumes[channel]=clamp(value,0,100);
+ const bus=channel==='music'?audioMusic:audioEffects;
+ if(bus)bus.gain.setTargetAtTime(volumes[channel]/100,audio.currentTime,.035);
+ try{localStorage.setItem('nethar-audio-mix',JSON.stringify(volumes));}catch{}
+}
 function audioReady(){return sound&&audio?.state==='running'&&!document.hidden;}
-function note(at,start,end,level,duration,type='triangle',attack=.012){
+function note(at,start,end,level,duration,type='triangle',attack=.012,bus=audioEffects){
  const osc=audio.createOscillator(),gain=audio.createGain();
  osc.type=type;
  osc.frequency.setValueAtTime(start,at);
@@ -119,7 +131,7 @@ function note(at,start,end,level,duration,type='triangle',attack=.012){
  gain.gain.setValueAtTime(.0001,at);
  gain.gain.exponentialRampToValueAtTime(level,at+attack);
  gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
- osc.connect(gain).connect(audioMix);
+ osc.connect(gain).connect(bus);
  osc.start(at);
  osc.stop(at+duration);
 }
@@ -136,7 +148,7 @@ function texture(at,frequency,level,duration){
  filter.Q.value=.9;
  gain.gain.setValueAtTime(level,at);
  gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
- source.connect(filter).connect(gain).connect(audioMix);
+ source.connect(filter).connect(gain).connect(audioEffects);
  source.start(at);
  source.stop(at+duration);
 }
@@ -165,8 +177,8 @@ function playMusicBar(){
  const at=audio.currentTime+.04;
  const chord=musicChords[musicStep++%musicChords.length];
  chord.forEach((pitch,i)=>{
-  note(at,pitch,pitch,.012,4.4,i<2?'triangle':'sine',.65);
-  if(i>1)note(at+.7*i,pitch*2,pitch*2,.013,1.5,'sine',.1);
+  note(at,pitch,pitch,.012,4.4,i<2?'triangle':'sine',.65,audioMusic);
+  if(i>1)note(at+.7*i,pitch*2,pitch*2,.013,1.5,'sine',.1,audioMusic);
  });
 }
 function popup(text,color,now,x=.68,y=.44,actor=false){if(motion.matches)return;fx.push({text,color,at:now,x,y,actor});if(fx.length>12)fx.shift();}
@@ -760,6 +772,12 @@ function toggle(){
     audio=new Context();
     audioMix=audio.createGain();
     audioMix.connect(audio.destination);
+    audioEffects=audio.createGain();
+    audioEffects.gain.value=volumes.effects/100;
+    audioEffects.connect(audioMix);
+    audioMusic=audio.createGain();
+    audioMusic.gain.value=volumes.music/100;
+    audioMusic.connect(audioMix);
    }
    audioMix.gain.setTargetAtTime(.8,audio.currentTime,.02);
    audio.resume().then(()=>{if(sound)playMusicBar();}).catch(()=>{if(sound)toggle();});
@@ -775,5 +793,5 @@ function toggle(){
 }
 function interact(){if(!state||state.activity||!cityNear)return;window.eldoria61CityService?.(cityNear.mode);}
 const blocked=()=>!state||state.activity||document.querySelector('dialog[open]')||document.querySelector('#window53.floating53:not([hidden])');document.addEventListener('keydown',e=>{if(blocked()||e.target.closest?.('input,select,textarea,button,[contenteditable]'))return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();cityKeys.add(k);}else if(k==='e'){e.preventDefault();interact();}});document.addEventListener('keyup',e=>cityKeys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>cityKeys.clear());document.addEventListener('visibilitychange',()=>{cityKeys.clear();if(document.hidden)levelEffect=null;});canvas()?.addEventListener('click',e=>{if(blocked()||!projection)return;const r=canvas().getBoundingClientRect(),p=projection,x=((e.clientX-r.left)/r.width*p.w-p.ox)/(p.w*p.scale),y=((e.clientY-r.top)/r.height*p.h-p.oy)/(p.h*p.scaleY),actorH=cityActorHeight(p.w,p.h);cityClickNPC=cityNPC.filter(n=>Math.abs((x-n.x)*p.w)<actorH*.32&&(y-n.y)*p.h*p.scaleY>=-actorH*p.scale&&(y-n.y)*p.h*p.scaleY<actorH*p.scale*.20).sort((a,b)=>Math.abs(x-a.x)-Math.abs(x-b.x)||b.y-a.y)[0]||null;const clicked=cityClickNPC?{x:cityClickNPC.x,y:cityClickNPC.y+.04}:{x,y};cityDest=cityWalkable(clicked.x,clicked.y)?clicked:nearestCityNode(clicked);cityRoute=cityDest?routeCity(cityPos,cityDest):[];canvas().focus({preventScroll:true});});
-window.eldoria52Scene={apply,toggle,interact,setMotionMode,motionMode:()=>motionMode,zoom:delta=>{zoom61=clamp(zoom61+delta,baseZoom,1);},view:()=>projection?{...projection}:null};
+window.eldoria52Scene={apply,toggle,interact,setMotionMode,motionMode:()=>motionMode,setVolume,volume:channel=>volumes[channel],zoom:delta=>{zoom61=clamp(zoom61+delta,baseZoom,1);},view:()=>projection?{...projection}:null};
 })();
