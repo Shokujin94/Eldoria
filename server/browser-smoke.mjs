@@ -373,6 +373,8 @@ try{
   ctx.strokeText=(...args)=>{if(/^\d+$|^CRÍTICO \d+$/.test(args[0]))seen.damage=true;strokeText(...args);};
   return seen;
  });
+ await page.locator('#sound52').click();
+ assert.equal(await page.locator('#sound52').getAttribute('aria-pressed'),'true');
  await page.locator('#start61').click();
  await page.locator('#target60').waitFor({state:'visible'});
  try{await page.waitForFunction(seen=>seen.projectile&&seen.damage&&seen.impact&&seen.panorama&&seen.attackPose,impact,{timeout:15000});}
@@ -380,6 +382,8 @@ try{
   const scene=await page.evaluate(()=>({hidden:document.hidden,focus:document.hasFocus(),motion:window.eldoria52Scene?.motionMode(),hp:document.querySelector('#target60-hp')?.value}));
   throw new Error('Combat render check: '+JSON.stringify({seen:await impact.jsonValue(),scene,errors}),{cause:error});
  }
+ await page.locator('#sound52').click();
+ assert.equal(await page.locator('#sound52').getAttribute('aria-pressed'),'false');
  if(combatOnly){
   assert.deepEqual(errors,[]);
   console.log('Combat smoke ('+engine+(executablePath?' · '+executablePath:'')+'): pose, projectile, impact and damage passed');
