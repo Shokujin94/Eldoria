@@ -575,3 +575,11 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #tal47-tip.bag-compare-tip>section{--path:var(--rar61);padding:8px;border:1px solid var(--rar61);border-radius:6px;background:#141821;min-width:0}
 #tal47-tip .comparison-equipped{display:block;font-weight:650;margin:3px 0 5px}
 @media(max-width:550px){#tal47-tip.bag-compare-tip{grid-template-columns:1fr}}
+
+.attribute-sheet-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin:6px 0;padding:8px 10px;border:1px solid #4d493e;border-radius:6px;background:#151922}
+.attribute-sheet-row small{margin-left:7px;color:#e7bd7f}
+.attribute-sheet-row p{margin:4px 0 0;color:#bbc5d0}
+.attribute-precision{margin:8px 0;padding:8px;border:1px solid #494c58;border-radius:6px}
+.attribute-precision dl{margin:.5em 0}
+.attribute-precision dl>div{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #6567794d}
+.attribute-precision dd{margin:0;color:#eddbb9;font-variant-numeric:tabular-nums}

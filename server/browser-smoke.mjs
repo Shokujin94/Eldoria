@@ -146,7 +146,10 @@ try{
  const mastery=page.locator('#win-character .mastery-progress');
  await mastery.waitFor({state:'visible'});
  assert.match(await mastery.innerText(),/Domínio dos mortos.*0 \/ 18 XP de maestria/);
- assert.match(await page.locator('#win-character .stat13').filter({hasText:'Tenacidade'}).innerText(),/1,5%/);
+ assert.match(await page.locator('#win-character .stat13').filter({hasText:'Tenacidade'}).innerText(),/2%/);
+ await page.locator('#win-character .attribute-precision summary').click();
+ assert.match(await page.locator('#win-character .attribute-precision dl>div').filter({hasText:'Tenacidade'}).innerText(),/1,5%/);
+ assert.match(await page.locator('#win-character .attribute-sheet-row').filter({hasText:/Intelig.ncia/}).innerText(),/Atributo principal/);
  await page.locator('[data-character61=gear]').click();
  await page.locator('.paper61-hero').waitFor();await page.locator('[data-gearslot66=weapon]').click();await page.locator('.gear-cell.chosen[data-gearslot66=weapon]').waitFor();
  await page.locator('[data-geartab66=stats]').click();
