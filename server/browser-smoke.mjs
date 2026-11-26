@@ -113,9 +113,11 @@ try{
   save.materials['mining:0:2']=2;
   save.runeStock.r30_weapon_might_2=1;
   save.rareEvent={z:0,k:0};
-  fixture.prepare('UPDATE characters SET data=? WHERE account=?').run(JSON.stringify(save),character.account);
+  fixture.prepare('UPDATE characters SET data=?,gold=10 WHERE account=?').run(JSON.stringify(save),character.account);
   const equip=fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data,equipped) VALUES(?,?,?,?,0,1,2,?,?,?,1)');
   for(const slot of ['head','armor'])equip.run('fixture-'+slot,character.account,'Peça da Vigília',slot,'hunt',1,JSON.stringify({mods:{},quality:0,...(slot==='head'?{sockets:2,runes:['r30_head_memory_2'],corrupt:'power'}:{})}));
+  fixture.prepare('INSERT INTO items(id,owner,name,slot,tier,level,rarity,source,power,data) VALUES(?,?,?,?,0,1,0,?,?,?)')
+   .run('market-fixture',character.account,'Amuleto de teste','accessory','hunt',1,JSON.stringify({mods:{mana:1}}));
  }finally{fixture.close();}
  await page.locator('[data-group65="0"]').click();
  await page.locator('[data-tab=cons]').click();
@@ -230,6 +232,18 @@ try{
  await page.locator('[data-group65="2"]').click();await page.locator('[data-tab=market]').click();
  await page.locator('[data-market65=sell]').click();
  await page.locator('#listing').waitFor();
+ await page.locator('#listing [name=itemId]').selectOption('market-fixture');
+ await page.locator('#listing [name=price]').fill('100');
+ const listingResponse=page.waitForResponse(response=>response.url().endsWith('/market')&&response.request().method()==='POST');
+ await page.locator('#listing button').click();
+ const listingResult=await listingResponse;
+ assert.equal(listingResult.status(),200,await listingResult.text());
+ try{await page.locator('#win-market').getByText('Amuleto de teste',{exact:true}).waitFor({timeout:5000});}
+ catch(error){throw new Error(await page.locator('#win-market').innerText(),{cause:error});}
+ const cancellation=page.locator('#win-market [data-cancel-at]');
+ await cancellation.waitFor();
+ assert.equal(await cancellation.isDisabled(),true);
+ assert.match(await cancellation.innerText(),/Remover em (30:00|29:\d{2})/);
  await page.locator('[data-group65="3"]').click();await page.locator('[data-tab=ranking]').click();
  await page.locator('#rankcat').waitFor();
  for(const id of ['ranking','market','talent','bag','character'])await page.locator('#win-'+id+' [data-close65]').evaluate(b=>b.click());

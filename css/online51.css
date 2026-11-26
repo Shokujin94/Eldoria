@@ -538,3 +538,9 @@ body.play14 :is(.floating,.era-modal,dialog) :is(.atlas-select button,.atlas-mon
 #win-merchant .merchant-stock{border:1px solid color-mix(in srgb,var(--rar61) 65%,#202028);border-radius:7px;padding:9px;background:linear-gradient(155deg,color-mix(in srgb,var(--rar61) 13%,#20242d),#12161c);box-shadow:inset 0 0 8px #0006}
 #win-merchant .merchant-item{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 #win-merchant .merchant-item small{display:block;color:var(--rar61)}
+
+#win-market .market-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:9px}
+#win-market .market-stock{border:1px solid color-mix(in srgb,var(--rar61) 60%,#272731);border-radius:8px;padding:10px;background:linear-gradient(155deg,color-mix(in srgb,var(--rar61) 12%,#20242d),#12161c)}
+#win-market .market-item{display:flex;align-items:center;gap:9px}
+#win-market .market-item small{display:block;color:var(--rar61)}
+#win-market .market-stock button{font-variant-numeric:tabular-nums}
