@@ -93,7 +93,7 @@ function spendConsumable(s,key){
  }
 }
 export function elapseElixirs(s,seconds){for(const k of Object.keys(s.elixirs||{})){s.elixirs[k]=Math.max(0,s.elixirs[k]-seconds);if(!s.elixirs[k])delete s.elixirs[k];}}
-export function usePotion(s,st,key){if(Object.hasOwn(elixirs,key)){if(!(s.potions[key]>0)||s.elixirs[key]>0)return false;spendConsumable(s,key);s.elixirs[key]=elixirs[key].cd;return true;}const p=Object.hasOwn(potions,key)?potions[key]:null;if(!p||!(s.potions[key]>0)||s.potionCD[p.kind]>0)return false;const stat=p.kind==='hp'?'hp':'mana',max=st[stat];if(s[stat]>=max)return false;s[stat]=Math.min(max,s[stat]+Math.ceil(max*p.fraction));spendConsumable(s,key);s.potionCD[p.kind]=p.cd;return true;}
+export function usePotion(s,st,key){if(Object.hasOwn(elixirs,key)){if(!(s.potions[key]>0)||s.elixirs[key]>0)return false;spendConsumable(s,key);s.elixirs[key]=elixirs[key].cd;return true;}const p=Object.hasOwn(potions,key)?potions[key]:null;if(!p||!(s.potions[key]>0)||s.potionCD[p.kind]>0)return false;const stat=p.kind==='hp'?'hp':'mana',max=st[stat];if(s[stat]>=max)return false;s[stat]=Math.min(max,s[stat]+Math.ceil(max*p.fraction));spendConsumable(s,key);s.potionCD[p.kind]=p.cd;(s.potionCDMax??={})[p.kind]=p.cd;return true;}
 export function autoPotion(s,st){for(const k of ['hp','mp']){const stat=k==='hp'?'hp':'mana';if(s.autoPotion[k]>0&&s[stat]/st[stat]*100<=s.autoPotion[k]){const preferred=s.autoPotion[k+'Key'],key=preferred&&Object.hasOwn(potions,preferred)&&potions[preferred].kind===k?preferred:[1,2,3].map(n=>k+n).find(id=>s.potions[id]>0);if(key)usePotion(s,st,key);}}}
 export function elapsePotionCooldowns(s,seconds){for(const k of Object.keys(s.potionCD||{}))s.potionCD[k]=Math.max(0,s.potionCD[k]-seconds);}
 function damageHero(s,amount){

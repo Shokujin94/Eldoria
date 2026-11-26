@@ -128,7 +128,7 @@ try{
  }finally{fixture.close();}
  await page.locator('[data-group65="0"]').click();
  await page.locator('[data-tab=cons]').click();
- await page.locator('#auto-hp').waitFor();
+ await page.locator('#auto-hp').waitFor({state:'attached'});
  assert.equal(await page.locator('.cons-item11').count(),12);
  const dropCard=page.locator('#drop-notice.rarity61-3');
  await dropCard.getByText('Item de teste do saque',{exact:true}).waitFor();
@@ -136,6 +136,16 @@ try{
  assert.match(await dropCard.innerText(),/0,5%/);
  const flaskMarkup=await page.locator('#win-cons .flask-icon').evaluateAll(icons=>icons.map(icon=>icon.innerHTML));
  assert.equal(new Set(flaskMarkup).size,12);
+ const autoLife=page.locator('#auto-hp');
+ await autoLife.locator('..').locator('summary').click();
+ await autoLife.getByRole('checkbox').check();
+ await autoLife.locator('[name=threshold]').fill('42');
+ await autoLife.getByRole('button',{name:'Salvar'}).click();
+ await page.locator('#quick61 .potion-auto').getByText('Auto 42%').waitFor();
+ await autoLife.locator('..').locator('summary').click();
+ await autoLife.getByRole('checkbox').uncheck();
+ await autoLife.getByRole('button',{name:'Salvar'}).click();
+ await page.locator('#quick61 .potion-auto').getByText('Auto 42%').waitFor({state:'detached'});
  const buyPotions=page.locator('#win-cons [data-buy-potion=hp1]');
  await buyPotions.locator('input').fill('2');
  assert.equal(await buyPotions.locator('[data-potion-total]').innerText(),'16');
